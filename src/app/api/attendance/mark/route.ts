@@ -12,6 +12,11 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json();
   let { studentId, status, method, qrToken, otp, latitude, longitude, recordId, classId } = body;
+  
+  // Workaround for DB constraint missing kiosk/ai_vision
+  let dbMethod = method;
+  if (method === 'kiosk' || method === 'ai_vision') dbMethod = 'manual';
+
 
   // If recordId is provided (e.g. from Admin editor), fetch classId and studentId from DB
   if (recordId) {
@@ -94,6 +99,7 @@ export async function POST(req: NextRequest) {
     if (cls) {
       const { data: subj } = await supabaseAdmin.from('subjects').select('teacher_ids').eq('id', cls.subject_id).single();
       if (!subj?.teacher_ids?.includes(session.user.userId)) {
+        console.error('Mark Manual Failed: Not your subject', { teacher_ids: subj?.teacher_ids, userId: session.user.userId });
         return NextResponse.json({ error: 'Not your subject' }, { status: 403 });
       }
       
@@ -125,7 +131,7 @@ export async function POST(req: NextRequest) {
 
   if (existing) {
     await supabaseAdmin.from('attendance').update({
-      status: markStatus, method,
+      status: markStatus, method: dbMethod,
       edited_by: session.user.userId, edited_at: new Date().toISOString(),
     }).eq('id', existing.id);
     if (session.user.role !== 'superadmin') {
@@ -136,7 +142,7 @@ export async function POST(req: NextRequest) {
     }
   } else {
     const { data: newRecord } = await supabaseAdmin.from('attendance')
-      .insert({ class_id: classId, student_id: targetStudentId, status: markStatus, method })
+      .insert({ class_id: classId, student_id: targetStudentId, status: markStatus, method: dbMethod })
       .select().single();
     if (session.user.role !== 'superadmin') {
       await logAudit({ userId: session.user.userId!, action: 'MARK_ATTENDANCE',

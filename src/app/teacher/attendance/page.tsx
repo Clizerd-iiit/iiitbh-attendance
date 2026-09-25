@@ -239,6 +239,18 @@ function AttendancePage() {
     setShowKiosk(false);
   };
 
+  const markBulk = async (studentIds: string[], status: AttendanceStatus) => {
+    if (!activeClass || studentIds.length === 0) return;
+    const newMarks: Record<string, AttendanceStatus> = {};
+    studentIds.forEach(id => newMarks[id] = status);
+    setMarked(prev => ({ ...prev, ...newMarks }));
+    await fetch('/api/attendance/mark/bulk', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ classId: activeClass.id, studentIds, status, method: 'manual' })
+    });
+  };
+
   const markManual = async (studentId: string, status: AttendanceStatus) => {
     if (!activeClass) return;
     // Optimistic update
@@ -589,7 +601,7 @@ function AttendancePage() {
       </div>
 
       {toastMsg && (
-        <div className="fixed bottom-6 right-6 bg-green-600 text-white px-6 py-4 rounded-xl shadow-2xl font-bold z-[99999] animate-bounce flex items-center gap-2 text-lg border-2 border-green-400">
+        <div className="fixed bottom-6 right-6 bg-green-600 text-white px-6 py-4 rounded-xl shadow-2xl font-bold z-[999999] animate-bounce flex items-center gap-2 text-lg border-2 border-green-400">
           {toastMsg}
         </div>
       )}

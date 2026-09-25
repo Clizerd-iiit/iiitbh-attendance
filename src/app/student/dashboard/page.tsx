@@ -3,6 +3,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { Navbar } from '@/components/shared/Navbar';
 import { WelcomeCard } from '@/components/shared/WelcomeCard';
+import { QrScanner } from '@/components/student/QrScanner';
 import { StudentAttendanceSummary } from '@/types';
 import * as faceapi from 'face-api.js';
 
@@ -52,6 +53,7 @@ export default function StudentDashboard() {
     const [activePoll, setActivePoll] = useState<any>(null);
   const [myVote, setMyVote] = useState<number | null>(null);
     const [showMarkModal, setShowMarkModal] = useState(false);
+  const [showScanner, setShowScanner] = useState(false);
   const [markForm, setMarkForm] = useState({ code: '' });
   const [marking, setMarking] = useState(false);
   const [faceCheckState, setFaceCheckState] = useState<'idle'|'loading_models'|'scanning'|'success'|'failed'>('idle');
