@@ -7,7 +7,7 @@ import { PhotoZoom } from '@/components/shared/PhotoZoom';
 interface StudentBasic {
   id: string; name: string; email: string;
   profile_photo_url?: string; roll_no?: string; is_online?: boolean;
-  section?: string; branch?: string; is_cr?: boolean; is_active?: boolean; bio?: string; signup_info?: any;
+  section?: string; branch?: string; is_cr?: boolean; is_active?: boolean; bio?: string; signup_info?: any; last_seen_at?: string;
 }
 
 export default function StudentDirectoryPage() {

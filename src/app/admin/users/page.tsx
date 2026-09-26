@@ -3,14 +3,20 @@ import { useEffect, useState } from 'react';
 import { Navbar } from '@/components/shared/Navbar';
 import { User, Role } from '@/types';
 import { PhotoZoom } from '@/components/shared/PhotoZoom';
+import { AdminEditStudentModal } from '@/components/admin/AdminEditStudentModal';
 
 export default function AdminUsers() {
   const [users, setUsers] = useState<User[]>([]);
   const [filter, setFilter] = useState<Role | 'all'>('all');
+  const [branchFilter, setBranchFilter] = useState('');
+  const [groupFilter, setGroupFilter] = useState('');
+  
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  
+  const [editingStudent, setEditingStudent] = useState<User | null>(null);
   
   const defaultForm = { id: '', name: '', email: '', role: 'student', roll_no: '', section: '', branch: '', group: '', sub_group: '', semester: 1, bio: '', profile_photo_url: '', is_cr: false };
   const [form, setForm] = useState(defaultForm);
@@ -25,8 +31,7 @@ export default function AdminUsers() {
 
   useEffect(() => {
     fetchUsers();
-    const interval = setInterval(fetchUsers, 5000);
-    return () => clearInterval(interval);
+    // Removed setInterval to prevent list from jumping while admin is working
   }, [filter]);
 
   const saveUser = async () => {
@@ -79,6 +84,7 @@ export default function AdminUsers() {
         </div>
 
         <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 mb-6 flex flex-col md:flex-row gap-4 items-center justify-between">
+          <div className="flex flex-wrap items-center gap-3">
           <div className="flex bg-gray-100 p-1 rounded-xl">
             {['all', 'student', 'teacher', 'superadmin'].map(r => (
               <button key={r} onClick={() => setFilter(r as any)}
@@ -87,6 +93,24 @@ export default function AdminUsers() {
               </button>
             ))}
           </div>
+          
+          {(filter === 'student' || filter === 'all') && (
+            <>
+              <select value={branchFilter} onChange={e => setBranchFilter(e.target.value)} className="border border-gray-200 rounded-xl px-3 py-1.5 text-sm bg-white outline-none focus:border-blue-500">
+                <option value="">All Branches</option>
+                <option value="CSE">CSE</option>
+                <option value="ECE">ECE</option>
+                <option value="MEA">MEA</option>
+                <option value="MNC">MNC</option>
+              </select>
+              <select value={groupFilter} onChange={e => setGroupFilter(e.target.value)} className="border border-gray-200 rounded-xl px-3 py-1.5 text-sm bg-white outline-none focus:border-blue-500">
+                <option value="">All Groups</option>
+                <option value="G1">G1</option>
+                <option value="G2">G2</option>
+              </select>
+            </>
+          )}
+        </div>
           <div className="w-full md:w-72 relative">
             <input type="text" placeholder="Search by name, email, roll no..."
               value={search} onChange={(e) => setSearch(e.target.value)}
@@ -183,7 +207,16 @@ export default function AdminUsers() {
           </div>
         )}
 
-        {/* Modal: Edit / Add User */}
+        {/* Student Advanced Edit Modal */}
+      {editingStudent && (
+        <AdminEditStudentModal 
+          student={editingStudent} 
+          onClose={() => setEditingStudent(null)} 
+          onSaved={() => { setEditingStudent(null); fetchUsers(); }} 
+        />
+      )}
+
+      {/* Modal: Edit / Add User */}
         {showModal && (
           <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
             <div className="bg-white rounded-2xl w-full max-w-xl shadow-2xl flex flex-col max-h-[90vh]">
