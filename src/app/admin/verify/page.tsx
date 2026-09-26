@@ -91,7 +91,7 @@ export default function VerifyUsersPage() {
                     setBulkActing(false);
                     setSelectedUsers(new Set());
                     fetchUsers();
-                  }} disabled={bulkActing} className="px-3 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition disabled:opacity-50">
+                  }} disabled={bulkActing} className="px-3 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition disabled:opacity-70">
                     ✅ Approve Selected
                   </button>
                   <button onClick={async () => {
@@ -103,7 +103,7 @@ export default function VerifyUsersPage() {
                     setBulkActing(false);
                     setSelectedUsers(new Set());
                     fetchUsers();
-                  }} disabled={bulkActing} className="px-3 py-2 bg-red-100 text-red-600 text-sm font-medium rounded-lg hover:bg-red-200 transition disabled:opacity-50">
+                  }} disabled={bulkActing} className="px-3 py-2 bg-red-100 text-red-600 text-sm font-medium rounded-lg hover:bg-red-200 transition disabled:opacity-70">
                     ❌ Reject Selected
                   </button>
                 </>
@@ -117,7 +117,7 @@ export default function VerifyUsersPage() {
             {[1,2,3,4].map(i => <div key={i} className="h-40 bg-gray-200 rounded-2xl animate-pulse"/>)}
           </div>
         ) : users.length === 0 ? (
-          <div className="text-center text-gray-400 py-20 text-lg">
+          <div className="text-center text-gray-500 py-20 text-lg">
             {filter === 'pending' ? '🎉 No pending requests!' : `No ${filter} users`}
           </div>
         ) : (
@@ -166,12 +166,12 @@ export default function VerifyUsersPage() {
                 {/* Signup info */}
                 <div className="bg-gray-50 rounded-xl p-3 mb-4 text-sm space-y-1">
                   {user.role === 'student' && user.roll_no && (
-                    <p><span className="text-gray-400">Roll No:</span> <span className="font-medium">{user.roll_no}</span></p>
+                    <p><span className="text-gray-500">Roll No:</span> <span className="font-medium">{user.roll_no}</span></p>
                   )}
                   {user.signup_info?.subject_name && (
-                    <p><span className="text-gray-400">Subject:</span> <span className="font-medium">{user.signup_info.subject_name} ({user.signup_info.subject_code})</span></p>
+                    <p><span className="text-gray-500">Subject:</span> <span className="font-medium">{user.signup_info.subject_name} ({user.signup_info.subject_code})</span></p>
                   )}
-                  <p><span className="text-gray-400">Applied:</span> <span className="font-medium">{new Date(user.created_at).toLocaleDateString('en-IN')}</span></p>
+                  <p><span className="text-gray-500">Applied:</span> <span className="font-medium">{new Date(user.created_at).toLocaleDateString('en-IN')}</span></p>
                 </div>
 
                 {/* Actions */}

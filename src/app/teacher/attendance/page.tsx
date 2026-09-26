@@ -344,7 +344,7 @@ function AttendancePage() {
             <div className="grid md:grid-cols-2 gap-4">
               {/* Method 1: Kiosk */}
               <button onClick={() => startClass('kiosk')} disabled={!subjectId || loading}
-                className="text-left bg-white p-6 rounded-2xl border-2 border-transparent hover:border-blue-400 hover:shadow-md transition group disabled:opacity-50">
+                className="text-left bg-white p-6 rounded-2xl border-2 border-transparent hover:border-blue-400 hover:shadow-md transition group disabled:opacity-70">
                 <div className="text-4xl mb-4">📸</div>
                 <h3 className="text-xl font-bold text-gray-900 mb-2">Start Live AI Detection Attendance</h3>
                 <p className="text-sm text-gray-500">Teacher scans faces using this device. Students cannot mark via their portal. Unmarked are marked absent.</p>
@@ -367,7 +367,7 @@ function AttendancePage() {
                     </div>
                   </div>
                   <button onClick={() => startClass('otp')} disabled={!subjectId || loading}
-                    className="w-full bg-green-600 text-white py-3 rounded-xl font-bold hover:bg-green-700 disabled:opacity-50">
+                    className="w-full bg-green-600 text-white py-3 rounded-xl font-bold hover:bg-green-700 disabled:opacity-70">
                     Start with OTP
                   </button>
                 </div>
@@ -390,7 +390,7 @@ function AttendancePage() {
                     </div>
                   </div>
                   <button onClick={() => startClass('qr')} disabled={!subjectId || loading}
-                    className="w-full bg-purple-600 text-white py-3 rounded-xl font-bold hover:bg-purple-700 disabled:opacity-50">
+                    className="w-full bg-purple-600 text-white py-3 rounded-xl font-bold hover:bg-purple-700 disabled:opacity-70">
                     Start with QR
                   </button>
                 </div>
@@ -503,7 +503,7 @@ function AttendancePage() {
                         <label className="text-xs font-semibold text-gray-500">Refresh Interval</label>
                         <div className="flex items-center gap-1 bg-white border rounded px-2 py-0.5">
                           <input type="number" min="2" max="180" value={qrRefreshInterval} onChange={(e) => { const v=Number(e.target.value); if(v>=2 && v<=180) { setQrRefreshInterval(v); setQrExpiry(v); } else if (e.target.value==='') setQrRefreshInterval(0); }} className="w-10 text-xs font-bold text-gray-700 text-right focus:outline-none" />
-                          <span className="text-[10px] text-gray-400">sec</span>
+                          <span className="text-xs text-gray-500">sec</span>
                         </div>
                       </div>
                       <input type="range" min="2" max="180" step="1" value={qrRefreshInterval} onChange={(e) => { setQrRefreshInterval(Number(e.target.value)); setQrExpiry(Number(e.target.value)); }} className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer" />
@@ -542,7 +542,7 @@ function AttendancePage() {
                         <label className="text-xs font-semibold text-gray-500">Refresh Interval</label>
                         <div className="flex items-center gap-1 bg-white border rounded px-2 py-0.5">
                           <input type="number" min="2" max="180" value={otpRefreshInterval} onChange={(e) => { const v=Number(e.target.value); if(v>=2 && v<=180) { setOtpRefreshInterval(v); setOtpExpiry(v); } else if (e.target.value==='') setOtpRefreshInterval(0); }} className="w-10 text-xs font-bold text-gray-700 text-right focus:outline-none" />
-                          <span className="text-[10px] text-gray-400">sec</span>
+                          <span className="text-xs text-gray-500">sec</span>
                         </div>
                       </div>
                       <input type="range" min="2" max="180" step="1" value={otpRefreshInterval} onChange={(e) => { setOtpRefreshInterval(Number(e.target.value)); setOtpExpiry(Number(e.target.value)); }} className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer" />
@@ -623,7 +623,7 @@ function AttendancePage() {
             <button onClick={() => setFullScreenMode(null)} className="bg-gray-100 hover:bg-gray-200 text-gray-800 px-5 py-2.5 rounded-xl font-bold text-lg shadow-sm transition flex items-center gap-2">
               ← Back
             </button>
-            <div className="text-gray-400 font-medium hidden sm:block">Press ESC to exit</div>
+            <div className="text-gray-500 font-medium hidden sm:block">Press ESC to exit</div>
           </div>
           
           <div className="flex-1 flex items-center justify-center w-full min-h-0 my-4 md:my-8">

@@ -29,14 +29,14 @@ export default function TeacherDashboard() {
       <div className="max-w-5xl mx-auto px-4 py-8">
 
         {/* Welcome Card */}
-        <WelcomeCard subtitle="Teacher Dashboard" />
+        <div className="mb-6"><WelcomeCard subtitle="Teacher Dashboard" /></div>
 
         <h2 className="text-lg font-semibold text-gray-700 mb-4">Your Subjects</h2>
         <div className="grid md:grid-cols-2 gap-6">
           {loading ? (
             [1,2,3].map(i => <div key={i} className="h-40 bg-gray-200 rounded-xl animate-pulse"/>)
           ) : subjects.length === 0 ? (
-            <div className="col-span-2 text-center text-gray-400 py-12 bg-white rounded-xl">
+            <div className="col-span-2 text-center text-gray-500 py-12 bg-white rounded-xl">
               <p className="text-4xl mb-2">📚</p>
               <p>No subjects assigned yet. Contact administrator.</p>
             </div>

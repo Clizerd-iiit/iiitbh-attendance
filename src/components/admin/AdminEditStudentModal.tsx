@@ -109,7 +109,7 @@ export function AdminEditStudentModal({ student, onClose, onSaved }: { student: 
       <div className="bg-white rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
         <div className="flex justify-between items-center p-5 border-b bg-gray-50">
           <h2 className="text-xl font-bold text-gray-800">Manage Student: {student.name}</h2>
-          <button onClick={() => { stopCamera(); onClose(); }} className="text-gray-400 hover:text-gray-700 text-2xl">&times;</button>
+          <button onClick={() => { stopCamera(); onClose(); }} className="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
         </div>
         
         <div className="flex border-b bg-gray-50 overflow-x-auto shrink-0">

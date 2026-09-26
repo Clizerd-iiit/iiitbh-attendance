@@ -186,7 +186,7 @@ export default function ProfileSetupPage() {
                 <input value={rollNo} onChange={e => setRollNo(e.target.value)}
                   placeholder="e.g. 260101047"
                   className="w-full border rounded-xl px-4 py-2.5 focus:outline-none focus:border-blue-500"/>
-                <p className="text-xs text-gray-400 mt-1">E.g., 26 (Year), 01 (BTech), 01 (CSE), 047 (Roll)</p>
+                <p className="text-xs text-gray-500 mt-1">E.g., 26 (Year), 01 (BTech), 01 (CSE), 047 (Roll)</p>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
@@ -238,11 +238,11 @@ export default function ProfileSetupPage() {
           {error && <p className="text-red-500 text-sm bg-red-50 p-3 rounded-lg">{error}</p>}
 
           <button onClick={handleSubmit} disabled={submitting}
-            className="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold hover:bg-blue-700 disabled:opacity-50 transition text-lg">
+            className="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold hover:bg-blue-700 disabled:opacity-70 transition text-lg">
             {submitting ? 'Submitting...' : 'Submit for Verification →'}
           </button>
 
-          <p className="text-xs text-center text-gray-400">
+          <p className="text-xs text-center text-gray-500">
             Your account will be activated after administrator approval
           </p>
         </div>

@@ -273,7 +273,7 @@ export default function TeacherAnnouncementsPage() {
               </div>
 
               <button onClick={post} disabled={posting || !form.title.trim()}
-                className="w-full bg-blue-600 text-white py-3 rounded-xl hover:bg-blue-700 disabled:opacity-50 transition font-medium">
+                className="w-full bg-blue-600 text-white py-3 rounded-xl hover:bg-blue-700 disabled:opacity-70 transition font-medium">
                 {posting ? 'Posting…' : '📢 Post Announcement'}
               </button>
             </div>
@@ -282,7 +282,7 @@ export default function TeacherAnnouncementsPage() {
 
         {/* Announcements list */}
         {announcements.length === 0 ? (
-          <div className="text-center text-gray-400 py-12 bg-white rounded-2xl">
+          <div className="text-center text-gray-500 py-12 bg-white rounded-2xl">
             <p className="text-4xl mb-2">📭</p>
             <p>No announcements yet</p>
           </div>
@@ -321,7 +321,7 @@ export default function TeacherAnnouncementsPage() {
                         )}
                         
                         <div className="flex flex-col gap-2 mt-2">
-                          <div className="flex items-center gap-3 text-xs text-gray-400">
+                          <div className="flex items-center gap-3 text-xs text-gray-500">
                             <span>{format(new Date(ann.created_at), 'dd MMM, hh:mm a')}</span>
                             {ann.subject && <span>· {ann.subject.name}</span>}
                             {left && (
@@ -335,12 +335,12 @@ export default function TeacherAnnouncementsPage() {
                             {ann.teacher?.profile_photo_url ? (
                               <img src={ann.teacher.profile_photo_url} alt={ann.teacher.name} className="w-5 h-5 rounded-full object-cover border" />
                             ) : (
-                              <div className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 text-[10px] font-bold">
+                              <div className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 text-xs font-bold">
                                 {ann.teacher?.name?.charAt(0)?.toUpperCase() || '?'}
                               </div>
                             )}
                             <p className={`text-[11px] ${ann.teacher?.role === 'superadmin' ? 'font-bold text-gray-900 text-[12px]' : 'font-medium text-gray-600'}`}>
-                              By {ann.teacher?.name || 'Unknown'} <span className="text-gray-400 font-normal">({ann.teacher?.role === 'superadmin' ? 'Administrator' : ann.teacher?.role === 'teacher' ? 'Professor' : 'Class Representative'})</span>
+                              By {ann.teacher?.name || 'Unknown'} <span className="text-gray-500 font-normal">({ann.teacher?.role === 'superadmin' ? 'Administrator' : ann.teacher?.role === 'teacher' ? 'Professor' : 'Class Representative'})</span>
                             </p>
                           </div>
                         </div>

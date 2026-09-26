@@ -144,7 +144,7 @@ export default function AppointPositionPage() {
                     <div>
                       <div className="font-semibold text-gray-800 text-sm flex items-center gap-2">
                         {s.name}
-                        <span className="bg-purple-100 text-purple-700 text-[10px] px-1.5 py-0.5 rounded font-bold">CR</span>
+                        <span className="bg-purple-100 text-purple-700 text-xs px-1.5 py-0.5 rounded font-bold">CR</span>
                       </div>
                       <div className="text-xs text-gray-500 mt-0.5">
                         {s.roll_no} • {(s as any).branch || 'N/A'} • {s.section || 'N/A'}

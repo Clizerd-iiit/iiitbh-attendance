@@ -101,7 +101,7 @@ export default function SettingsPage() {
                 value={(settings as unknown as Record<string, string>)[field.key] || ''}
                 onChange={e => setSettings(prev => ({...prev, [field.key]: e.target.value}))}
                 className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500"/>
-              <p className="text-xs text-gray-400 mt-1">{field.desc}</p>
+              <p className="text-xs text-gray-500 mt-1">{field.desc}</p>
             </div>
           ))}
 
@@ -148,7 +148,7 @@ export default function SettingsPage() {
               </div>
               <button 
                 onClick={runCleanup} disabled={cleaning}
-                className="bg-white text-blue-700 font-bold px-6 py-3 rounded-xl shadow-sm border border-blue-200 hover:bg-blue-100 transition disabled:opacity-50">
+                className="bg-white text-blue-700 font-bold px-6 py-3 rounded-xl shadow-sm border border-blue-200 hover:bg-blue-100 transition disabled:opacity-70">
                 {cleaning ? 'Cleaning...' : '🧹 Run Cleanup'}
               </button>
             </div>
@@ -178,20 +178,20 @@ export default function SettingsPage() {
                   style={{ width: `${Math.max(0.5, parseFloat(storage.percentUsed))}%` }}
                 ></div>
               </div>
-              <p className="text-xs text-gray-400 mt-2 text-right">{storage.percentUsed}% used (Free Tier Limit: 500 MB)</p>
+              <p className="text-xs text-gray-500 mt-2 text-right">{storage.percentUsed}% used (Free Tier Limit: 500 MB)</p>
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               {Object.entries(storage.metrics).sort((a: any, b: any) => b[1].bytes - a[1].bytes).map(([table, data]: any) => (
                 <div key={table} className="bg-gray-50 p-4 rounded-xl border">
                   <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{table.replace('_', ' ')}</div>
-                  <div className="text-lg font-bold text-gray-800">{data.count} <span className="text-sm font-medium text-gray-400">rows</span></div>
+                  <div className="text-lg font-bold text-gray-800">{data.count} <span className="text-sm font-medium text-gray-500">rows</span></div>
                   <div className="text-xs text-blue-600 font-medium mt-1">~ {formatBytes(data.bytes)}</div>
                 </div>
               ))}
             </div>
             
-            <p className="text-xs text-gray-400 mt-6 text-center italic">
+            <p className="text-xs text-gray-500 mt-6 text-center italic">
               Note: This is an estimated usage based on typical data sizes per row + vector embeddings. Exact physical storage may vary slightly due to Postgres indexing.
             </p>
           </div>

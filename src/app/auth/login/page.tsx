@@ -58,7 +58,7 @@ export default function LoginPage() {
           Sign in with Google
         </button>
 
-        <p className="text-xs text-gray-400 mt-6">
+        <p className="text-xs text-gray-500 mt-6">
           Having trouble? Contact the system administrator.
         </p>
       </div>

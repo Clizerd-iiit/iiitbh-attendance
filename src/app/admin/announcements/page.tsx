@@ -69,7 +69,7 @@ export default function AdminAnnouncementsPage() {
         {loading ? (
           <div className="space-y-4">{[1,2,3].map(i => <div key={i} className="h-24 bg-gray-200 rounded-xl animate-pulse"/>)}</div>
         ) : announcements.length === 0 ? (
-          <div className="text-center text-gray-400 py-16">No announcements yet</div>
+          <div className="text-center text-gray-500 py-16">No announcements yet</div>
         ) : (
           <div className="space-y-4">
             {announcements.map(a => {
@@ -83,9 +83,9 @@ export default function AdminAnnouncementsPage() {
                       <span className={`text-xs px-2 py-1 rounded font-medium ${cfg.color}`}>
                         {cfg.icon} {cfg.label}
                       </span>
-                      {sub?.code && <span className="text-xs text-gray-400">{sub.code}</span>}
+                      {sub?.code && <span className="text-xs text-gray-500">{sub.code}</span>}
                     </div>
-                    <span className="text-xs text-gray-400">
+                    <span className="text-xs text-gray-500">
                       {format(new Date(a.created_at), 'dd MMM, HH:mm')}
                     </span>
                   </div>
@@ -114,7 +114,7 @@ export default function AdminAnnouncementsPage() {
                         </div>
                       )}
                       <p className={`text-xs ${teacher?.role === 'superadmin' ? 'font-bold text-gray-900 text-[13px]' : 'font-medium text-gray-600'}`}>
-                        By {teacher?.name || 'Unknown'} <span className="text-gray-400 font-normal">({teacher?.role === 'superadmin' ? 'Administrator' : teacher?.role === 'teacher' ? 'Professor' : 'Class Representative'})</span> {a.teacher_id === userId ? ' (You)' : ''}
+                        By {teacher?.name || 'Unknown'} <span className="text-gray-500 font-normal">({teacher?.role === 'superadmin' ? 'Administrator' : teacher?.role === 'teacher' ? 'Professor' : 'Class Representative'})</span> {a.teacher_id === userId ? ' (You)' : ''}
                       </p>
                     </div>
                     {(true) && (

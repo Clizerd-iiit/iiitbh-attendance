@@ -171,7 +171,7 @@ export function Navbar() {
               {!collapsed && <span className="text-sm flex-1 truncate">{item.label}</span>}
               
               {!collapsed && badge > 0 && (
-                <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 animate-pulse">
+                <span className="bg-red-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 animate-pulse">
                   {badge}
                 </span>
               )}
@@ -204,7 +204,7 @@ export function Navbar() {
           {!collapsed && (
             <div className="min-w-0">
               <p className="text-sm font-semibold text-gray-800 truncate">{name}</p>
-              <p className="text-xs text-gray-400 truncate">{displayRole}</p>
+              <p className="text-xs text-gray-500 truncate">{displayRole}</p>
             </div>
           )}
         </div>

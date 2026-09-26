@@ -98,7 +98,7 @@ export default function FaceRegisterPage() {
           </div>
 
           {!descriptor ? (
-            <button onClick={captureFace} disabled={!!loading} className="px-8 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 disabled:opacity-50 transition w-full max-w-sm">
+            <button onClick={captureFace} disabled={!!loading} className="px-8 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 disabled:opacity-70 transition w-full max-w-sm">
               Capture Face
             </button>
           ) : (

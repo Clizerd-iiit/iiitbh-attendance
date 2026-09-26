@@ -227,9 +227,9 @@ export default function PastAttendancePage() {
           
           <div className="p-4 max-h-[50vh] overflow-y-auto">
             {loading ? (
-              <p className="text-center py-8 text-gray-400">Loading students...</p>
+              <p className="text-center py-8 text-gray-500">Loading students...</p>
             ) : filteredStudents.length === 0 ? (
-              <p className="text-center py-8 text-gray-400">No students found.</p>
+              <p className="text-center py-8 text-gray-500">No students found.</p>
             ) : (
               <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-3">
                 {filteredStudents.map(s => (
@@ -251,7 +251,7 @@ export default function PastAttendancePage() {
               Selected: <span className="font-bold text-gray-900">{selectedIds.size}</span> students
             </p>
             <button onClick={submitAttendance} disabled={saving || students.length === 0}
-              className={`px-6 py-3 rounded-xl font-bold text-white transition disabled:opacity-50 shadow-sm ${mode === 'absentees' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'}`}>
+              className={`px-6 py-3 rounded-xl font-bold text-white transition disabled:opacity-70 shadow-sm ${mode === 'absentees' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'}`}>
               {saving ? 'Saving...' : (mode === 'absentees' ? 'Mark All Others Present' : 'Mark All Others Absent')}
             </button>
           </div>

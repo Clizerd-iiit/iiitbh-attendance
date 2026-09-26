@@ -72,7 +72,7 @@ export default function ContactAdmin() {
           <h2 className="font-bold flex items-center gap-2">
             Contact Admin
             {isOnline(adminLastSeen) && (
-              <span className="flex items-center gap-1 text-[10px] text-green-600 bg-green-50 px-2 py-0.5 rounded-full border border-green-100 shadow-sm">
+              <span className="flex items-center gap-1 text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded-full border border-green-100 shadow-sm">
                 <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>Online
               </span>
             )}
@@ -82,7 +82,7 @@ export default function ContactAdmin() {
       </div>
       <div className="bg-yellow-50 border-b border-yellow-100 p-3 text-center space-y-1">
         <p className="text-xs font-bold text-red-600">🚨 Report Bugs, Issues & Errors HERE!!</p>
-        <p className="text-[10px] text-gray-500 font-medium flex items-center justify-center gap-1">🔒 Your Messages Would be Private & only be sent to the ADMIN Only!!</p>
+        <p className="text-xs text-gray-500 font-medium flex items-center justify-center gap-1">🔒 Your Messages Would be Private & only be sent to the ADMIN Only!!</p>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
@@ -92,8 +92,8 @@ export default function ContactAdmin() {
             <div key={m.id || i} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
               <div className={`max-w-[75%] p-3 rounded-2xl ${isMe ? 'bg-blue-600 text-white rounded-br-sm' : 'bg-white border text-gray-800 rounded-bl-sm shadow-sm'}`}>
                 <p className="text-sm whitespace-pre-wrap">{m.content}</p>
-                <div className={`flex items-center justify-end gap-1 mt-1 ${isMe ? 'text-blue-200' : 'text-gray-400'}`}>
-                  <span className="text-[10px]">
+                <div className={`flex items-center justify-end gap-1 mt-1 ${isMe ? 'text-blue-200' : 'text-gray-500'}`}>
+                  <span className="text-xs">
                     {new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </span>
                   {isMe && m.id !== 'temp' && (
@@ -102,7 +102,7 @@ export default function ContactAdmin() {
                     </span>
                   )}
                   {isMe && m.id === 'temp' && (
-                    <span className="text-[10px] text-blue-200/50">🕒</span>
+                    <span className="text-xs text-blue-200/50">🕒</span>
                   )}
                 </div>
               </div>
@@ -118,7 +118,7 @@ export default function ContactAdmin() {
           placeholder="Type your message..."
           className="flex-1 bg-gray-100 border-transparent focus:bg-white rounded-xl px-4 py-2 text-sm"
         />
-        <button type="submit" disabled={!input.trim()} className="bg-blue-600 text-white px-5 rounded-xl font-medium disabled:opacity-50">
+        <button type="submit" disabled={!input.trim()} className="bg-blue-600 text-white px-5 rounded-xl font-medium disabled:opacity-70">
           Send
         </button>
       </form>

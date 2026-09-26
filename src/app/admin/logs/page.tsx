@@ -110,7 +110,7 @@ export default function AuditLogsPage() {
         <div className="flex justify-between items-center mb-4">
           <div>
             <h1 className="text-xl font-bold text-gray-800">🔍 Activity Logs</h1>
-            <p className="text-gray-400 text-xs mt-0.5">{total} total entries</p>
+            <p className="text-gray-500 text-xs mt-0.5">{total} total entries</p>
           </div>
           {isSuperAdmin && (
             <button onClick={clearAllLogs}
@@ -126,7 +126,7 @@ export default function AuditLogsPage() {
 
         <div className="space-y-2">
           {filtered.length === 0 && (
-            <div className="text-center text-gray-400 py-12 bg-white rounded-xl">No logs found</div>
+            <div className="text-center text-gray-500 py-12 bg-white rounded-xl">No logs found</div>
           )}
           {filtered.map(log => {
             const act = actionLabel[log.action] || { label: log.action, color: 'bg-gray-100 text-gray-600', icon: '📋', stealth: false };
@@ -184,7 +184,7 @@ export default function AuditLogsPage() {
                     <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${act.color}`}>
                       {act.icon} {act.label}
                     </span>
-                    <span className="text-xs text-gray-400">
+                    <span className="text-xs text-gray-500">
                       {format(new Date(log.created_at), 'dd MMM yyyy, hh:mm a')}
                     </span>
                   </div>
@@ -198,7 +198,7 @@ export default function AuditLogsPage() {
                       {subj?.name && (
                         <div className="flex flex-wrap gap-x-3 text-xs bg-gray-50 rounded-lg px-3 py-1.5">
                           <span className="font-semibold text-gray-700">{subj.name}</span>
-                          {subj.email && <span className="text-gray-400">{subj.email}</span>}
+                          {subj.email && <span className="text-gray-500">{subj.email}</span>}
                           {subj.role && (
                             <span className={`font-medium ${
                               subj.role === 'teacher' ? 'text-green-600' :
@@ -214,7 +214,7 @@ export default function AuditLogsPage() {
                   {!stealth && actorUser && (
                     <div className="mt-1.5 flex flex-wrap gap-x-4 text-xs">
                       <span className="font-semibold text-gray-700">{actorUser.name}</span>
-                      <span className="text-gray-400">{actorUser.email}</span>
+                      <span className="text-gray-500">{actorUser.email}</span>
                       {actorUser.role && <span className="text-gray-500">{roleLabel[actorUser.role] || actorUser.role}</span>}
                       {actorUser.roll_no && <span className="text-gray-500 font-mono">#{actorUser.roll_no}</span>}
                     </div>
@@ -222,7 +222,7 @@ export default function AuditLogsPage() {
 
                   {/* Changes — non-stealth only */}
                   {!stealth && (log.new_value || log.old_value) && (
-                    <div className="mt-1 text-xs text-gray-400 truncate max-w-xl">
+                    <div className="mt-1 text-xs text-gray-500 truncate max-w-xl">
                       {log.old_value && (
                         <span className="text-red-400 mr-2">
                           Before: {Object.entries(log.old_value)

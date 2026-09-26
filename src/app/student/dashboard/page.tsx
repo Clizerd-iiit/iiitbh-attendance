@@ -225,12 +225,14 @@ export default function StudentDashboard() {
         )}
 
         {/* Welcome Card */}
-        <div className="flex justify-between items-center mb-4">
-          <WelcomeCard subtitle={batchInfo || "Your Attendance Overview"} isCr={isCr} />
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+          <div className="w-full sm:w-auto">
+            <WelcomeCard subtitle={batchInfo || "Your Attendance Overview"} isCr={isCr} />
+          </div>
           <button onClick={() => {
             if (!hasFaceId) { alert('Please setup Face ID first!'); window.location.href='/student/face-register'; return; }
             setShowMarkModal(true);
-          }} className="bg-blue-600 text-white px-5 py-3 rounded-xl font-bold shadow-md hover:bg-blue-700 transition flex items-center gap-2">
+          }} className="w-full sm:w-auto justify-center bg-blue-600 text-white px-5 py-3 rounded-xl font-bold shadow-md hover:bg-blue-700 transition flex items-center gap-2 sm:mt-0">
             📷 Mark Attendance
           </button>
         </div>
@@ -286,7 +288,7 @@ export default function StudentDashboard() {
             {[1,2,3,4].map(i => <div key={i} className="h-36 bg-gray-200 rounded-xl animate-pulse"/>)}
           </div>
         ) : summary.length === 0 ? (
-          <div className="text-center text-gray-400 py-12 bg-white rounded-xl">
+          <div className="text-center text-gray-500 py-12 bg-white rounded-xl">
             <p className="text-4xl mb-2">📚</p>
             <p>No subjects enrolled yet</p>
           </div>
@@ -308,7 +310,7 @@ export default function StudentDashboard() {
               <div className="mb-4 text-center">
                 <div className="w-48 h-48 mx-auto bg-black rounded-xl overflow-hidden relative mb-2">
                   <video ref={videoRef} className="w-full h-full object-cover" muted playsInline />
-                  <div className="absolute inset-0 border-4 border-blue-500 opacity-50 rounded-xl animate-pulse"></div>
+                  <div className="absolute inset-0 border-4 border-blue-500 opacity-70 rounded-xl animate-pulse"></div>
                 </div>
                 <p className="font-bold text-blue-600 animate-pulse">
                   {faceCheckState === 'loading_models' ? 'Loading AI...' : 'Scanning Face...'}
@@ -322,21 +324,41 @@ export default function StudentDashboard() {
               </div>
             )}
 
-            <input 
-              placeholder="e.g. 1234 or a-long-qr-token..." 
-              value={markForm.code} 
-              onChange={e => setMarkForm({ code: e.target.value.trim() })}
-              disabled={marking}
-              className="w-full border-2 rounded-xl px-4 py-3 text-center text-lg font-bold tracking-widest focus:border-blue-500 outline-none mb-4 disabled:bg-gray-100 disabled:opacity-50"
-            />
+            <div className="flex gap-2 mb-4">
+              <input 
+                placeholder="OTP or Token" 
+                value={markForm.code} 
+                onChange={e => setMarkForm({ code: e.target.value.trim() })}
+                disabled={marking}
+                className="flex-1 min-w-0 border-2 rounded-xl px-3 py-3 text-center text-lg font-bold tracking-wider focus:border-blue-500 outline-none disabled:bg-gray-100 disabled:opacity-60"
+              />
+              <button 
+                onClick={() => setShowScanner(true)}
+                disabled={marking}
+                className="bg-gray-100 hover:bg-gray-200 text-gray-800 px-4 rounded-xl flex items-center justify-center font-bold transition whitespace-nowrap disabled:opacity-60"
+              >
+                📷 Scan
+              </button>
+            </div>
+            
+            {showScanner && (
+              <QrScanner 
+                onClose={() => setShowScanner(false)} 
+                onScan={(text) => {
+                  setShowScanner(false);
+                  const tokenMatch = text.match(/token=([a-zA-Z0-9-]+)/);
+                  setMarkForm({ code: tokenMatch ? tokenMatch[1] : text.trim() });
+                }} 
+              />
+            )}
             
             <div className="flex gap-3">
               <button onClick={() => setShowMarkModal(false)} className="flex-1 py-2.5 bg-gray-100 text-gray-700 font-medium rounded-xl hover:bg-gray-200">Cancel</button>
-              <button onClick={handleMarkAttendance} disabled={marking} className="flex-1 py-2.5 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 disabled:opacity-50">
+              <button onClick={handleMarkAttendance} disabled={marking} className="flex-1 py-2.5 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 disabled:opacity-70">
                 {marking ? 'Marking...' : 'Submit'}
               </button>
             </div>
-            <p className="text-xs text-center text-gray-400 mt-4">Location + AI Face verification is required.</p>
+            <p className="text-xs text-center text-gray-500 mt-4">Location + AI Face verification is required.</p>
           </div>
         </div>
       )}

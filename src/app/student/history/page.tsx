@@ -72,7 +72,7 @@ export default function HistoryPage() {
         <div className="bg-white rounded-2xl shadow-sm p-4">
           <div className="grid grid-cols-7 mb-2">
             {['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d => (
-              <div key={d} className="text-center text-xs font-medium text-gray-400 py-2">{d}</div>
+              <div key={d} className="text-center text-xs font-medium text-gray-500 py-2">{d}</div>
             ))}
           </div>
 
@@ -92,12 +92,12 @@ export default function HistoryPage() {
                   </p>
                   <div className="space-y-0.5">
                     {recs.length === 0 && (
-                      <div className="text-[10px] text-gray-300">—</div>
+                      <div className="text-xs text-gray-300">—</div>
                     )}
                     {recs.map((r, i) => (
                       <div key={i} className={`flex items-center gap-1 rounded px-1 py-0.5 ${statusColor[r.status] || 'bg-gray-300'} bg-opacity-20`}>
                         <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${statusColor[r.status] || 'bg-gray-400'}`}/>
-                        <span className="text-[10px] text-gray-700 truncate">{r.subject_code}</span>
+                        <span className="text-xs text-gray-700 truncate">{r.subject_code}</span>
                       </div>
                     ))}
                   </div>

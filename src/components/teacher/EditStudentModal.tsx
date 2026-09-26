@@ -92,7 +92,7 @@ export function EditStudentModal({ student, onClose, onSaved }: { student: any, 
       <div className="bg-white rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl">
         <div className="flex justify-between items-center p-5 border-b bg-gray-50">
           <h2 className="text-xl font-bold text-gray-800">Edit Student</h2>
-          <button onClick={() => { stopCamera(); onClose(); }} className="text-gray-400 hover:text-gray-700 text-2xl">&times;</button>
+          <button onClick={() => { stopCamera(); onClose(); }} className="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
         </div>
         
         <div className="flex border-b bg-gray-50">

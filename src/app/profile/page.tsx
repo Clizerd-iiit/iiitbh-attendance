@@ -148,7 +148,7 @@ export default function ProfilePage() {
               <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded capitalize mt-1 inline-block">
                 {displayRole}
               </span>
-              <p className="text-xs text-gray-400 mt-1">
+              <p className="text-xs text-gray-500 mt-1">
                 {isSuperAdmin
                   ? <span className="text-blue-500">✨ Unlimited photo changes</span>
                   : `Photo changes remaining this month: ${photoChangesLeft}/2`
@@ -211,22 +211,22 @@ export default function ProfilePage() {
               <>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className="text-xs text-gray-400 mb-0.5">Name</p>
+                    <p className="text-xs text-gray-500 mb-0.5">Name</p>
                     <p className="font-medium text-gray-800">{profile.name}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-400 mb-0.5">Email</p>
+                    <p className="text-xs text-gray-500 mb-0.5">Email</p>
                     <p className="font-medium text-gray-800 text-sm">{profile.email}</p>
                   </div>
                   {profile.roll_no && (
                     <div>
-                      <p className="text-xs text-gray-400 mb-0.5">Roll No</p>
+                      <p className="text-xs text-gray-500 mb-0.5">Roll No</p>
                       <p className="font-medium text-gray-800">{profile.roll_no}</p>
                     </div>
                   )}
                   {profile.signup_info?.branch && (
                     <div>
-                      <p className="text-xs text-gray-400 mb-0.5">Class / Batch</p>
+                      <p className="text-xs text-gray-500 mb-0.5">Class / Batch</p>
                       <p className="font-medium text-gray-800">
                         {profile.signup_info.branch} 
                         {profile.signup_info.group ? ` - ${profile.signup_info.group}` : ''} 
@@ -236,7 +236,7 @@ export default function ProfilePage() {
                   )}
                   {profile.signup_info?.subject_name && (
                     <div>
-                      <p className="text-xs text-gray-400 mb-0.5">Subject</p>
+                      <p className="text-xs text-gray-500 mb-0.5">Subject</p>
                       <p className="font-medium text-gray-800">
                         {profile.signup_info.subject_name} ({profile.signup_info.subject_code})
                       </p>
@@ -245,7 +245,7 @@ export default function ProfilePage() {
                 </div>
                 {profile.bio && (
                   <div>
-                    <p className="text-xs text-gray-400 mb-0.5">Bio</p>
+                    <p className="text-xs text-gray-500 mb-0.5">Bio</p>
                     <p className="text-gray-700 text-sm">{profile.bio}</p>
                   </div>
                 )}
@@ -258,7 +258,7 @@ export default function ProfilePage() {
               {editing ? (
                 <>
                   <button onClick={saveProfile} disabled={saving}
-                    className="flex-1 bg-blue-600 text-white py-2 rounded-xl hover:bg-blue-700 disabled:opacity-50 transition font-medium">
+                    className="flex-1 bg-blue-600 text-white py-2 rounded-xl hover:bg-blue-700 disabled:opacity-70 transition font-medium">
                     {saving ? 'Saving...' : 'Save Changes'}
                   </button>
                   <button onClick={() => setEditing(false)}
@@ -299,7 +299,7 @@ export default function ProfilePage() {
                             alert(`You can only update your Face ID once every 30 days.\nPlease try again after ${daysLeft} days.`);
                           }
                         }}
-                        className={`flex items-center justify-center gap-2 py-2.5 rounded-xl font-medium transition ${canUpdate ? 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100' : 'bg-gray-50 text-gray-400 cursor-not-allowed'}`}>
+                        className={`flex items-center justify-center gap-2 py-2.5 rounded-xl font-medium transition ${canUpdate ? 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100' : 'bg-gray-50 text-gray-500 cursor-not-allowed'}`}>
                         <span>📸</span> 
                         {profile.signup_info?.face_descriptor ? 'Update Face ID' : 'Register Face ID'}
                       </Link>
@@ -314,7 +314,7 @@ export default function ProfilePage() {
                         </>
                       )}
                       {canUpdate && profile.signup_info?.face_descriptor && (
-                         <p className="text-xs text-center text-gray-400">
+                         <p className="text-xs text-center text-gray-500">
                           You can update your Face ID once per month.
                         </p>
                       )}

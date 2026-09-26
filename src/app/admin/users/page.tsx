@@ -115,7 +115,7 @@ export default function AdminUsers() {
             <input type="text" placeholder="Search by name, email, roll no..."
               value={search} onChange={(e) => setSearch(e.target.value)}
               className="w-full bg-gray-50 border border-gray-200 rounded-xl pl-10 pr-4 py-2 text-sm focus:outline-none focus:border-blue-400 focus:bg-white transition" />
-            <span className="absolute left-3 top-2.5 opacity-50">🔍</span>
+            <span className="absolute left-3 top-2.5 opacity-70">🔍</span>
           </div>
         </div>
 
@@ -140,7 +140,7 @@ export default function AdminUsers() {
                       <div>
                         <div className="flex items-center gap-2">
                           <p className="font-semibold text-gray-800 text-sm">{u.name}</p>
-                          {(u as any).is_cr && <span className="bg-purple-100 text-purple-700 text-[10px] px-1.5 py-0.5 rounded font-bold border border-purple-200">CR</span>}
+                          {(u as any).is_cr && <span className="bg-purple-100 text-purple-700 text-xs px-1.5 py-0.5 rounded font-bold border border-purple-200">CR</span>}
                         </div>
                         <p className="text-xs text-gray-500">{u.email}</p>
                       </div>
@@ -235,7 +235,7 @@ export default function AdminUsers() {
                     <div className="w-24 h-24 rounded-full bg-gray-100 overflow-hidden border">
                       {form.profile_photo_url ? (
                         <img src={form.profile_photo_url} alt="Avatar" className="w-full h-full object-cover" />
-                      ) : <div className="w-full h-full flex items-center justify-center text-gray-400">No Img</div>}
+                      ) : <div className="w-full h-full flex items-center justify-center text-gray-500">No Img</div>}
                     </div>
                     {form.profile_photo_url && (
                       <button onClick={() => setForm({...form, profile_photo_url: ''})} className="mt-2 text-xs text-red-500 font-medium hover:underline block text-center w-full">
@@ -290,7 +290,7 @@ export default function AdminUsers() {
               <div className="p-4 border-t bg-gray-50 flex justify-end gap-3 rounded-b-2xl">
                 <button onClick={() => setShowModal(false)} className="px-4 py-2 text-gray-600 hover:bg-gray-200 rounded-lg">Cancel</button>
                 <button onClick={saveUser} disabled={!form.name || !form.email}
-                  className="bg-blue-600 text-white px-5 py-2 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50">
+                  className="bg-blue-600 text-white px-5 py-2 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-70">
                   {isEditing ? 'Save Changes' : 'Add User'}
                 </button>
               </div>

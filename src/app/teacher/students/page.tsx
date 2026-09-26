@@ -135,7 +135,7 @@ useEffect(() => {
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold text-gray-800">👥 Students</h1>
           <button onClick={() => setShowAddModal(true)} disabled={!selected}
-            className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition disabled:opacity-50">
+            className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition disabled:opacity-70">
             + Add Students
           </button>
         </div>
@@ -188,7 +188,7 @@ useEffect(() => {
             </thead>
             <tbody className="divide-y divide-gray-100">
               {loading ? (
-                <tr><td colSpan={6} className="p-8 text-center text-gray-400">Loading...</td></tr>
+                <tr><td colSpan={6} className="p-8 text-center text-gray-500">Loading...</td></tr>
               ) : students.filter(s => {
                   const br = s.signup_info?.branch || s.branch || '';
                   const gr = s.signup_info?.group || s.section || '';
@@ -201,7 +201,7 @@ useEffect(() => {
                   return true;
                 }).map(s => {
                 const pct = summary[s.id] ?? null;
-                const color = pct === null ? 'text-gray-400' : pct >= 85 ? 'text-green-600' : pct >= 75 ? 'text-yellow-600' : 'text-red-600';
+                const color = pct === null ? 'text-gray-500' : pct >= 85 ? 'text-green-600' : pct >= 75 ? 'text-yellow-600' : 'text-red-600';
                 
   const unenroll = async (studentId: string) => {
     if (!window.confirm('Remove this student from the subject?')) return;
@@ -262,7 +262,7 @@ useEffect(() => {
                     <td className="p-4 text-sm font-mono text-gray-600">{s.roll_no || '—'}</td>
                     <td className="p-4 font-medium text-gray-800 flex items-center gap-2">
                       {s.name}
-                      {s.is_cr && <span className="bg-purple-100 text-purple-700 text-[10px] px-1.5 py-0.5 rounded font-bold border border-purple-200">CR</span>}
+                      {s.is_cr && <span className="bg-purple-100 text-purple-700 text-xs px-1.5 py-0.5 rounded font-bold border border-purple-200">CR</span>}
                     </td>
                     <td className="p-4 text-sm">
                       {s.signup_info?.last_face_update || s.signup_info?.face_descriptor ? (
@@ -314,7 +314,7 @@ useEffect(() => {
             <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden shadow-2xl">
               <div className="p-5 border-b border-gray-100 flex justify-between items-center bg-gray-50">
                 <h2 className="text-xl font-bold text-gray-800">Add Students to Subject</h2>
-                <button onClick={() => setShowAddModal(false)} className="text-gray-400 hover:text-gray-700 text-2xl leading-none">&times;</button>
+                <button onClick={() => setShowAddModal(false)} className="text-gray-500 hover:text-gray-700 text-2xl leading-none">&times;</button>
               </div>
               
               <div className="p-4 flex-1 overflow-y-auto">
@@ -382,7 +382,7 @@ useEffect(() => {
                     );
                   })}
                   {allStudents.filter(s => !students.some(e => e.id === s.id)).length === 0 && (
-                    <div className="col-span-2 text-center text-gray-400 py-8">All students are already enrolled!</div>
+                    <div className="col-span-2 text-center text-gray-500 py-8">All students are already enrolled!</div>
                   )}
                 </div>
               </div>
@@ -390,7 +390,7 @@ useEffect(() => {
               <div className="p-4 border-t border-gray-100 bg-gray-50 flex justify-end gap-3">
                 <button onClick={() => setShowAddModal(false)} className="px-5 py-2 rounded-xl text-gray-600 hover:bg-gray-200 transition">Cancel</button>
                 <button onClick={handleAddStudents} disabled={adding || selectedStudents.size === 0} 
-                  className="px-5 py-2 rounded-xl bg-blue-600 text-white font-medium hover:bg-blue-700 transition disabled:opacity-50">
+                  className="px-5 py-2 rounded-xl bg-blue-600 text-white font-medium hover:bg-blue-700 transition disabled:opacity-70">
                   {adding ? 'Adding...' : `Add ${selectedStudents.size} Students`}
                 </button>
               </div>

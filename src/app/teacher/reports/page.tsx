@@ -180,7 +180,7 @@ export default function TeacherReports() {
             </thead>
             <tbody className="divide-y divide-gray-100">
               {loading ? (
-                <tr><td colSpan={5} className="p-8 text-center text-gray-400">Loading report...</td></tr>
+                <tr><td colSpan={5} className="p-8 text-center text-gray-500">Loading report...</td></tr>
               ) : report.sort((a,b) => a.percentage - b.percentage).map(r => {
                 const pct = r.percentage;
                 const barColor = pct >= 85 ? 'bg-green-500' : pct >= 75 ? 'bg-yellow-400' : 'bg-red-500';
@@ -220,14 +220,14 @@ export default function TeacherReports() {
                 <h2 className="text-xl font-bold">{selectedStudent.name}</h2>
                 <p className="text-sm text-gray-500 font-mono">{selectedStudent.roll_no}</p>
               </div>
-              <button onClick={() => setSelectedStudent(null)} className="text-gray-400 hover:text-gray-600">✕</button>
+              <button onClick={() => setSelectedStudent(null)} className="text-gray-500 hover:text-gray-600">✕</button>
             </div>
             
             <div className="flex-1 overflow-y-auto pr-2">
               {loadingHistory ? (
                 <div className="flex justify-center p-8 text-blue-600 animate-pulse">Loading history...</div>
               ) : studentHistory.length === 0 ? (
-                <div className="text-center p-8 text-gray-400">No classes found</div>
+                <div className="text-center p-8 text-gray-500">No classes found</div>
               ) : (
                 <table className="w-full text-left border-collapse">
                   <thead>
@@ -242,7 +242,7 @@ export default function TeacherReports() {
                       <tr key={h.class_id} className="border-b last:border-0 hover:bg-gray-50">
                         <td className="p-3 text-sm">
                           {format(new Date(h.date), 'dd MMM yyyy')}
-                          <br/><span className="text-xs text-gray-400">{h.start_time}</span>
+                          <br/><span className="text-xs text-gray-500">{h.start_time}</span>
                         </td>
                         <td className="p-3">
                           <span className={`px-2 py-1 rounded text-xs font-medium ${
@@ -258,7 +258,7 @@ export default function TeacherReports() {
                             {['P', 'A', 'Late'].map(st => (
                               <button key={st} onClick={() => updateStatus(h.class_id, st)}
                                 disabled={h.status === st}
-                                className={`px-2 py-1 text-xs font-medium rounded border ${h.status === st ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed' : 'bg-white text-gray-600 hover:bg-blue-50 hover:text-blue-600'}`}>
+                                className={`px-2 py-1 text-xs font-medium rounded border ${h.status === st ? 'bg-gray-100 text-gray-500 border-gray-200 cursor-not-allowed' : 'bg-white text-gray-600 hover:bg-blue-50 hover:text-blue-600'}`}>
                                 {st}
                               </button>
                             ))}
@@ -271,7 +271,7 @@ export default function TeacherReports() {
               )}
             </div>
             
-            <div className="mt-4 pt-4 border-t text-xs text-gray-400 text-center">
+            <div className="mt-4 pt-4 border-t text-xs text-gray-500 text-center">
               Note: Attendance editing is limited by the {defaultersOnly ? '' : ''} global 30-day window policy.
             </div>
           </div>

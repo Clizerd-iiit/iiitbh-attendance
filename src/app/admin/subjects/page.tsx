@@ -108,7 +108,7 @@ export default function AdminSubjectsPage() {
                     const t = teachers.find(x => x.id === tid);
                     return t ? <div key={tid} className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-xs inline-block mr-1 mb-1">{t.name}</div> : null;
                   })}
-                  {!(s.teacher_ids && s.teacher_ids.length > 0) && <span className="text-xs italic text-gray-400">None assigned</span>}
+                  {!(s.teacher_ids && s.teacher_ids.length > 0) && <span className="text-xs italic text-gray-500">None assigned</span>}
                 </div>
               </div>
               
@@ -188,7 +188,7 @@ export default function AdminSubjectsPage() {
               <div className="p-4 border-t bg-gray-50 flex justify-end gap-3">
                 <button onClick={() => setShowModal(false)} className="px-4 py-2 text-gray-600 hover:bg-gray-200 rounded-lg">Cancel</button>
                 <button onClick={saveSubject} disabled={!form.name || !form.code}
-                  className="bg-blue-600 text-white px-5 py-2 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50">
+                  className="bg-blue-600 text-white px-5 py-2 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-70">
                   {isEditing ? 'Save Changes' : 'Add Subject'}
                 </button>
               </div>

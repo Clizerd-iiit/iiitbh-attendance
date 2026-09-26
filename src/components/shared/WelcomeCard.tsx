@@ -24,7 +24,7 @@ export function WelcomeCard({ subtitle, isCr }: Props) {
   }, []);
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm p-5 mb-6 flex items-center gap-5 border">
+    <div className="bg-white rounded-2xl shadow-sm p-5 flex items-center gap-5 border">
       {/* Big profile photo */}
       <div className="relative flex-shrink-0">
         {photo ? (
@@ -45,7 +45,7 @@ export function WelcomeCard({ subtitle, isCr }: Props) {
 
       {/* Text */}
       <div className="min-w-0">
-        <p className="text-sm text-gray-400 mb-0.5">{subtitle || 'Welcome back!'}</p>
+        <p className="text-sm text-gray-500 mb-0.5">{subtitle || 'Welcome back!'}</p>
         <div className="flex items-center gap-2">
           <h1 className="text-xl font-bold text-gray-800 truncate">{name}</h1>
           {isCr && <span className="bg-purple-100 text-purple-700 text-xs px-2 py-0.5 rounded-full font-bold border border-purple-200">CR / Leader</span>}

@@ -111,7 +111,7 @@ export default function AdminAttendancePage() {
                   <p className="text-xs text-gray-500 font-mono">{s.roll_no || 'No Roll No'}</p>
                 </div>
               ))}
-              {filteredStudents.length === 0 && <p className="text-sm text-gray-400 text-center py-4">No students found</p>}
+              {filteredStudents.length === 0 && <p className="text-sm text-gray-500 text-center py-4">No students found</p>}
             </div>
           </div>
 
@@ -132,11 +132,11 @@ export default function AdminAttendancePage() {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-gray-400">This student is not enrolled in any subjects.</p>
+                  <p className="text-sm text-gray-500">This student is not enrolled in any subjects.</p>
                 )}
               </div>
             ) : (
-              <div className="bg-white rounded-2xl shadow-sm p-8 border text-center text-gray-400">
+              <div className="bg-white rounded-2xl shadow-sm p-8 border text-center text-gray-500">
                 Please select a student first.
               </div>
             )}
@@ -158,7 +158,7 @@ export default function AdminAttendancePage() {
                 </div>
 
                 {loadingHist ? (
-                  <p className="text-sm text-gray-400 p-4">Loading history...</p>
+                  <p className="text-sm text-gray-500 p-4">Loading history...</p>
                 ) : history.length > 0 ? (
                   <div className="flex-1 overflow-y-auto pr-2 space-y-6">
                     {Object.entries(groupedHistory).map(([month, records]: any) => (
@@ -178,7 +178,7 @@ export default function AdminAttendancePage() {
                               return (
                                 <tr key={h.class_id} className="hover:bg-gray-50 transition">
                                   <td className="py-2 text-gray-800">
-                                    {format(new Date(h.date), 'dd MMM (EEE)')} <span className="text-gray-400 text-xs ml-1">{h.start_time.slice(0,5)}</span>
+                                    {format(new Date(h.date), 'dd MMM (EEE)')} <span className="text-gray-500 text-xs ml-1">{h.start_time.slice(0,5)}</span>
                                   </td>
                                   <td className="py-2">
                                     {currentStatus ? (
@@ -210,7 +210,7 @@ export default function AdminAttendancePage() {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-gray-400">No classes found for this subject.</p>
+                  <p className="text-sm text-gray-500">No classes found for this subject.</p>
                 )}
               </div>
             )}
