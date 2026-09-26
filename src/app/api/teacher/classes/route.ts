@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
 
   let query = supabaseAdmin.from('classes')
     .select('id, date, start_time, status, subject_id, subjects!inner(name, code)')
-    .eq('status', 'closed')
+    .neq('status', 'scheduled')
     .order('date', { ascending: false })
     .limit(limit);
 

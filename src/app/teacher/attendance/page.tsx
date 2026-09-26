@@ -76,37 +76,42 @@ function AttendancePage() {
   }, [subjectId]);
 
 
-  // Fetch closed classes for today
+  // Fetch closed and active classes
   useEffect(() => {
     if (!activeClass) {
       fetch('/api/teacher/classes?limit=1000')
         .then(r => r.json())
         .then(d => {
           if (d.classes) {
-            // Group by subject to calculate classNo
+            // Check if there is an abandoned active class
+            const active = d.classes.find((c: any) => c.status === 'active');
+            if (active) {
+              setActiveClass(active);
+            }
+
+            // Group by subject to calculate classNo (only for closed classes)
+            const closedOnly = d.classes.filter((c: any) => c.status === 'closed');
             const bySubject: Record<string, any[]> = {};
-            d.classes.forEach((c: any) => {
+            closedOnly.forEach((c: any) => {
               if (!bySubject[c.subject_id]) bySubject[c.subject_id] = [];
               bySubject[c.subject_id].push(c);
             });
+            
             Object.values(bySubject).forEach(subjectClasses => {
-              // Sort ascending by date/time to find oldest first
               subjectClasses.sort((a, b) => {
                 const timeA = new Date(`${a.date}T${a.start_time || '00:00:00'}`).getTime();
                 const timeB = new Date(`${b.date}T${b.start_time || '00:00:00'}`).getTime();
                 return timeA - timeB;
               });
-              // Assign Class No.
-              subjectClasses.forEach((c, index) => {
-                c.classNo = index + 1;
-              });
+              subjectClasses.forEach((c, index) => c.classNo = index + 1);
             });
-            // Finally sort all descending by date to show newest first
-            const allAssigned = d.classes.sort((a: any, b: any) => {
+            
+            const allAssigned = closedOnly.sort((a: any, b: any) => {
               const timeA = new Date(`${a.date}T${a.start_time || '00:00:00'}`).getTime();
               const timeB = new Date(`${b.date}T${b.start_time || '00:00:00'}`).getTime();
               return timeB - timeA;
             });
+            
             setClosedClasses(allAssigned);
           }
         });
