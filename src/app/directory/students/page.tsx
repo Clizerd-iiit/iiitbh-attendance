@@ -125,9 +125,16 @@ export default function StudentDirectoryPage() {
                   {s.signup_info?.branch || s.branch || 'N/A'} {s.signup_info?.group ? `- ${s.signup_info.group}` : ''} {s.signup_info?.sub_group ? `(${s.signup_info.sub_group})` : ''}
                 </p>
                 <p className="text-xs text-gray-400 truncate mt-0.5">{s.email}</p>
-                <span className={`text-xs font-medium ${s.is_online ? 'text-green-500' : 'text-gray-400'}`}>
-                  {s.is_online ? '● Online' : '○ Offline'}
-                </span>
+                <div className="flex flex-col items-center justify-center gap-0.5 mt-1">
+                  <span className={`text-xs font-medium ${s.is_online ? 'text-green-500' : 'text-gray-400'}`}>
+                    {s.is_online ? '● Online' : '○ Offline'}
+                  </span>
+                  {!s.is_online && s.last_seen_at && (
+                    <span className="text-[10px] text-gray-400">
+                      Last seen: {new Date(s.last_seen_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                    </span>
+                  )}
+                </div>
               </div>
             ))}
           </div>

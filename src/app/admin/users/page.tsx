@@ -185,9 +185,13 @@ export default function AdminUsers() {
                     </td>
                     <td className="p-4 text-right space-x-2">
                       <button onClick={() => { 
-                          setForm({ id: u.id, name: u.name, email: u.email, role: u.role, roll_no: u.roll_no||'', section: u.section||'', branch: (u as any).signup_info?.branch || (u as any).branch || '', group: (u as any).signup_info?.group || '', sub_group: (u as any).signup_info?.sub_group || '', is_cr: (u as any).is_cr||false, semester: u.semester||1, bio: u.bio||'', profile_photo_url: u.profile_photo_url||'' });
-                          setIsEditing(true); 
-                          setShowModal(true); 
+                          if (u.role === 'student') {
+                            setEditingStudent(u);
+                          } else {
+                            setForm({ id: u.id, name: u.name, email: u.email, role: u.role, roll_no: u.roll_no||'', section: u.section||'', branch: (u as any).signup_info?.branch || (u as any).branch || '', group: (u as any).signup_info?.group || '', sub_group: (u as any).signup_info?.sub_group || '', is_cr: (u as any).is_cr||false, semester: u.semester||1, bio: u.bio||'', profile_photo_url: u.profile_photo_url||'' });
+                            setIsEditing(true); 
+                            setShowModal(true); 
+                          }
                         }} 
                         className="text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg text-sm font-medium transition">
                         Edit
