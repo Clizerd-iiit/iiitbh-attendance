@@ -9,7 +9,7 @@ export default function ContactAdmin() {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(true);
   const [adminLastSeen, setAdminLastSeen] = useState<string | null>(null);
-  const endRef = useRef<HTMLDivElement>(null);
+  const chatRef = useRef<HTMLDivElement>(null);
 
   const isOnline = (lastSeen?: string | null) => {
     if (!lastSeen) return false;
@@ -35,13 +35,11 @@ export default function ContactAdmin() {
     return () => clearInterval(id);
   }, []);
 
-  const isInitialMount = useRef(true);
   useEffect(() => {
-    if (isInitialMount.current) {
-      isInitialMount.current = false;
-      return;
+    if (chatRef.current) {
+      // Scroll only the chat container, not the whole window!
+      chatRef.current.scrollTo({ top: chatRef.current.scrollHeight, behavior: 'smooth' });
     }
-    endRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
   const send = async (e: React.FormEvent) => {
@@ -90,7 +88,7 @@ export default function ContactAdmin() {
         <p className="text-xs text-gray-700 font-medium flex items-center justify-center gap-1">🔒 Your Messages Would be Private & only be sent to the ADMIN Only!!</p>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+      <div ref={chatRef} className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
         {messages.map((m, i) => {
           const isMe = m.sender_id === session?.user?.userId;
           return (
@@ -114,7 +112,6 @@ export default function ContactAdmin() {
             </div>
           );
         })}
-        <div ref={endRef} />
       </div>
 
       <form onSubmit={send} className="p-3 bg-white border-t flex gap-2">
