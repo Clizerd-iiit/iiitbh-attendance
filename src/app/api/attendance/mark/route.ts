@@ -6,7 +6,11 @@ import { logAudit } from '@/lib/audit';
 import { updateAttendanceInSheet } from '@/lib/sheets';
 import type { AttendanceStatus } from '@/types';
 
+import { rateLimit, getIp } from '@/lib/rate-limit';
 export async function POST(req: NextRequest) {
+  const ip = getIp(req);
+  if (!rateLimit(ip, 10, 60000)) return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
+
   const session = await getServerSession(authOptions);
   if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
