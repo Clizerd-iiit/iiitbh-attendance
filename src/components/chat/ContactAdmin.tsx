@@ -35,7 +35,12 @@ export default function ContactAdmin() {
     return () => clearInterval(id);
   }, []);
 
+  const isInitialMount = useRef(true);
   useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
@@ -90,7 +95,7 @@ export default function ContactAdmin() {
           const isMe = m.sender_id === session?.user?.userId;
           return (
             <div key={m.id || i} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
-              <div className={`max-w-[75%] p-3 rounded-2xl ${isMe ? 'bg-blue-600 text-white rounded-br-sm' : 'bg-white border text-gray-800 rounded-bl-sm shadow-sm'}`}>
+              <div className={`max-w-[75%] p-3 rounded-2xl ${isMe ? 'bg-blue-600 text-white font-semibold rounded-br-sm' : 'bg-white border text-black font-semibold rounded-bl-sm shadow-sm'}`}>
                 <p className="text-sm whitespace-pre-wrap">{m.content}</p>
                 <div className={`flex items-center justify-end gap-1 mt-1 ${isMe ? 'text-blue-200' : 'text-gray-700'}`}>
                   <span className="text-xs">
@@ -116,7 +121,7 @@ export default function ContactAdmin() {
         <input 
           value={input} onChange={e => setInput(e.target.value)}
           placeholder="Type your message..."
-          className="flex-1 bg-gray-100 border-transparent focus:bg-white rounded-xl px-4 py-2 text-sm"
+          className="flex-1 text-black font-bold bg-gray-100 border focus:bg-white focus:border-blue-500 rounded-xl px-4 py-2 text-sm outline-none shadow-sm"
         />
         <button type="submit" disabled={!input.trim()} className="bg-blue-600 text-white px-5 rounded-xl font-medium disabled:opacity-70">
           Send

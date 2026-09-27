@@ -162,15 +162,15 @@ export default function ProfilePage() {
             {editing ? (
               <>
                 <div>
-                  <label className="block text-sm font-medium text-gray-800 mb-1">Full Name</label>
+                  <label className="block text-sm font-black text-gray-900 mb-1">Full Name</label>
                   <input value={name} onChange={e => setName(e.target.value)}
-                    className="w-full border rounded-xl px-3 py-2 focus:outline-none focus:border-blue-500"/>
+                    className="w-full text-black font-bold border-2 border-gray-300 rounded-xl px-3 py-2 focus:outline-none focus:border-blue-600 bg-white shadow-sm"/>
                 </div>
                 {role === 'student' && (
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-800 mb-1">Branch</label>
-                      <select value={branch} onChange={e => { setBranch(e.target.value); setGroup(''); setSubGroup(''); }} className="w-full border rounded-xl px-3 py-2 bg-white outline-none focus:border-blue-500">
+                      <label className="block text-sm font-black text-gray-900 mb-1">Branch</label>
+                      <select value={branch} onChange={e => { setBranch(e.target.value); setGroup(''); setSubGroup(''); }} className="w-full text-black font-bold border-2 border-gray-300 rounded-xl px-3 py-2 bg-white outline-none focus:border-blue-600 shadow-sm">
                         <option value="">Select Branch</option>
                         <option value="CSE">Computer Science (CSE)</option>
                         <option value="ECE">Electronics (ECE)</option>
@@ -180,8 +180,8 @@ export default function ProfilePage() {
                     </div>
                     {branch && (
                       <div>
-                        <label className="block text-sm font-medium text-gray-800 mb-1">Group</label>
-                        <select value={group} onChange={e => { setGroup(e.target.value); setSubGroup(''); }} className="w-full border rounded-xl px-3 py-2 bg-white outline-none focus:border-blue-500">
+                        <label className="block text-sm font-black text-gray-900 mb-1">Group</label>
+                        <select value={group} onChange={e => { setGroup(e.target.value); setSubGroup(''); }} className="w-full text-black font-bold border-2 border-gray-300 rounded-xl px-3 py-2 bg-white outline-none focus:border-blue-600 shadow-sm">
                           <option value="">Select Group</option>
                           <option value="G1">G1</option>
                           <option value="G2">G2</option>
@@ -190,8 +190,8 @@ export default function ProfilePage() {
                     )}
                     {group && (
                       <div>
-                        <label className="block text-sm font-medium text-gray-800 mb-1">Sub Group</label>
-                        <select value={subGroup} onChange={e => setSubGroup(e.target.value)} className="w-full border rounded-xl px-3 py-2 bg-white outline-none focus:border-blue-500">
+                        <label className="block text-sm font-black text-gray-900 mb-1">Sub Group</label>
+                        <select value={subGroup} onChange={e => setSubGroup(e.target.value)} className="w-full text-black font-bold border-2 border-gray-300 rounded-xl px-3 py-2 bg-white outline-none focus:border-blue-600 shadow-sm">
                           <option value="">Select Sub Group</option>
                           <option value={`${group}A`}>{group}A</option>
                           <option value={`${group}B`}>{group}B</option>
@@ -201,9 +201,9 @@ export default function ProfilePage() {
                   </div>
                 )}
                 <div>
-                  <label className="block text-sm font-medium text-gray-800 mb-1">Bio (optional)</label>
+                  <label className="block text-sm font-black text-gray-900 mb-1">Bio (optional)</label>
                   <textarea value={bio} onChange={e => setBio(e.target.value)} rows={3}
-                    className="w-full border rounded-xl px-3 py-2 focus:outline-none focus:border-blue-500 resize-none"
+                    className="w-full text-black font-bold border-2 border-gray-300 rounded-xl px-3 py-2 focus:outline-none focus:border-blue-600 bg-white shadow-sm resize-none"
                     placeholder="Tell something about yourself..."/>
                 </div>
               </>
@@ -211,23 +211,23 @@ export default function ProfilePage() {
               <>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className="text-xs text-gray-700 mb-0.5">Name</p>
-                    <p className="font-medium text-gray-800">{profile.name}</p>
+                    <p className="text-xs font-bold text-gray-900 mb-0.5">Name</p>
+                    <p className="font-black text-black text-base tracking-tight">{profile.name}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-700 mb-0.5">Email</p>
+                    <p className="text-xs font-bold text-gray-900 mb-0.5">Email</p>
                     <p className="font-medium text-gray-800 text-sm">{profile.email}</p>
                   </div>
                   {profile.roll_no && (
                     <div>
-                      <p className="text-xs text-gray-700 mb-0.5">Roll No</p>
-                      <p className="font-medium text-gray-800">{profile.roll_no}</p>
+                      <p className="text-xs font-bold text-gray-900 mb-0.5">Roll No</p>
+                      <p className="font-black text-black text-base tracking-tight">{profile.roll_no}</p>
                     </div>
                   )}
                   {profile.signup_info?.branch && (
                     <div>
-                      <p className="text-xs text-gray-700 mb-0.5">Class / Batch</p>
-                      <p className="font-medium text-gray-800">
+                      <p className="text-xs font-bold text-gray-900 mb-0.5">Class / Batch</p>
+                      <p className="font-black text-black text-base tracking-tight">
                         {profile.signup_info.branch} 
                         {profile.signup_info.group ? ` - ${profile.signup_info.group}` : ''} 
                         {profile.signup_info.sub_group ? ` (${profile.signup_info.sub_group})` : ''}
@@ -236,8 +236,8 @@ export default function ProfilePage() {
                   )}
                   {profile.signup_info?.subject_name && (
                     <div>
-                      <p className="text-xs text-gray-700 mb-0.5">Subject</p>
-                      <p className="font-medium text-gray-800">
+                      <p className="text-xs font-bold text-gray-900 mb-0.5">Subject</p>
+                      <p className="font-black text-black text-base tracking-tight">
                         {profile.signup_info.subject_name} ({profile.signup_info.subject_code})
                       </p>
                     </div>
@@ -245,8 +245,8 @@ export default function ProfilePage() {
                 </div>
                 {profile.bio && (
                   <div>
-                    <p className="text-xs text-gray-700 mb-0.5">Bio</p>
-                    <p className="text-gray-800 text-sm">{profile.bio}</p>
+                    <p className="text-xs font-bold text-gray-900 mb-0.5">Bio</p>
+                    <p className="font-bold text-black text-sm">{profile.bio}</p>
                   </div>
                 )}
               </>

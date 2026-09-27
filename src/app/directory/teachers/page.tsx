@@ -93,11 +93,11 @@ export default function TeachersPage() {
         </div>
         
         <div className="flex flex-wrap gap-3 mb-6 items-center bg-white p-3 rounded-xl border shadow-sm">
-          <select value={branchFilter} onChange={e => setBranchFilter(e.target.value)} className="bg-gray-50 border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-blue-500">
+          <select value={branchFilter} onChange={e => setBranchFilter(e.target.value)} className="bg-gray-50 text-gray-900 font-bold border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-blue-500 shadow-sm">
             <option value="">All Branches</option>
             <option value="CSE">CSE</option><option value="ECE">ECE</option><option value="MNC">MNC</option><option value="MEA">MEA</option>
           </select>
-          <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="bg-gray-50 border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-blue-500">
+          <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="bg-gray-50 text-gray-900 font-bold border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-blue-500 shadow-sm">
             <option value="">Any Status</option>
             <option value="online">🟢 Online</option>
             <option value="offline">⚪ Offline</option>
