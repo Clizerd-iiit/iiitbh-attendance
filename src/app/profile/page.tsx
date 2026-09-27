@@ -38,8 +38,6 @@ export default function ProfilePage() {
     });
     };
     fetchData();
-    const interval = setInterval(fetchData, 5000);
-    return () => clearInterval(interval);
   }, []);
 
   const saveProfile = async () => {

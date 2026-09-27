@@ -3,12 +3,15 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { supabaseAdmin } from '@/lib/supabase';
 import { logAudit } from '@/lib/audit';
+import { cleanupRejectedUsers } from '@/lib/cleanupRejectedUsers';
+
 
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session?.user || !['superadmin', 'teacher'].includes(session.user.role as string))
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
+  await cleanupRejectedUsers();
   const { searchParams } = new URL(req.url);
   const status = searchParams.get('status') || 'pending';
 
