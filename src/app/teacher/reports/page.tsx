@@ -132,7 +132,7 @@ export default function TeacherReports() {
               </div>
             )}
             <select value={downloadMode} onChange={e => setDownloadMode(e.target.value as 'all'|'specific')}
-              className="border rounded-lg px-2 py-2 text-sm outline-none bg-gray-50 text-gray-700">
+              className="border rounded-lg px-2 py-2 text-sm outline-none bg-gray-50 text-gray-800">
               <option value="all">All Students</option>
               <option value="specific">Specific Student</option>
             </select>
@@ -143,7 +143,7 @@ export default function TeacherReports() {
         <div className="flex gap-2 mb-4 flex-wrap">
           {subjects.map(s => (
             <button key={s.id} onClick={() => setSelected(s.id)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition ${selected===s.id ? 'bg-blue-600 text-white' : 'bg-white border text-gray-600 hover:bg-gray-50'}`}>
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition ${selected===s.id ? 'bg-blue-600 text-white' : 'bg-white border text-gray-700 hover:bg-gray-50'}`}>
               {s.code}
             </button>
           ))}
@@ -160,7 +160,7 @@ export default function TeacherReports() {
             ].map(s => (
               <div key={s.label} className="bg-white rounded-xl p-4 shadow-sm text-center">
                 <p className={`text-2xl font-bold ${s.color}`}>{s.value}</p>
-                <p className="text-xs text-gray-500 mt-1">{s.label}</p>
+                <p className="text-xs text-gray-700 mt-1">{s.label}</p>
               </div>
             ))}
           </div>
@@ -171,24 +171,24 @@ export default function TeacherReports() {
           <table className="w-full">
             <thead className="bg-gray-50 border-b">
               <tr>
-                <th className="text-left p-4 text-sm font-medium text-gray-600">Roll No</th>
-                <th className="text-left p-4 text-sm font-medium text-gray-600">Name</th>
-                <th className="text-left p-4 text-sm font-medium text-gray-600">Attended / Total</th>
-                <th className="text-left p-4 text-sm font-medium text-gray-600">Percentage</th>
-                <th className="text-left p-4 text-sm font-medium text-gray-600">Status</th>
+                <th className="text-left p-4 text-sm font-medium text-gray-700">Roll No</th>
+                <th className="text-left p-4 text-sm font-medium text-gray-700">Name</th>
+                <th className="text-left p-4 text-sm font-medium text-gray-700">Attended / Total</th>
+                <th className="text-left p-4 text-sm font-medium text-gray-700">Percentage</th>
+                <th className="text-left p-4 text-sm font-medium text-gray-700">Status</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {loading ? (
-                <tr><td colSpan={5} className="p-8 text-center text-gray-500">Loading report...</td></tr>
+                <tr><td colSpan={5} className="p-8 text-center text-gray-700">Loading report...</td></tr>
               ) : report.sort((a,b) => a.percentage - b.percentage).map(r => {
                 const pct = r.percentage;
                 const barColor = pct >= 85 ? 'bg-green-500' : pct >= 75 ? 'bg-yellow-400' : 'bg-red-500';
                 return (
                   <tr key={r.roll_no} onClick={() => openStudentHistory(r)} className={`${pct < 75 ? 'bg-red-50' : 'hover:bg-gray-50'} cursor-pointer transition-colors duration-150`}>
-                    <td className="p-4 text-sm font-mono text-gray-600">{r.roll_no}</td>
+                    <td className="p-4 text-sm font-mono text-gray-700">{r.roll_no}</td>
                     <td className="p-4 font-medium text-gray-800">{r.name}</td>
-                    <td className="p-4 text-sm text-gray-600">{r.attended} / {r.total}</td>
+                    <td className="p-4 text-sm text-gray-700">{r.attended} / {r.total}</td>
                     <td className="p-4">
                       <div className="flex items-center gap-2">
                         <div className="flex-1 bg-gray-200 rounded-full h-1.5 max-w-[80px]">
@@ -218,20 +218,20 @@ export default function TeacherReports() {
             <div className="flex justify-between items-start mb-4">
               <div>
                 <h2 className="text-xl font-bold">{selectedStudent.name}</h2>
-                <p className="text-sm text-gray-500 font-mono">{selectedStudent.roll_no}</p>
+                <p className="text-sm text-gray-700 font-mono">{selectedStudent.roll_no}</p>
               </div>
-              <button onClick={() => setSelectedStudent(null)} className="text-gray-500 hover:text-gray-600">✕</button>
+              <button onClick={() => setSelectedStudent(null)} className="text-gray-700 hover:text-gray-700">✕</button>
             </div>
             
             <div className="flex-1 overflow-y-auto pr-2">
               {loadingHistory ? (
                 <div className="flex justify-center p-8 text-blue-600 animate-pulse">Loading history...</div>
               ) : studentHistory.length === 0 ? (
-                <div className="text-center p-8 text-gray-500">No classes found</div>
+                <div className="text-center p-8 text-gray-700">No classes found</div>
               ) : (
                 <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="bg-gray-50 text-gray-600 text-xs uppercase">
+                    <tr className="bg-gray-50 text-gray-700 text-xs uppercase">
                       <th className="p-3">Date</th>
                       <th className="p-3">Status</th>
                       <th className="p-3 text-right">Edit</th>
@@ -242,7 +242,7 @@ export default function TeacherReports() {
                       <tr key={h.class_id} className="border-b last:border-0 hover:bg-gray-50">
                         <td className="p-3 text-sm">
                           {format(new Date(h.date), 'dd MMM yyyy')}
-                          <br/><span className="text-xs text-gray-500">{h.start_time}</span>
+                          <br/><span className="text-xs text-gray-700">{h.start_time}</span>
                         </td>
                         <td className="p-3">
                           <span className={`px-2 py-1 rounded text-xs font-medium ${
@@ -258,7 +258,7 @@ export default function TeacherReports() {
                             {['P', 'A', 'Late'].map(st => (
                               <button key={st} onClick={() => updateStatus(h.class_id, st)}
                                 disabled={h.status === st}
-                                className={`px-2 py-1 text-xs font-medium rounded border ${h.status === st ? 'bg-gray-100 text-gray-500 border-gray-200 cursor-not-allowed' : 'bg-white text-gray-600 hover:bg-blue-50 hover:text-blue-600'}`}>
+                                className={`px-2 py-1 text-xs font-medium rounded border ${h.status === st ? 'bg-gray-100 text-gray-700 border-gray-200 cursor-not-allowed' : 'bg-white text-gray-700 hover:bg-blue-50 hover:text-blue-600'}`}>
                                 {st}
                               </button>
                             ))}
@@ -271,7 +271,7 @@ export default function TeacherReports() {
               )}
             </div>
             
-            <div className="mt-4 pt-4 border-t text-xs text-gray-500 text-center">
+            <div className="mt-4 pt-4 border-t text-xs text-gray-700 text-center">
               Note: Attendance editing is limited by the {defaultersOnly ? '' : ''} global 30-day window policy.
             </div>
           </div>

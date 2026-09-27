@@ -155,14 +155,14 @@ export default function PastAttendancePage() {
         <div className="bg-white rounded-2xl shadow-sm p-6 border mb-6">
           <div className="grid md:grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">1. Select Subject</label>
+              <label className="block text-sm font-semibold text-gray-800 mb-2">1. Select Subject</label>
               <select value={selectedSubject} onChange={e => setSelectedSubject(e.target.value)}
                 className="w-full border rounded-xl px-4 py-3 bg-gray-50 focus:outline-none focus:border-blue-500 font-medium">
                 {subjects.map(s => <option key={s.id} value={s.id}>{s.code} - {s.name} {s.branch ? `(${s.branch} ${s.section||""})` : ""}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">2. Select Past Date</label>
+              <label className="block text-sm font-semibold text-gray-800 mb-2">2. Select Past Date</label>
               <input type="date" value={date} onChange={e => setDate(e.target.value)} max={format(new Date(), 'yyyy-MM-dd')}
                 className="w-full border rounded-xl px-4 py-3 bg-gray-50 focus:outline-none focus:border-blue-500 font-medium"/>
             </div>
@@ -182,7 +182,7 @@ export default function PastAttendancePage() {
                   {mode === 'absentees' && <div className="w-2.5 h-2.5 bg-red-500 rounded-full"/>}
                 </div>
               </div>
-              <p className="text-sm text-gray-600">Select only the students who were <b>ABSENT</b>. Everyone else will be marked Present automatically.</p>
+              <p className="text-sm text-gray-700">Select only the students who were <b>ABSENT</b>. Everyone else will be marked Present automatically.</p>
             </div>
 
             <div onClick={() => { setMode('presentees'); setSelectedIds(new Set()); }}
@@ -193,7 +193,7 @@ export default function PastAttendancePage() {
                   {mode === 'presentees' && <div className="w-2.5 h-2.5 bg-green-500 rounded-full"/>}
                 </div>
               </div>
-              <p className="text-sm text-gray-600">Select only the students who were <b>PRESENT</b>. Everyone else will be marked Absent automatically.</p>
+              <p className="text-sm text-gray-700">Select only the students who were <b>PRESENT</b>. Everyone else will be marked Absent automatically.</p>
             </div>
 
           </div>
@@ -227,9 +227,9 @@ export default function PastAttendancePage() {
           
           <div className="p-4 max-h-[50vh] overflow-y-auto">
             {loading ? (
-              <p className="text-center py-8 text-gray-500">Loading students...</p>
+              <p className="text-center py-8 text-gray-700">Loading students...</p>
             ) : filteredStudents.length === 0 ? (
-              <p className="text-center py-8 text-gray-500">No students found.</p>
+              <p className="text-center py-8 text-gray-700">No students found.</p>
             ) : (
               <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-3">
                 {filteredStudents.map(s => (
@@ -238,7 +238,7 @@ export default function PastAttendancePage() {
                       className={`w-5 h-5 rounded ${mode === 'absentees' ? 'accent-red-500' : 'accent-green-500'}`} />
                     <div className="min-w-0">
                       <p className="font-semibold text-sm text-gray-800 truncate">{s.name}</p>
-                      <p className="text-xs font-mono text-gray-500">{s.roll_no || '—'}</p>
+                      <p className="text-xs font-mono text-gray-700">{s.roll_no || '—'}</p>
                     </div>
                   </label>
                 ))}
@@ -247,7 +247,7 @@ export default function PastAttendancePage() {
           </div>
           
           <div className="p-4 border-t bg-gray-50 flex justify-between items-center">
-            <p className="text-sm font-medium text-gray-600">
+            <p className="text-sm font-medium text-gray-700">
               Selected: <span className="font-bold text-gray-900">{selectedIds.size}</span> students
             </p>
             <button onClick={submitAttendance} disabled={saving || students.length === 0}

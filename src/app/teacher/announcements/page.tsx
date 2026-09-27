@@ -19,7 +19,7 @@ const typeInfo: Record<AnnType, { icon: string; label: string; color: string }> 
   test:         { icon:'📝', label:'Test',         color:'bg-orange-100 text-orange-700' },
   quiz:         { icon:'❓', label:'Quiz',         color:'bg-purple-100 text-purple-700' },
   update:       { icon:'📌', label:'Update',       color:'bg-blue-100 text-blue-700' },
-  pdf:          { icon:'📄', label:'PDF',          color:'bg-gray-100 text-gray-700' },
+  pdf:          { icon:'📄', label:'PDF',          color:'bg-gray-100 text-gray-800' },
   link:         { icon:'🔗', label:'Link',         color:'bg-cyan-100 text-cyan-700' },
   text:         { icon:'💬', label:'Notice',       color:'bg-yellow-100 text-yellow-700' },
 };
@@ -130,12 +130,12 @@ export default function TeacherAnnouncementsPage() {
 
               {/* Type */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Type</label>
+                <label className="block text-sm font-medium text-gray-800 mb-2">Type</label>
                 <div className="flex flex-wrap gap-2">
                   {(Object.keys(typeInfo) as AnnType[]).map(t => (
                     <button key={t} onClick={() => setForm(f => ({...f, type: t}))}
                       className={`text-xs px-3 py-1.5 rounded-full border transition ${
-                        form.type === t ? 'border-blue-500 bg-blue-50 text-blue-700 font-medium' : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                        form.type === t ? 'border-blue-500 bg-blue-50 text-blue-700 font-medium' : 'border-gray-200 text-gray-700 hover:border-gray-300'
                       }`}>
                       {typeInfo[t].icon} {typeInfo[t].label}
                     </button>
@@ -145,7 +145,7 @@ export default function TeacherAnnouncementsPage() {
 
               {/* Subject */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Subject (optional)</label>
+                <label className="block text-sm font-medium text-gray-800 mb-1">Subject (optional)</label>
                 <select value={form.subject_id} onChange={e => setForm(f => ({...f, subject_id: e.target.value}))}
                   className="w-full border rounded-xl px-3 py-2.5 focus:outline-none focus:border-blue-500 text-sm">
                   <option value="">All my subjects</option>
@@ -185,12 +185,12 @@ export default function TeacherAnnouncementsPage() {
                               setTargetStudentIds(next);
                             }} />
                           <div className="flex flex-col min-w-0">
-                            <span className="text-sm font-medium text-gray-800 truncate">{s.name} <span className="text-gray-500 font-mono ml-1">{s.roll_no}</span></span>
-                            <span className="text-xs text-gray-500 truncate">{s.email}</span>
+                            <span className="text-sm font-medium text-gray-800 truncate">{s.name} <span className="text-gray-700 font-mono ml-1">{s.roll_no}</span></span>
+                            <span className="text-xs text-gray-700 truncate">{s.email}</span>
                           </div>
                         </label>
                       )) : (
-                        <p className="text-xs text-gray-500 text-center py-3">No students found matching "{searchQuery}"</p>
+                        <p className="text-xs text-gray-700 text-center py-3">No students found matching "{searchQuery}"</p>
                       )}
                     </div>
                   )}
@@ -225,7 +225,7 @@ export default function TeacherAnnouncementsPage() {
 
               {/* Title */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Title *</label>
+                <label className="block text-sm font-medium text-gray-800 mb-1">Title *</label>
                 <input value={form.title} onChange={e => setForm(f => ({...f, title: e.target.value}))}
                   placeholder="Announcement title..."
                   className="w-full border rounded-xl px-3 py-2.5 focus:outline-none focus:border-blue-500 text-sm"/>
@@ -233,7 +233,7 @@ export default function TeacherAnnouncementsPage() {
 
               {/* Content */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Details (optional)</label>
+                <label className="block text-sm font-medium text-gray-800 mb-1">Details (optional)</label>
                 <textarea value={form.content} onChange={e => setForm(f => ({...f, content: e.target.value}))}
                   placeholder="Additional details..." rows={3}
                   className="w-full border rounded-xl px-3 py-2.5 focus:outline-none focus:border-blue-500 text-sm resize-none"/>
@@ -242,7 +242,7 @@ export default function TeacherAnnouncementsPage() {
               {/* Link */}
               {(form.type === 'link' || form.type === 'pdf') && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">URL</label>
+                  <label className="block text-sm font-medium text-gray-800 mb-1">URL</label>
                   <input value={form.link_url} onChange={e => setForm(f => ({...f, link_url: e.target.value}))}
                     placeholder="https://..." type="url"
                     className="w-full border rounded-xl px-3 py-2.5 focus:outline-none focus:border-blue-500 text-sm"/>
@@ -282,7 +282,7 @@ export default function TeacherAnnouncementsPage() {
 
         {/* Announcements list */}
         {announcements.length === 0 ? (
-          <div className="text-center text-gray-500 py-12 bg-white rounded-2xl">
+          <div className="text-center text-gray-700 py-12 bg-white rounded-2xl">
             <p className="text-4xl mb-2">📭</p>
             <p>No announcements yet</p>
           </div>
@@ -312,7 +312,7 @@ export default function TeacherAnnouncementsPage() {
                       </span>
                       <div className="min-w-0">
                         <p className="font-medium text-gray-800 text-sm">{ann.title}</p>
-                        {ann.content && <p className="text-gray-500 text-xs mt-0.5">{ann.content}</p>}
+                        {ann.content && <p className="text-gray-700 text-xs mt-0.5">{ann.content}</p>}
                         {ann.link_url && (
                           <a href={ann.link_url} target="_blank" rel="noreferrer"
                             className="text-xs text-blue-500 hover:underline mt-0.5 block truncate">
@@ -321,7 +321,7 @@ export default function TeacherAnnouncementsPage() {
                         )}
                         
                         <div className="flex flex-col gap-2 mt-2">
-                          <div className="flex items-center gap-3 text-xs text-gray-500">
+                          <div className="flex items-center gap-3 text-xs text-gray-700">
                             <span>{format(new Date(ann.created_at), 'dd MMM, hh:mm a')}</span>
                             {ann.subject && <span>· {ann.subject.name}</span>}
                             {left && (
@@ -339,8 +339,8 @@ export default function TeacherAnnouncementsPage() {
                                 {ann.teacher?.name?.charAt(0)?.toUpperCase() || '?'}
                               </div>
                             )}
-                            <p className={`text-[11px] ${ann.teacher?.role === 'superadmin' ? 'font-bold text-gray-900 text-[12px]' : 'font-medium text-gray-600'}`}>
-                              By {ann.teacher?.name || 'Unknown'} <span className="text-gray-500 font-normal">({ann.teacher?.role === 'superadmin' ? 'Administrator' : ann.teacher?.role === 'teacher' ? 'Professor' : 'Class Representative'})</span>
+                            <p className={`text-[11px] ${ann.teacher?.role === 'superadmin' ? 'font-bold text-gray-900 text-[12px]' : 'font-medium text-gray-700'}`}>
+                              By {ann.teacher?.name || 'Unknown'} <span className="text-gray-700 font-normal">({ann.teacher?.role === 'superadmin' ? 'Administrator' : ann.teacher?.role === 'teacher' ? 'Professor' : 'Class Representative'})</span>
                             </p>
                           </div>
                         </div>

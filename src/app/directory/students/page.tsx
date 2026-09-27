@@ -88,7 +88,7 @@ export default function StudentDirectoryPage() {
             <option value="offline">⚪ Offline</option>
           </select>
           
-          <div className="ml-auto text-sm font-semibold text-gray-600 bg-blue-50 text-blue-700 px-3 py-1 rounded-lg">
+          <div className="ml-auto text-sm font-semibold text-gray-700 bg-blue-50 text-blue-700 px-3 py-1 rounded-lg">
             {filtered.length} Student{filtered.length !== 1 ? 's' : ''} Found
           </div>
         </div>
@@ -98,7 +98,7 @@ export default function StudentDirectoryPage() {
             {[1,2,3,4,5,6].map(i => <div key={i} className="h-28 bg-gray-200 rounded-2xl animate-pulse"/>)}
           </div>
         ) : filtered.length === 0 ? (
-          <div className="text-center text-gray-500 py-12">No students found</div>
+          <div className="text-center text-gray-700 py-12">No students found</div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             {filtered.map(s => (
@@ -120,17 +120,17 @@ export default function StudentDirectoryPage() {
                   <p className="font-medium text-gray-800 text-sm truncate">{s.name}</p>
                   {s.is_cr && <span className="bg-purple-100 text-purple-700 text-xs px-1.5 py-0.5 rounded font-bold">CR</span>}
                 </div>
-                {s.roll_no && <p className="text-xs text-gray-500 font-mono">{s.roll_no}</p>}
+                {s.roll_no && <p className="text-xs text-gray-700 font-mono">{s.roll_no}</p>}
                 <p className="text-xs text-blue-600 font-medium truncate my-0.5">
                   {s.signup_info?.branch || s.branch || 'N/A'} {s.signup_info?.group ? `- ${s.signup_info.group}` : ''} {s.signup_info?.sub_group ? `(${s.signup_info.sub_group})` : ''}
                 </p>
-                <p className="text-xs text-gray-500 truncate mt-0.5">{s.email}</p>
+                <p className="text-xs text-gray-700 truncate mt-0.5">{s.email}</p>
                 <div className="flex flex-col items-center justify-center gap-0.5 mt-1">
-                  <span className={`text-xs font-medium ${s.is_online ? 'text-green-500' : 'text-gray-500'}`}>
+                  <span className={`text-xs font-medium ${s.is_online ? 'text-green-500' : 'text-gray-700'}`}>
                     {s.is_online ? '● Online' : '○ Offline'}
                   </span>
                   {!s.is_online && s.last_seen_at && (
-                    <span className="text-xs text-gray-500">
+                    <span className="text-xs text-gray-700">
                       Last seen: {new Date(s.last_seen_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
                     </span>
                   )}

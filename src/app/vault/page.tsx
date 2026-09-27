@@ -71,7 +71,7 @@ export default function VaultPage() {
             {[1,2,3].map(i => <div key={i} className="h-40 bg-gray-200 rounded-xl animate-pulse"/>)}
           </div>
         ) : notes.length === 0 ? (
-          <div className="text-center text-gray-500 py-16 bg-white rounded-2xl shadow-sm border border-gray-100">
+          <div className="text-center text-gray-700 py-16 bg-white rounded-2xl shadow-sm border border-gray-100">
             <p className="text-5xl mb-4">🗂️</p>
             <p className="text-lg">Vault is empty</p>
             <p className="text-sm">Be the first to upload notes!</p>
@@ -82,12 +82,12 @@ export default function VaultPage() {
               <div key={n.id} className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col">
                 <div className="flex justify-between items-start mb-2">
                   <span className="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-md font-bold">{n.subject?.code}</span>
-                  <span className="text-xs text-gray-500">{format(new Date(n.created_at), 'dd MMM yyyy')}</span>
+                  <span className="text-xs text-gray-700">{format(new Date(n.created_at), 'dd MMM yyyy')}</span>
                 </div>
                 <h3 className="font-semibold text-gray-800 mb-1">{n.title}</h3>
-                <p className="text-sm text-gray-500 flex-1">{n.description}</p>
+                <p className="text-sm text-gray-700 flex-1">{n.description}</p>
                 <div className="mt-4 flex items-center justify-between border-t pt-3">
-                  <div className="text-xs text-gray-500 flex items-center gap-2">
+                  <div className="text-xs text-gray-700 flex items-center gap-2">
                     <img src={n.uploader?.profile_photo_url || '/default-avatar.png'} className="w-5 h-5 rounded-full" />
                     {n.uploader?.name}
                   </div>
@@ -107,26 +107,26 @@ export default function VaultPage() {
             <h2 className="text-xl font-bold mb-4">Upload to Vault</h2>
             <div className="space-y-4">
               <div>
-                <label className="text-sm font-medium text-gray-700">Subject</label>
+                <label className="text-sm font-medium text-gray-800">Subject</label>
                 <select value={form.subject_id} onChange={e=>setForm({...form, subject_id: e.target.value})} className="w-full border p-2.5 rounded-xl bg-white mt-1">
                   {subjects.map(s => <option key={s.id} value={s.id}>{s.name} ({s.code})</option>)}
                 </select>
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-700">Title</label>
+                <label className="text-sm font-medium text-gray-800">Title</label>
                 <input value={form.title} onChange={e=>setForm({...form, title: e.target.value})} placeholder="e.g. Midsem Notes - Unit 1" className="w-full border p-2.5 rounded-xl mt-1"/>
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-700">Description</label>
+                <label className="text-sm font-medium text-gray-800">Description</label>
                 <textarea value={form.description} onChange={e=>setForm({...form, description: e.target.value})} placeholder="Short description..." className="w-full border p-2.5 rounded-xl mt-1 h-20"/>
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-700">File (PDF/Image)</label>
+                <label className="text-sm font-medium text-gray-800">File (PDF/Image)</label>
                 <input type="file" onChange={e=>setFile(e.target.files?.[0] || null)} className="w-full border p-2.5 rounded-xl mt-1"/>
               </div>
             </div>
             <div className="flex gap-3 mt-6">
-              <button onClick={() => setShowModal(false)} className="flex-1 py-2.5 bg-gray-100 rounded-xl font-medium text-gray-700 hover:bg-gray-200">Cancel</button>
+              <button onClick={() => setShowModal(false)} className="flex-1 py-2.5 bg-gray-100 rounded-xl font-medium text-gray-800 hover:bg-gray-200">Cancel</button>
               <button onClick={handleUpload} disabled={uploading} className="flex-1 py-2.5 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 disabled:opacity-70">
                 {uploading ? 'Uploading...' : 'Upload'}
               </button>

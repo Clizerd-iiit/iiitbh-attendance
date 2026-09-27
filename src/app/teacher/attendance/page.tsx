@@ -316,7 +316,7 @@ function AttendancePage() {
             {/* Subject and Target Filters */}
             <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100">
               <div className="mb-4">
-                <label className="block text-sm font-semibold text-gray-700 mb-2">1. Select Subject</label>
+                <label className="block text-sm font-semibold text-gray-800 mb-2">1. Select Subject</label>
                 <select value={subjectId} onChange={e => setSubjectId(e.target.value)}
                   className="w-full border rounded-xl px-4 py-3 bg-gray-50 focus:outline-none focus:border-blue-500 font-medium text-lg">
                   <option value="" disabled>-- Select a Subject --</option>
@@ -326,7 +326,7 @@ function AttendancePage() {
               
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1">Target Branch (Optional)</label>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">Target Branch (Optional)</label>
                   <select value={branchFilter} onChange={e => setBranchFilter(e.target.value)}
                     className="w-full border rounded-xl px-3 py-2.5 bg-gray-50 focus:outline-none focus:border-blue-500 text-sm">
                     <option value="">All Branches</option>
@@ -334,7 +334,7 @@ function AttendancePage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1">Target Group (Optional)</label>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">Target Group (Optional)</label>
                   <select value={groupFilter} onChange={e => setGroupFilter(e.target.value)}
                     className="w-full border rounded-xl px-3 py-2.5 bg-gray-50 focus:outline-none focus:border-blue-500 text-sm">
                     <option value="">All Groups</option>
@@ -352,7 +352,7 @@ function AttendancePage() {
                 className="text-left bg-white p-6 rounded-2xl border-2 border-transparent hover:border-blue-400 hover:shadow-md transition group disabled:opacity-70">
                 <div className="text-4xl mb-4">📸</div>
                 <h3 className="text-xl font-bold text-gray-900 mb-2">Start Live AI Detection Attendance</h3>
-                <p className="text-sm text-gray-500">Teacher scans faces using this device. Students cannot mark via their portal. Unmarked are marked absent.</p>
+                <p className="text-sm text-gray-700">Teacher scans faces using this device. Students cannot mark via their portal. Unmarked are marked absent.</p>
               </button>
 
               {/* Method 2: OTP */}
@@ -360,15 +360,15 @@ function AttendancePage() {
                 <div>
                   <div className="text-4xl mb-4">🔢</div>
                   <h3 className="text-xl font-bold text-gray-900 mb-2">OTP + Geofence + Face ID</h3>
-                  <p className="text-sm text-gray-500 mb-4">Students mark via portal. Big OTP is displayed here. High volume concurrent scanning.</p>
+                  <p className="text-sm text-gray-700 mb-4">Students mark via portal. Big OTP is displayed here. High volume concurrent scanning.</p>
                 </div>
                 <div>
                   <div className="flex items-center gap-3 mb-4">
-                    <span className="text-xs font-semibold text-gray-500 shrink-0">Radius:</span>
+                    <span className="text-xs font-semibold text-gray-700 shrink-0">Radius:</span>
                     <input type="range" min="3" max="500" value={radius} onChange={e=>setRadius(Number(e.target.value))} className="flex-1 accent-green-500" />
                     <div className="flex items-center gap-1 bg-gray-50 border rounded-lg px-2 py-1">
-                      <input type="number" min="3" max="500" value={radius} onChange={e=>{const v=Number(e.target.value); if(v>=3 && v<=5000) setRadius(v); else if (e.target.value==='') setRadius(0);}} className="w-12 text-sm font-bold text-gray-700 bg-transparent focus:outline-none text-right" />
-                      <span className="text-xs text-gray-500 font-medium">m</span>
+                      <input type="number" min="3" max="500" value={radius} onChange={e=>{const v=Number(e.target.value); if(v>=3 && v<=5000) setRadius(v); else if (e.target.value==='') setRadius(0);}} className="w-12 text-sm font-bold text-gray-800 bg-transparent focus:outline-none text-right" />
+                      <span className="text-xs text-gray-700 font-medium">m</span>
                     </div>
                   </div>
                   <button onClick={() => startClass('otp')} disabled={!subjectId || loading}
@@ -383,15 +383,15 @@ function AttendancePage() {
                 <div>
                   <div className="text-4xl mb-4">📱</div>
                   <h3 className="text-xl font-bold text-gray-900 mb-2">Scanner + Geofence + Face ID</h3>
-                  <p className="text-sm text-gray-500 mb-4">Students scan a big QR code via portal. High volume concurrent scanning.</p>
+                  <p className="text-sm text-gray-700 mb-4">Students scan a big QR code via portal. High volume concurrent scanning.</p>
                 </div>
                 <div>
                   <div className="flex items-center gap-3 mb-4">
-                    <span className="text-xs font-semibold text-gray-500 shrink-0">Radius:</span>
+                    <span className="text-xs font-semibold text-gray-700 shrink-0">Radius:</span>
                     <input type="range" min="3" max="500" value={radius} onChange={e=>setRadius(Number(e.target.value))} className="flex-1 accent-purple-500" />
                     <div className="flex items-center gap-1 bg-gray-50 border rounded-lg px-2 py-1">
-                      <input type="number" min="3" max="500" value={radius} onChange={e=>{const v=Number(e.target.value); if(v>=3 && v<=5000) setRadius(v); else if (e.target.value==='') setRadius(0);}} className="w-12 text-sm font-bold text-gray-700 bg-transparent focus:outline-none text-right" />
-                      <span className="text-xs text-gray-500 font-medium">m</span>
+                      <input type="number" min="3" max="500" value={radius} onChange={e=>{const v=Number(e.target.value); if(v>=3 && v<=5000) setRadius(v); else if (e.target.value==='') setRadius(0);}} className="w-12 text-sm font-bold text-gray-800 bg-transparent focus:outline-none text-right" />
+                      <span className="text-xs text-gray-700 font-medium">m</span>
                     </div>
                   </div>
                   <button onClick={() => startClass('qr')} disabled={!subjectId || loading}
@@ -406,7 +406,7 @@ function AttendancePage() {
                 className="text-left bg-white p-6 rounded-2xl border-2 border-transparent hover:border-orange-400 hover:shadow-md transition group">
                 <div className="text-4xl mb-4">📝</div>
                 <h3 className="text-xl font-bold text-gray-900 mb-2">Bulk Manual Entry</h3>
-                <p className="text-sm text-gray-500">Add past attendance or feed offline records manually. (Mark Absentees / Mark Presentees Mode).</p>
+                <p className="text-sm text-gray-700">Add past attendance or feed offline records manually. (Mark Absentees / Mark Presentees Mode).</p>
               </Link>
             </div>
             {/* Today's Closed Classes */}
@@ -418,15 +418,15 @@ function AttendancePage() {
                 
                 <div className="flex flex-col sm:flex-row gap-3 mb-4 bg-gray-50 p-3 rounded-lg border border-gray-100">
                   <div className="flex-1">
-                     <label className="block text-xs font-semibold text-gray-500 mb-1">Filter by Month</label>
+                     <label className="block text-xs font-semibold text-gray-700 mb-1">Filter by Month</label>
                      <input type="month" value={pastSearchMonth} onChange={e=>setPastSearchMonth(e.target.value)} className="w-full px-3 py-2 border rounded-lg text-sm outline-none focus:border-blue-500" />
                   </div>
                   <div className="flex-1">
-                     <label className="block text-xs font-semibold text-gray-500 mb-1">Filter by Date</label>
+                     <label className="block text-xs font-semibold text-gray-700 mb-1">Filter by Date</label>
                      <input type="date" value={pastSearchDate} onChange={e=>setPastSearchDate(e.target.value)} className="w-full px-3 py-2 border rounded-lg text-sm outline-none focus:border-blue-500" />
                   </div>
                   <div className="flex-1">
-                     <label className="block text-xs font-semibold text-gray-500 mb-1">Filter by Class No.</label>
+                     <label className="block text-xs font-semibold text-gray-700 mb-1">Filter by Class No.</label>
                      <input type="number" placeholder="e.g. 5" value={pastSearchClassNo} onChange={e=>setPastSearchClassNo(e.target.value)} className="w-full px-3 py-2 border rounded-lg text-sm outline-none focus:border-blue-500" />
                   </div>
                   <div className="flex items-end pb-1 shrink-0">
@@ -436,7 +436,7 @@ function AttendancePage() {
 
                 <div className="space-y-3 max-h-96 overflow-y-auto pr-2">
                   {filteredClosedClasses.length === 0 && (
-                    <p className="text-center text-gray-500 text-sm py-4">No classes found for this filter.</p>
+                    <p className="text-center text-gray-700 text-sm py-4">No classes found for this filter.</p>
                   )}
                   {filteredClosedClasses.map(cls => (
                     <div key={cls.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100 gap-3">
@@ -445,7 +445,7 @@ function AttendancePage() {
                           {cls.subjects?.name} ({cls.subjects?.code})
                           <span className="text-xs font-bold bg-blue-100 text-blue-800 px-2.5 py-1 rounded-full">Class No. {cls.classNo}</span>
                         </p>
-                        <p className="text-sm text-gray-500 mt-1 font-medium">
+                        <p className="text-sm text-gray-700 mt-1 font-medium">
                           📅 {cls.date} • ⏰ {cls.start_time} • <span className="text-red-500">Closed</span>
                         </p>
                       </div>
@@ -472,7 +472,7 @@ function AttendancePage() {
             <div className="bg-white p-6 rounded-2xl shadow-sm border flex justify-between items-center">
               <div>
                 <h2 className="text-xl font-bold text-gray-800">Class is Live! 🟢</h2>
-                <p className="text-sm text-gray-500 capitalize">{method === 'kiosk' ? 'Live Kiosk Mode' : method === 'otp' ? 'OTP Mode' : 'QR Scanner Mode'}</p>
+                <p className="text-sm text-gray-700 capitalize">{method === 'kiosk' ? 'Live Kiosk Mode' : method === 'otp' ? 'OTP Mode' : 'QR Scanner Mode'}</p>
               </div>
               <button onClick={closeClass} disabled={loading}
                 className="bg-red-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-red-700 transition shadow-sm">
@@ -483,7 +483,7 @@ function AttendancePage() {
             {/* QR Display */}
             {method === 'qr' && (
               <div className="bg-white p-8 rounded-2xl border shadow-xl text-center mb-6 max-w-2xl mx-auto relative">
-                <button onClick={() => setFullScreenMode('qr')} className="absolute top-4 right-4 bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-sm font-medium transition flex items-center gap-2">
+                <button onClick={() => setFullScreenMode('qr')} className="absolute top-4 right-4 bg-gray-100 hover:bg-gray-200 text-gray-800 px-3 py-1.5 rounded-lg text-sm font-medium transition flex items-center gap-2">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path></svg> Full Screen
                 </button>
                 <h2 className="font-bold text-2xl md:text-3xl mb-6 text-gray-800">Scan to Mark Attendance</h2>
@@ -497,7 +497,7 @@ function AttendancePage() {
                 <div className="flex flex-col items-center gap-4 bg-gray-50 p-4 rounded-xl border border-gray-100">
                   <div className="flex items-center gap-3">
                     <div className={`w-3 h-3 rounded-full ${qrExpiry > 10 ? 'bg-green-500' : 'bg-red-500 animate-pulse'}`}/>
-                    <span className={`font-mono text-xl font-bold ${qrExpiry <= 10 ? 'text-red-500' : 'text-gray-700'}`}>
+                    <span className={`font-mono text-xl font-bold ${qrExpiry <= 10 ? 'text-red-500' : 'text-gray-800'}`}>
                       Refreshes in {qrExpiry}s
                     </span>
                   </div>
@@ -505,10 +505,10 @@ function AttendancePage() {
                   <div className="w-full flex flex-col md:flex-row items-center gap-4 justify-between border-t border-gray-200 pt-4 mt-2">
                     <div className="flex-1 w-full text-left">
                       <div className="flex justify-between items-center mb-1">
-                        <label className="text-xs font-semibold text-gray-500">Refresh Interval</label>
+                        <label className="text-xs font-semibold text-gray-700">Refresh Interval</label>
                         <div className="flex items-center gap-1 bg-white border rounded px-2 py-0.5">
-                          <input type="number" min="2" max="180" value={qrRefreshInterval} onChange={(e) => { const v=Number(e.target.value); if(v>=2 && v<=180) { setQrRefreshInterval(v); setQrExpiry(v); } else if (e.target.value==='') setQrRefreshInterval(0); }} className="w-10 text-xs font-bold text-gray-700 text-right focus:outline-none" />
-                          <span className="text-xs text-gray-500">sec</span>
+                          <input type="number" min="2" max="180" value={qrRefreshInterval} onChange={(e) => { const v=Number(e.target.value); if(v>=2 && v<=180) { setQrRefreshInterval(v); setQrExpiry(v); } else if (e.target.value==='') setQrRefreshInterval(0); }} className="w-10 text-xs font-bold text-gray-800 text-right focus:outline-none" />
+                          <span className="text-xs text-gray-700">sec</span>
                         </div>
                       </div>
                       <input type="range" min="2" max="180" step="1" value={qrRefreshInterval} onChange={(e) => { setQrRefreshInterval(Number(e.target.value)); setQrExpiry(Number(e.target.value)); }} className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer" />
@@ -524,7 +524,7 @@ function AttendancePage() {
             {/* OTP Display */}
             {method === 'otp' && (
               <div className="bg-white p-8 rounded-2xl border shadow-xl text-center mb-6 max-w-2xl mx-auto relative">
-                <button onClick={() => setFullScreenMode('otp')} className="absolute top-4 right-4 bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg text-sm font-medium transition flex items-center gap-2">
+                <button onClick={() => setFullScreenMode('otp')} className="absolute top-4 right-4 bg-gray-100 hover:bg-gray-200 text-gray-800 px-3 py-1.5 rounded-lg text-sm font-medium transition flex items-center gap-2">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path></svg> Full Screen
                 </button>
                 <h2 className="font-bold text-2xl md:text-3xl mb-8 text-gray-800">Enter OTP to Mark Attendance</h2>
@@ -536,7 +536,7 @@ function AttendancePage() {
                 <div className="flex flex-col items-center gap-4 bg-gray-50 p-4 rounded-xl border border-gray-100">
                   <div className="flex items-center gap-3">
                     <div className={`w-3 h-3 rounded-full ${otpExpiry > 10 ? 'bg-green-500' : 'bg-red-500 animate-pulse'}`}/>
-                    <span className={`font-mono text-xl font-bold ${otpExpiry <= 10 ? 'text-red-500' : 'text-gray-700'}`}>
+                    <span className={`font-mono text-xl font-bold ${otpExpiry <= 10 ? 'text-red-500' : 'text-gray-800'}`}>
                       Refreshes in {otpExpiry}s
                     </span>
                   </div>
@@ -544,10 +544,10 @@ function AttendancePage() {
                   <div className="w-full flex flex-col md:flex-row items-center gap-4 justify-between border-t border-gray-200 pt-4 mt-2">
                     <div className="flex-1 w-full text-left">
                       <div className="flex justify-between items-center mb-1">
-                        <label className="text-xs font-semibold text-gray-500">Refresh Interval</label>
+                        <label className="text-xs font-semibold text-gray-700">Refresh Interval</label>
                         <div className="flex items-center gap-1 bg-white border rounded px-2 py-0.5">
-                          <input type="number" min="2" max="180" value={otpRefreshInterval} onChange={(e) => { const v=Number(e.target.value); if(v>=2 && v<=180) { setOtpRefreshInterval(v); setOtpExpiry(v); } else if (e.target.value==='') setOtpRefreshInterval(0); }} className="w-10 text-xs font-bold text-gray-700 text-right focus:outline-none" />
-                          <span className="text-xs text-gray-500">sec</span>
+                          <input type="number" min="2" max="180" value={otpRefreshInterval} onChange={(e) => { const v=Number(e.target.value); if(v>=2 && v<=180) { setOtpRefreshInterval(v); setOtpExpiry(v); } else if (e.target.value==='') setOtpRefreshInterval(0); }} className="w-10 text-xs font-bold text-gray-800 text-right focus:outline-none" />
+                          <span className="text-xs text-gray-700">sec</span>
                         </div>
                       </div>
                       <input type="range" min="2" max="180" step="1" value={otpRefreshInterval} onChange={(e) => { setOtpRefreshInterval(Number(e.target.value)); setOtpExpiry(Number(e.target.value)); }} className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer" />
@@ -584,13 +584,13 @@ function AttendancePage() {
                   <div key={student.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100 transition hover:shadow-sm">
                     <div>
                       <p className="font-bold text-gray-800">{student.name}</p>
-                      <p className="text-xs text-gray-500 font-mono mt-0.5">{student.roll_no}</p>
+                      <p className="text-xs text-gray-700 font-mono mt-0.5">{student.roll_no}</p>
                     </div>
                     <div className="flex gap-1.5">
                       {(['P','A','Late'] as AttendanceStatus[]).map(s => (
                         <button key={s} onClick={() => markManual(student.id, s)}
                           className={`px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-sm ${
-                            marked[student.id] === s ? statusColors[s] : 'bg-white text-gray-600 border hover:bg-gray-100'
+                            marked[student.id] === s ? statusColors[s] : 'bg-white text-gray-700 border hover:bg-gray-100'
                           }`}>
                           {s}
                         </button>
@@ -628,7 +628,7 @@ function AttendancePage() {
             <button onClick={() => setFullScreenMode(null)} className="bg-gray-100 hover:bg-gray-200 text-gray-800 px-5 py-2.5 rounded-xl font-bold text-lg shadow-sm transition flex items-center gap-2">
               ← Back
             </button>
-            <div className="text-gray-500 font-medium hidden sm:block">Press ESC to exit</div>
+            <div className="text-gray-700 font-medium hidden sm:block">Press ESC to exit</div>
           </div>
           
           <div className="flex-1 flex items-center justify-center w-full min-h-0 my-4 md:my-8">
@@ -649,7 +649,7 @@ function AttendancePage() {
             </h1>
             <div className="flex items-center justify-center gap-4">
               <div className={`w-6 h-6 md:w-8 md:h-8 rounded-full ${fullScreenMode === 'qr' ? (qrExpiry > 10 ? 'bg-green-500' : 'bg-red-500 animate-pulse') : (otpExpiry > 10 ? 'bg-green-500' : 'bg-red-500 animate-pulse')}`}/>
-              <span className={`font-mono text-3xl md:text-5xl font-bold ${fullScreenMode === 'qr' ? (qrExpiry <= 10 ? 'text-red-500' : 'text-gray-700') : (otpExpiry <= 10 ? 'text-red-500' : 'text-gray-700')}`}>
+              <span className={`font-mono text-3xl md:text-5xl font-bold ${fullScreenMode === 'qr' ? (qrExpiry <= 10 ? 'text-red-500' : 'text-gray-800') : (otpExpiry <= 10 ? 'text-red-500' : 'text-gray-800')}`}>
                 Refreshes in {fullScreenMode === 'qr' ? qrExpiry : otpExpiry}s
               </span>
             </div>

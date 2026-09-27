@@ -84,31 +84,31 @@ export default function AdminSubjectsPage() {
               <div className="flex justify-between items-start mb-2">
                 <div>
                   <h3 className="font-bold text-gray-800">{s.name}</h3>
-                  <p className="text-xs text-gray-500 font-mono">{s.code}</p>
+                  <p className="text-xs text-gray-700 font-mono">{s.code}</p>
                 </div>
                 <button onClick={() => toggleActive(s)}
-                  className={`text-xs px-2 py-1 rounded-full border ${s.is_active ? 'bg-green-50 text-green-700 border-green-200' : 'bg-gray-50 text-gray-500 border-gray-200'}`}>
+                  className={`text-xs px-2 py-1 rounded-full border ${s.is_active ? 'bg-green-50 text-green-700 border-green-200' : 'bg-gray-50 text-gray-700 border-gray-200'}`}>
                   {s.is_active ? 'Active' : 'Inactive'}
                 </button>
               </div>
 
               <div className="space-y-1.5 mt-4">
-                <p className="text-sm text-gray-600">
-                  <span className="font-semibold text-gray-700">Group:</span> {s.section}
+                <p className="text-sm text-gray-700">
+                  <span className="font-semibold text-gray-800">Group:</span> {s.section}
                 </p>
-                <p className="text-sm text-gray-600">
-                  <span className="font-semibold text-gray-700">Branch:</span> {s.branch || 'N/A'}
+                <p className="text-sm text-gray-700">
+                  <span className="font-semibold text-gray-800">Branch:</span> {s.branch || 'N/A'}
                 </p>
-                <p className="text-sm text-gray-600">
-                  <span className="font-semibold text-gray-700">Sem:</span> {s.semester}
+                <p className="text-sm text-gray-700">
+                  <span className="font-semibold text-gray-800">Sem:</span> {s.semester}
                 </p>
-                <div className="text-sm text-gray-600 mt-2">
-                  <span className="font-semibold text-gray-700 block mb-1">Teachers:</span>
+                <div className="text-sm text-gray-700 mt-2">
+                  <span className="font-semibold text-gray-800 block mb-1">Teachers:</span>
                   {(s.teacher_ids || []).map(tid => {
                     const t = teachers.find(x => x.id === tid);
                     return t ? <div key={tid} className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-xs inline-block mr-1 mb-1">{t.name}</div> : null;
                   })}
-                  {!(s.teacher_ids && s.teacher_ids.length > 0) && <span className="text-xs italic text-gray-500">None assigned</span>}
+                  {!(s.teacher_ids && s.teacher_ids.length > 0) && <span className="text-xs italic text-gray-700">None assigned</span>}
                 </div>
               </div>
               
@@ -118,7 +118,7 @@ export default function AdminSubjectsPage() {
               </div>
             </div>
           ))}
-          {subjects.length === 0 && <p className="text-gray-500 col-span-full">No subjects found.</p>}
+          {subjects.length === 0 && <p className="text-gray-700 col-span-full">No subjects found.</p>}
         </div>
 
         {/* Modal */}
@@ -131,12 +131,12 @@ export default function AdminSubjectsPage() {
               <div className="p-5 overflow-y-auto space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-semibold text-gray-600 mb-1">Name</label>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">Name</label>
                     <input className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
                       value={form.name} onChange={e=>setForm({...form, name:e.target.value})} placeholder="e.g. Mathematics" />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-gray-600 mb-1">Code</label>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">Code</label>
                     <input className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
                       value={form.code} onChange={e=>setForm({...form, code:e.target.value.toUpperCase()})} placeholder="e.g. MA101" />
                   </div>
@@ -144,7 +144,7 @@ export default function AdminSubjectsPage() {
 
                 <div className="grid grid-cols-3 gap-4">
                   <div>
-                    <label className="block text-xs font-semibold text-gray-600 mb-1">Branch</label>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">Branch</label>
                     <select className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
                       value={form.branch} onChange={e=>setForm({...form, branch:e.target.value})}>
                       <option value="CSE">CSE</option>
@@ -154,7 +154,7 @@ export default function AdminSubjectsPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-gray-600 mb-1">Group (Section)</label>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">Group (Section)</label>
                     <select className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
                       value={form.section} onChange={e=>setForm({...form, section:e.target.value})}>
                       <option value="G1">G1</option>
@@ -166,27 +166,27 @@ export default function AdminSubjectsPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-gray-600 mb-1">Semester</label>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">Semester</label>
                     <input type="number" min="1" max="8" className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
                       value={form.semester} onChange={e=>setForm({...form, semester:parseInt(e.target.value)})} />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-2">Assign Teachers (Multiple)</label>
+                  <label className="block text-xs font-semibold text-gray-700 mb-2">Assign Teachers (Multiple)</label>
                   <div className="border rounded-lg p-2 max-h-40 overflow-y-auto space-y-1 bg-gray-50">
                     {teachers.map(t => (
                       <label key={t.id} className="flex items-center gap-2 p-1.5 hover:bg-white rounded cursor-pointer border border-transparent hover:border-gray-200 transition">
                         <input type="checkbox" className="w-4 h-4 text-blue-600"
                           checked={form.teacher_ids.includes(t.id)} onChange={() => toggleTeacher(t.id)} />
-                        <span className="text-sm font-medium text-gray-700">{t.name}</span>
+                        <span className="text-sm font-medium text-gray-800">{t.name}</span>
                       </label>
                     ))}
                   </div>
                 </div>
               </div>
               <div className="p-4 border-t bg-gray-50 flex justify-end gap-3">
-                <button onClick={() => setShowModal(false)} className="px-4 py-2 text-gray-600 hover:bg-gray-200 rounded-lg">Cancel</button>
+                <button onClick={() => setShowModal(false)} className="px-4 py-2 text-gray-700 hover:bg-gray-200 rounded-lg">Cancel</button>
                 <button onClick={saveSubject} disabled={!form.name || !form.code}
                   className="bg-blue-600 text-white px-5 py-2 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-70">
                   {isEditing ? 'Save Changes' : 'Add Subject'}

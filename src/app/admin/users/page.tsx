@@ -88,7 +88,7 @@ export default function AdminUsers() {
           <div className="flex bg-gray-100 p-1 rounded-xl">
             {['all', 'student', 'teacher', 'superadmin'].map(r => (
               <button key={r} onClick={() => setFilter(r as any)}
-                className={`px-4 py-1.5 rounded-lg text-sm font-medium capitalize transition ${filter === r ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}>
+                className={`px-4 py-1.5 rounded-lg text-sm font-medium capitalize transition ${filter === r ? 'bg-white shadow-sm text-blue-600' : 'text-gray-700 hover:text-gray-800'}`}>
                 {r}
               </button>
             ))}
@@ -119,11 +119,11 @@ export default function AdminUsers() {
           </div>
         </div>
 
-        {loading ? <p className="text-gray-500">Loading users...</p> : (
+        {loading ? <p className="text-gray-700">Loading users...</p> : (
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-gray-50 border-b text-sm text-gray-500">
+                <tr className="bg-gray-50 border-b text-sm text-gray-700">
                   <th className="p-4 font-medium">User</th>
                   <th className="p-4 font-medium">Role</th>
                   <th className="p-4 font-medium">Roll No / Details</th>
@@ -142,19 +142,19 @@ export default function AdminUsers() {
                           <p className="font-semibold text-gray-800 text-sm">{u.name}</p>
                           {(u as any).is_cr && <span className="bg-purple-100 text-purple-700 text-xs px-1.5 py-0.5 rounded font-bold border border-purple-200">CR</span>}
                         </div>
-                        <p className="text-xs text-gray-500">{u.email}</p>
+                        <p className="text-xs text-gray-700">{u.email}</p>
                       </div>
                     </td>
                     <td className="p-4">
                       <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${
                         u.role==='superadmin' ? 'bg-purple-100 text-purple-700' :
-                        u.role==='teacher' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'
+                        u.role==='teacher' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-800'
                       }`}>
                         {u.role}
                       </span>
                     </td>
                     <td className="p-4">
-                      <p className="text-sm font-mono text-gray-600">{u.roll_no || '-'}</p>
+                      <p className="text-sm font-mono text-gray-700">{u.roll_no || '-'}</p>
                       <p className="text-xs font-medium text-blue-600 mt-0.5">
                         {u.role === 'student' ? (
                           <>
@@ -204,7 +204,7 @@ export default function AdminUsers() {
                   </tr>
                 ))}
                 {filteredUsers.length === 0 && (
-                  <tr><td colSpan={5} className="p-8 text-center text-gray-500">No users found.</td></tr>
+                  <tr><td colSpan={5} className="p-8 text-center text-gray-700">No users found.</td></tr>
                 )}
               </tbody>
             </table>
@@ -231,11 +231,11 @@ export default function AdminUsers() {
                 
                 <div className="flex gap-4">
                   <div className="w-24 shrink-0">
-                    <label className="block text-xs font-semibold text-gray-600 mb-1">Avatar URL</label>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">Avatar URL</label>
                     <div className="w-24 h-24 rounded-full bg-gray-100 overflow-hidden border">
                       {form.profile_photo_url ? (
                         <img src={form.profile_photo_url} alt="Avatar" className="w-full h-full object-cover" />
-                      ) : <div className="w-full h-full flex items-center justify-center text-gray-500">No Img</div>}
+                      ) : <div className="w-full h-full flex items-center justify-center text-gray-700">No Img</div>}
                     </div>
                     {form.profile_photo_url && (
                       <button onClick={() => setForm({...form, profile_photo_url: ''})} className="mt-2 text-xs text-red-500 font-medium hover:underline block text-center w-full">
@@ -245,12 +245,12 @@ export default function AdminUsers() {
                   </div>
                   <div className="flex-1 space-y-4">
                     <div>
-                      <label className="block text-xs font-semibold text-gray-600 mb-1">Name</label>
+                      <label className="block text-xs font-semibold text-gray-700 mb-1">Name</label>
                       <input className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
                         value={form.name} onChange={e=>setForm({...form, name:e.target.value})} />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-gray-600 mb-1">Email</label>
+                      <label className="block text-xs font-semibold text-gray-700 mb-1">Email</label>
                       <input type="email" className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
                         value={form.email} onChange={e=>setForm({...form, email:e.target.value})}  />
                     </div>
@@ -259,7 +259,7 @@ export default function AdminUsers() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-semibold text-gray-600 mb-1">Role</label>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">Role</label>
                     <select className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
                       value={form.role} onChange={e=>setForm({...form, role:e.target.value})} disabled={isEditing && form.role==='superadmin'}>
                       <option value="student">Student</option>
@@ -268,27 +268,27 @@ export default function AdminUsers() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-gray-600 mb-1">Roll No (Optional)</label>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">Roll No (Optional)</label>
                     <input className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
                       value={form.roll_no} onChange={e=>setForm({...form, roll_no:e.target.value})} />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1">Photo URL (Direct Link)</label>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">Photo URL (Direct Link)</label>
                   <input className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
                     value={form.profile_photo_url} onChange={e=>setForm({...form, profile_photo_url:e.target.value})} placeholder="https://..." />
                 </div>
                 
                 <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1">Bio</label>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">Bio</label>
                   <textarea className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 h-20"
                     value={form.bio} onChange={e=>setForm({...form, bio:e.target.value})} />
                 </div>
 
               </div>
               <div className="p-4 border-t bg-gray-50 flex justify-end gap-3 rounded-b-2xl">
-                <button onClick={() => setShowModal(false)} className="px-4 py-2 text-gray-600 hover:bg-gray-200 rounded-lg">Cancel</button>
+                <button onClick={() => setShowModal(false)} className="px-4 py-2 text-gray-700 hover:bg-gray-200 rounded-lg">Cancel</button>
                 <button onClick={saveUser} disabled={!form.name || !form.email}
                   className="bg-blue-600 text-white px-5 py-2 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-70">
                   {isEditing ? 'Save Changes' : 'Add User'}
@@ -303,9 +303,9 @@ export default function AdminUsers() {
           <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
             <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl">
               <h2 className="text-xl font-bold text-gray-800 mb-2">Delete User?</h2>
-              <p className="text-gray-600 text-sm mb-6">This action will cascade delete everything associated with this user. It cannot be undone.</p>
+              <p className="text-gray-700 text-sm mb-6">This action will cascade delete everything associated with this user. It cannot be undone.</p>
               <div className="flex gap-3 justify-end">
-                <button onClick={() => setDeleting(null)} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-xl font-medium">Cancel</button>
+                <button onClick={() => setDeleting(null)} className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-xl font-medium">Cancel</button>
                 <button onClick={deleteUser} className="px-4 py-2 bg-red-600 text-white hover:bg-red-700 rounded-xl font-medium">Delete Permanently</button>
               </div>
             </div>

@@ -92,12 +92,12 @@ export function EditStudentModal({ student, onClose, onSaved }: { student: any, 
       <div className="bg-white rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl">
         <div className="flex justify-between items-center p-5 border-b bg-gray-50">
           <h2 className="text-xl font-bold text-gray-800">Edit Student</h2>
-          <button onClick={() => { stopCamera(); onClose(); }} className="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
+          <button onClick={() => { stopCamera(); onClose(); }} className="text-gray-700 hover:text-gray-800 text-2xl">&times;</button>
         </div>
         
         <div className="flex border-b bg-gray-50">
-          <button onClick={() => { setMode('details'); stopCamera(); }} className={`flex-1 py-3 font-medium text-sm ${mode==='details'?'border-b-2 border-blue-600 text-blue-600':'text-gray-500 hover:bg-gray-100'}`}>Basic Details</button>
-          <button onClick={() => { setMode('face'); startCamera(); }} className={`flex-1 py-3 font-medium text-sm ${mode==='face'?'border-b-2 border-blue-600 text-blue-600':'text-gray-500 hover:bg-gray-100'}`}>Update Face ID</button>
+          <button onClick={() => { setMode('details'); stopCamera(); }} className={`flex-1 py-3 font-medium text-sm ${mode==='details'?'border-b-2 border-blue-600 text-blue-600':'text-gray-700 hover:bg-gray-100'}`}>Basic Details</button>
+          <button onClick={() => { setMode('face'); startCamera(); }} className={`flex-1 py-3 font-medium text-sm ${mode==='face'?'border-b-2 border-blue-600 text-blue-600':'text-gray-700 hover:bg-gray-100'}`}>Update Face ID</button>
         </div>
 
         <div className="p-6">
@@ -141,7 +141,7 @@ export function EditStudentModal({ student, onClose, onSaved }: { student: any, 
                     await fetch(`/api/teacher/students/face?student_id=${student.id}`, { method: 'DELETE' });
                     setSaving(false);
                     alert('Limit reset successfully! Student can now update their Face ID.');
-                  }} disabled={saving} className="w-full py-3 bg-gray-100 text-gray-700 hover:bg-gray-200 rounded-xl font-medium">Reset Face ID Limit</button>
+                  }} disabled={saving} className="w-full py-3 bg-gray-100 text-gray-800 hover:bg-gray-200 rounded-xl font-medium">Reset Face ID Limit</button>
                 </div>
               ) : (
                 <div className="flex gap-2">
@@ -149,7 +149,7 @@ export function EditStudentModal({ student, onClose, onSaved }: { student: any, 
                   <button onClick={saveFace} disabled={saving} className="flex-1 py-3 bg-green-600 text-white rounded-xl font-medium">{saving?'Saving...':'Confirm & Save'}</button>
                 </div>
               )}
-              <p className="text-xs text-gray-500 mt-4">This will immediately overwrite the student's Face ID and bypass the 30-day limit.</p>
+              <p className="text-xs text-gray-700 mt-4">This will immediately overwrite the student's Face ID and bypass the 30-day limit.</p>
             </div>
           )}
         </div>

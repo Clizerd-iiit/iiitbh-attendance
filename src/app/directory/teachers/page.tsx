@@ -74,8 +74,8 @@ export default function TeachersPage() {
           <h1 className="text-2xl font-bold text-gray-800">👨‍🏫 Teachers</h1>
           {isStudent && (
             <div className="flex bg-gray-200 p-1 rounded-xl">
-              <button onClick={() => setFilter('my')} className={`px-4 py-1.5 rounded-lg text-sm font-medium transition ${filter === 'my' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>My Teachers</button>
-              <button onClick={() => setFilter('all')} className={`px-4 py-1.5 rounded-lg text-sm font-medium transition ${filter === 'all' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>All Teachers</button>
+              <button onClick={() => setFilter('my')} className={`px-4 py-1.5 rounded-lg text-sm font-medium transition ${filter === 'my' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-700 hover:text-gray-800'}`}>My Teachers</button>
+              <button onClick={() => setFilter('all')} className={`px-4 py-1.5 rounded-lg text-sm font-medium transition ${filter === 'all' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-700 hover:text-gray-800'}`}>All Teachers</button>
             </div>
           )}
         </div>
@@ -103,7 +103,7 @@ export default function TeachersPage() {
             <option value="offline">⚪ Offline</option>
           </select>
           
-          <div className="ml-auto text-sm font-semibold text-gray-600 bg-blue-50 text-blue-700 px-3 py-1 rounded-lg">
+          <div className="ml-auto text-sm font-semibold text-gray-700 bg-blue-50 text-blue-700 px-3 py-1 rounded-lg">
             {filtered.length} Teacher{filtered.length !== 1 ? 's' : ''} Found
           </div>
         </div>
@@ -113,7 +113,7 @@ export default function TeachersPage() {
             {[1,2,3,4].map(i => <div key={i} className="h-28 bg-gray-200 rounded-2xl animate-pulse"/>)}
           </div>
         ) : filtered.length === 0 ? (
-          <div className="text-center text-gray-500 py-12 bg-white rounded-2xl border border-gray-100 shadow-sm">
+          <div className="text-center text-gray-700 py-12 bg-white rounded-2xl border border-gray-100 shadow-sm">
             {search ? 'No faculties match your search.' : (isStudent && filter === 'my' ? 'No faculties assigned to you yet.' : 'No teachers found')}
           </div>
         ) : (
@@ -138,21 +138,21 @@ export default function TeachersPage() {
                       {t.name}
                       {t.teaches_me && <span className="bg-purple-100 text-purple-700 text-xs px-2 py-0.5 rounded-full border border-purple-200">Teaches You</span>}
                     </h3>
-                    <span className={`text-xs uppercase font-bold px-1.5 py-0.5 rounded ${t.is_online ? 'bg-green-50 text-green-600' : 'bg-gray-50 text-gray-500'}`}>
+                    <span className={`text-xs uppercase font-bold px-1.5 py-0.5 rounded ${t.is_online ? 'bg-green-50 text-green-600' : 'bg-gray-50 text-gray-700'}`}>
                       {t.is_online ? 'Online' : 'Offline'}
                     </span>
                   </div>
-                  <p className="text-sm text-gray-500 truncate mt-0.5">{t.email}</p>
+                  <p className="text-sm text-gray-700 truncate mt-0.5">{t.email}</p>
                   
-                  {t.bio && <p className="text-xs text-gray-500 mt-2 line-clamp-2">{t.bio}</p>}
+                  {t.bio && <p className="text-xs text-gray-700 mt-2 line-clamp-2">{t.bio}</p>}
                   
                   {/* Subjects and Student Count */}
                   {t.subjects && t.subjects.length > 0 && (
                     <div className="mt-3 space-y-1">
-                      <p className="text-xs uppercase tracking-wider font-semibold text-gray-500">Allotted Subjects</p>
+                      <p className="text-xs uppercase tracking-wider font-semibold text-gray-700">Allotted Subjects</p>
                       {t.subjects.map(s => (
-                        <div key={s.code} className="text-xs text-gray-600 flex justify-between bg-gray-50 px-2.5 py-1.5 rounded-lg border border-gray-100">
-                          <span className="truncate mr-2 font-medium">{s.name} <span className="text-gray-500 font-normal">({s.code})</span></span>
+                        <div key={s.code} className="text-xs text-gray-700 flex justify-between bg-gray-50 px-2.5 py-1.5 rounded-lg border border-gray-100">
+                          <span className="truncate mr-2 font-medium">{s.name} <span className="text-gray-700 font-normal">({s.code})</span></span>
                           <span className="font-medium text-blue-600 shrink-0 bg-blue-50 px-1.5 rounded">{s.student_count} <span className="text-xs font-normal">sts</span></span>
                         </div>
                       ))}

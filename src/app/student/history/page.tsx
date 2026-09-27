@@ -50,7 +50,7 @@ export default function HistoryPage() {
           <div className="flex items-center gap-3">
             <button onClick={() => setMonth(m => new Date(m.getFullYear(), m.getMonth()-1,1))}
               className="px-3 py-1 bg-white border rounded-lg hover:bg-gray-100 transition">←</button>
-            <span className="font-semibold text-gray-700 w-36 text-center">
+            <span className="font-semibold text-gray-800 w-36 text-center">
               {format(month, 'MMMM yyyy')}
             </span>
             <button onClick={() => setMonth(m => new Date(m.getFullYear(), m.getMonth()+1,1))}
@@ -63,7 +63,7 @@ export default function HistoryPage() {
           {[['P','Present','bg-green-500'],['A','Absent','bg-red-500'],['Late','Late','bg-yellow-400']].map(([s,l,c]) => (
             <div key={s} className="flex items-center gap-1">
               <div className={`w-3 h-3 rounded-full ${c}`}/>
-              <span className="text-gray-600">{l}</span>
+              <span className="text-gray-700">{l}</span>
             </div>
           ))}
         </div>
@@ -72,7 +72,7 @@ export default function HistoryPage() {
         <div className="bg-white rounded-2xl shadow-sm p-4">
           <div className="grid grid-cols-7 mb-2">
             {['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d => (
-              <div key={d} className="text-center text-xs font-medium text-gray-500 py-2">{d}</div>
+              <div key={d} className="text-center text-xs font-medium text-gray-700 py-2">{d}</div>
             ))}
           </div>
 
@@ -87,7 +87,7 @@ export default function HistoryPage() {
                   className={`min-h-[72px] rounded-xl p-1.5 border transition ${
                     today ? 'border-blue-400 bg-blue-50' : 'border-gray-100 hover:bg-gray-50'
                   }`}>
-                  <p className={`text-xs font-semibold mb-1 ${today ? 'text-blue-600' : 'text-gray-700'}`}>
+                  <p className={`text-xs font-semibold mb-1 ${today ? 'text-blue-600' : 'text-gray-800'}`}>
                     {format(day, 'd')}
                   </p>
                   <div className="space-y-0.5">
@@ -97,7 +97,7 @@ export default function HistoryPage() {
                     {recs.map((r, i) => (
                       <div key={i} className={`flex items-center gap-1 rounded px-1 py-0.5 ${statusColor[r.status] || 'bg-gray-300'} bg-opacity-20`}>
                         <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${statusColor[r.status] || 'bg-gray-400'}`}/>
-                        <span className="text-xs text-gray-700 truncate">{r.subject_code}</span>
+                        <span className="text-xs text-gray-800 truncate">{r.subject_code}</span>
                       </div>
                     ))}
                   </div>
@@ -117,7 +117,7 @@ export default function HistoryPage() {
                 <div key={s} className="bg-white rounded-xl p-4 text-center shadow-sm">
                   <div className={`w-8 h-8 rounded-full ${statusColor[s]} mx-auto mb-2 flex items-center justify-center text-white font-bold text-sm`}>{s}</div>
                   <p className="text-2xl font-bold text-gray-800">{count}</p>
-                  <p className="text-xs text-gray-500">{labels[s]}</p>
+                  <p className="text-xs text-gray-700">{labels[s]}</p>
                 </div>
               );
             })}

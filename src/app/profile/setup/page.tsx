@@ -106,14 +106,14 @@ export default function ProfileSetupPage() {
             <span className="text-4xl">⏳</span>
           </div>
           <h1 className="text-2xl font-bold text-gray-800 mb-2">Profile Submitted!</h1>
-          <p className="text-gray-600 mb-4">
+          <p className="text-gray-700 mb-4">
             Your account is pending verification by the administrator. You will be notified once approved.
           </p>
           <div className="bg-blue-50 rounded-xl p-4 text-sm text-blue-700 mb-6">
             Verification usually takes within 24 hours on working days.
           </div>
           <button onClick={() => signOut({ callbackUrl: '/auth/login' })}
-            className="w-full bg-gray-100 text-gray-700 py-2.5 rounded-xl hover:bg-gray-200 transition font-medium">
+            className="w-full bg-gray-100 text-gray-800 py-2.5 rounded-xl hover:bg-gray-200 transition font-medium">
             Sign Out
           </button>
         </div>
@@ -131,7 +131,7 @@ export default function ProfileSetupPage() {
             <Image src="/iiitbh-logo.jpg" alt="IIIT Bhagalpur" width={64} height={64} className="object-cover"/>
           </div>
           <h1 className="text-2xl font-bold text-gray-800">Complete Your Profile</h1>
-          <p className="text-gray-500 text-sm mt-1">Fill in your details to get started</p>
+          <p className="text-gray-700 text-sm mt-1">Fill in your details to get started</p>
         </div>
 
         <div className="space-y-5">
@@ -146,7 +146,7 @@ export default function ProfileSetupPage() {
                 <span className="text-blue-400 text-3xl">📷</span>
               )}
             </div>
-            <p className="text-xs text-gray-500">Click to upload photo (optional, max 2MB)</p>
+            <p className="text-xs text-gray-700">Click to upload photo (optional, max 2MB)</p>
             {photoPreview && (
               <button type="button" onClick={() => { setPhotoFile(null); setPhotoPreview(''); }} className="text-xs text-red-500 mt-2 font-medium hover:underline">
                 Remove Photo
@@ -157,7 +157,7 @@ export default function ProfileSetupPage() {
 
           {/* Name */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Full Name <span className="text-red-500">*</span></label>
+            <label className="block text-sm font-medium text-gray-800 mb-1">Full Name <span className="text-red-500">*</span></label>
             <input value={name} onChange={e => setName(e.target.value)}
               placeholder="e.g. ABCD EFGH"
               className="w-full border rounded-xl px-4 py-2.5 focus:outline-none focus:border-blue-500 text-gray-800"/>
@@ -165,12 +165,12 @@ export default function ProfileSetupPage() {
 
           {/* Profession */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">I am a <span className="text-red-500">*</span></label>
+            <label className="block text-sm font-medium text-gray-800 mb-2">I am a <span className="text-red-500">*</span></label>
             <div className="grid grid-cols-2 gap-3">
               {(['student', 'teacher'] as Profession[]).map(p => (
                 <button key={p} onClick={() => setProfession(p)}
                   className={`py-3 rounded-xl font-medium capitalize border-2 transition ${
-                    profession === p ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                    profession === p ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-200 text-gray-700 hover:border-gray-300'
                   }`}>
                   {p === 'student' ? '🎓 Student' : '👨‍🏫 Teacher'}
                 </button>
@@ -182,15 +182,15 @@ export default function ProfileSetupPage() {
           {profession === 'student' && (
             <div className="space-y-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Roll Number <span className="text-red-500">*</span></label>
+                <label className="block text-sm font-medium text-gray-800 mb-1">Roll Number <span className="text-red-500">*</span></label>
                 <input value={rollNo} onChange={e => setRollNo(e.target.value)}
                   placeholder="e.g. 260101047"
                   className="w-full border rounded-xl px-4 py-2.5 focus:outline-none focus:border-blue-500"/>
-                <p className="text-xs text-gray-500 mt-1">E.g., 26 (Year), 01 (BTech), 01 (CSE), 047 (Roll)</p>
+                <p className="text-xs text-gray-700 mt-1">E.g., 26 (Year), 01 (BTech), 01 (CSE), 047 (Roll)</p>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Branch <span className="text-red-500">*</span></label>
+                  <label className="block text-sm font-medium text-gray-800 mb-1">Branch <span className="text-red-500">*</span></label>
                   <select value={branch} onChange={e => setBranch(e.target.value)} className="w-full border rounded-xl px-4 py-2.5 focus:outline-none focus:border-blue-500 bg-white">
                     <option value="CSE">CSE (01)</option>
                     <option value="ECE">ECE (02)</option>
@@ -199,7 +199,7 @@ export default function ProfileSetupPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Group <span className="text-red-500">*</span></label>
+                  <label className="block text-sm font-medium text-gray-800 mb-1">Group <span className="text-red-500">*</span></label>
                   <select value={group} onChange={e => setGroup(e.target.value)} className="w-full border rounded-xl px-4 py-2.5 focus:outline-none focus:border-blue-500 bg-white">
                     <option value="G1">G1</option><option value="G2">G2</option><option value="G3">G3</option>
                     <option value="G1A">G1A</option><option value="G1B">G1B</option>
@@ -214,13 +214,13 @@ export default function ProfileSetupPage() {
           {profession === 'teacher' && (
             <div className="space-y-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Subject Name <span className="text-red-500">*</span></label>
+                <label className="block text-sm font-medium text-gray-800 mb-1">Subject Name <span className="text-red-500">*</span></label>
                 <input value={subjectName} onChange={e => setSubjectName(e.target.value)}
                   placeholder="e.g. Data Structures"
                   className="w-full border rounded-xl px-4 py-2.5 focus:outline-none focus:border-blue-500"/>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Subject Code <span className="text-red-500">*</span></label>
+                <label className="block text-sm font-medium text-gray-800 mb-1">Subject Code <span className="text-red-500">*</span></label>
                 <input value={subjectCode} onChange={e => setSubjectCode(e.target.value)}
                   placeholder="e.g. CS201"
                   className="w-full border rounded-xl px-4 py-2.5 focus:outline-none focus:border-blue-500"/>
@@ -231,7 +231,7 @@ export default function ProfileSetupPage() {
 
           <div className="flex items-start gap-3 p-4 bg-blue-50/50 rounded-xl border border-blue-100">
             <input type="checkbox" checked={agreed} onChange={e => setAgreed(e.target.checked)} className="mt-1 w-4 h-4 text-blue-600 rounded cursor-pointer" />
-            <p className="text-sm text-gray-700 leading-tight">
+            <p className="text-sm text-gray-800 leading-tight">
               I agree to the <a href="/terms" target="_blank" className="text-blue-600 font-semibold hover:underline">Terms & Conditions</a> and <a href="/privacy" target="_blank" className="text-blue-600 font-semibold hover:underline">Privacy Policy</a> of the IIIT-BH Attendance System.
             </p>
           </div>
@@ -242,7 +242,7 @@ export default function ProfileSetupPage() {
             {submitting ? 'Submitting...' : 'Submit for Verification →'}
           </button>
 
-          <p className="text-xs text-center text-gray-500">
+          <p className="text-xs text-center text-gray-700">
             Your account will be activated after administrator approval
           </p>
         </div>

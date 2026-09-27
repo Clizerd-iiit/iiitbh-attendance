@@ -54,7 +54,7 @@ export default function VerifyUsersPage() {
       <div className="max-w-5xl mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold text-gray-800">🔔 User Verification</h1>
-          <span className="text-sm text-gray-500">
+          <span className="text-sm text-gray-700">
             {users.length} {filter} request{users.length !== 1 ? 's' : ''}
           </span>
         </div>
@@ -65,7 +65,7 @@ export default function VerifyUsersPage() {
             {(['pending','approved','rejected'] as const).map(s => (
               <button key={s} onClick={() => { setFilter(s); setSelectedUsers(new Set()); }}
                 className={`px-4 py-2 rounded-lg text-sm font-medium capitalize transition ${
-                  filter === s ? 'bg-blue-600 text-white' : 'bg-white border text-gray-600 hover:bg-gray-50'
+                  filter === s ? 'bg-blue-600 text-white' : 'bg-white border text-gray-700 hover:bg-gray-50'
                 }`}>
                 {s === 'pending' ? '⏳' : s === 'approved' ? '✅' : '❌'} {s}
               </button>
@@ -117,7 +117,7 @@ export default function VerifyUsersPage() {
             {[1,2,3,4].map(i => <div key={i} className="h-40 bg-gray-200 rounded-2xl animate-pulse"/>)}
           </div>
         ) : users.length === 0 ? (
-          <div className="text-center text-gray-500 py-20 text-lg">
+          <div className="text-center text-gray-700 py-20 text-lg">
             {filter === 'pending' ? '🎉 No pending requests!' : `No ${filter} users`}
           </div>
         ) : (
@@ -152,11 +152,11 @@ export default function VerifyUsersPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <h3 className="font-semibold text-gray-800">{user.name}</h3>
-                      <span className={`text-xs px-2 py-0.5 rounded capitalize ${statusColors[user.verification_status as keyof typeof statusColors] || 'bg-gray-100 text-gray-600'}`}>
+                      <span className={`text-xs px-2 py-0.5 rounded capitalize ${statusColors[user.verification_status as keyof typeof statusColors] || 'bg-gray-100 text-gray-700'}`}>
                         {user.verification_status}
                       </span>
                     </div>
-                    <p className="text-sm text-gray-500 truncate">{user.email}</p>
+                    <p className="text-sm text-gray-700 truncate">{user.email}</p>
                     <span className={`text-xs px-2 py-0.5 rounded capitalize inline-block mt-1 ${
                       user.role === 'teacher' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
                     }`}>{user.role}</span>
@@ -166,12 +166,12 @@ export default function VerifyUsersPage() {
                 {/* Signup info */}
                 <div className="bg-gray-50 rounded-xl p-3 mb-4 text-sm space-y-1">
                   {user.role === 'student' && user.roll_no && (
-                    <p><span className="text-gray-500">Roll No:</span> <span className="font-medium">{user.roll_no}</span></p>
+                    <p><span className="text-gray-700">Roll No:</span> <span className="font-medium">{user.roll_no}</span></p>
                   )}
                   {user.signup_info?.subject_name && (
-                    <p><span className="text-gray-500">Subject:</span> <span className="font-medium">{user.signup_info.subject_name} ({user.signup_info.subject_code})</span></p>
+                    <p><span className="text-gray-700">Subject:</span> <span className="font-medium">{user.signup_info.subject_name} ({user.signup_info.subject_code})</span></p>
                   )}
-                  <p><span className="text-gray-500">Applied:</span> <span className="font-medium">{new Date(user.created_at).toLocaleDateString('en-IN')}</span></p>
+                  <p><span className="text-gray-700">Applied:</span> <span className="font-medium">{new Date(user.created_at).toLocaleDateString('en-IN')}</span></p>
                 </div>
 
                 {/* Actions */}
@@ -200,7 +200,7 @@ export default function VerifyUsersPage() {
                         Confirm Reject
                       </button>
                       <button onClick={() => setRejectId(null)}
-                        className="flex-1 bg-gray-100 text-gray-600 py-1.5 rounded-lg text-sm hover:bg-gray-200 transition">
+                        className="flex-1 bg-gray-100 text-gray-700 py-1.5 rounded-lg text-sm hover:bg-gray-200 transition">
                         Cancel
                       </button>
                     </div>

@@ -88,7 +88,7 @@ export default function FaceRegisterPage() {
         <h1 className="text-2xl font-bold text-gray-800 mb-6">📷 Register Face ID</h1>
         
         <div className="bg-white p-6 rounded-2xl shadow-sm border text-center">
-          <p className="text-sm text-gray-600 mb-6">
+          <p className="text-sm text-gray-700 mb-6">
             Register your face to enable AI Face Recognition for attendance. This is completely safe and runs on your device.
           </p>
           

@@ -5,7 +5,7 @@ export default function TermsPage() {
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <div className="bg-white max-w-3xl w-full rounded-2xl shadow-sm p-8 md:p-12">
         <h1 className="text-3xl font-bold text-gray-800 mb-6">Terms & Conditions</h1>
-        <div className="prose text-gray-600 space-y-4 text-sm md:text-base">
+        <div className="prose text-gray-700 space-y-4 text-sm md:text-base">
           <p>Welcome to the IIIT-BH Attendance System. By using this system, you agree to comply with and be bound by the following terms and conditions of use.</p>
           <h2 className="text-xl font-semibold text-gray-800 mt-6">1. Acceptance of Terms</h2>
           <p>By accessing and using this service, you accept and agree to be bound by the terms and provision of this agreement.</p>

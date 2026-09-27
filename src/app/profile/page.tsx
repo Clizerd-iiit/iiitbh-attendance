@@ -144,11 +144,11 @@ export default function ProfilePage() {
                   Remove Photo
                 </button>
               )}
-              <p className="text-gray-500 text-sm">{profile.email}</p>
+              <p className="text-gray-700 text-sm">{profile.email}</p>
               <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded capitalize mt-1 inline-block">
                 {displayRole}
               </span>
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-gray-700 mt-1">
                 {isSuperAdmin
                   ? <span className="text-blue-500">✨ Unlimited photo changes</span>
                   : `Photo changes remaining this month: ${photoChangesLeft}/2`
@@ -162,14 +162,14 @@ export default function ProfilePage() {
             {editing ? (
               <>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                  <label className="block text-sm font-medium text-gray-800 mb-1">Full Name</label>
                   <input value={name} onChange={e => setName(e.target.value)}
                     className="w-full border rounded-xl px-3 py-2 focus:outline-none focus:border-blue-500"/>
                 </div>
                 {role === 'student' && (
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Branch</label>
+                      <label className="block text-sm font-medium text-gray-800 mb-1">Branch</label>
                       <select value={branch} onChange={e => { setBranch(e.target.value); setGroup(''); setSubGroup(''); }} className="w-full border rounded-xl px-3 py-2 bg-white outline-none focus:border-blue-500">
                         <option value="">Select Branch</option>
                         <option value="CSE">Computer Science (CSE)</option>
@@ -180,7 +180,7 @@ export default function ProfilePage() {
                     </div>
                     {branch && (
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Group</label>
+                        <label className="block text-sm font-medium text-gray-800 mb-1">Group</label>
                         <select value={group} onChange={e => { setGroup(e.target.value); setSubGroup(''); }} className="w-full border rounded-xl px-3 py-2 bg-white outline-none focus:border-blue-500">
                           <option value="">Select Group</option>
                           <option value="G1">G1</option>
@@ -190,7 +190,7 @@ export default function ProfilePage() {
                     )}
                     {group && (
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Sub Group</label>
+                        <label className="block text-sm font-medium text-gray-800 mb-1">Sub Group</label>
                         <select value={subGroup} onChange={e => setSubGroup(e.target.value)} className="w-full border rounded-xl px-3 py-2 bg-white outline-none focus:border-blue-500">
                           <option value="">Select Sub Group</option>
                           <option value={`${group}A`}>{group}A</option>
@@ -201,7 +201,7 @@ export default function ProfilePage() {
                   </div>
                 )}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Bio (optional)</label>
+                  <label className="block text-sm font-medium text-gray-800 mb-1">Bio (optional)</label>
                   <textarea value={bio} onChange={e => setBio(e.target.value)} rows={3}
                     className="w-full border rounded-xl px-3 py-2 focus:outline-none focus:border-blue-500 resize-none"
                     placeholder="Tell something about yourself..."/>
@@ -211,22 +211,22 @@ export default function ProfilePage() {
               <>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className="text-xs text-gray-500 mb-0.5">Name</p>
+                    <p className="text-xs text-gray-700 mb-0.5">Name</p>
                     <p className="font-medium text-gray-800">{profile.name}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500 mb-0.5">Email</p>
+                    <p className="text-xs text-gray-700 mb-0.5">Email</p>
                     <p className="font-medium text-gray-800 text-sm">{profile.email}</p>
                   </div>
                   {profile.roll_no && (
                     <div>
-                      <p className="text-xs text-gray-500 mb-0.5">Roll No</p>
+                      <p className="text-xs text-gray-700 mb-0.5">Roll No</p>
                       <p className="font-medium text-gray-800">{profile.roll_no}</p>
                     </div>
                   )}
                   {profile.signup_info?.branch && (
                     <div>
-                      <p className="text-xs text-gray-500 mb-0.5">Class / Batch</p>
+                      <p className="text-xs text-gray-700 mb-0.5">Class / Batch</p>
                       <p className="font-medium text-gray-800">
                         {profile.signup_info.branch} 
                         {profile.signup_info.group ? ` - ${profile.signup_info.group}` : ''} 
@@ -236,7 +236,7 @@ export default function ProfilePage() {
                   )}
                   {profile.signup_info?.subject_name && (
                     <div>
-                      <p className="text-xs text-gray-500 mb-0.5">Subject</p>
+                      <p className="text-xs text-gray-700 mb-0.5">Subject</p>
                       <p className="font-medium text-gray-800">
                         {profile.signup_info.subject_name} ({profile.signup_info.subject_code})
                       </p>
@@ -245,8 +245,8 @@ export default function ProfilePage() {
                 </div>
                 {profile.bio && (
                   <div>
-                    <p className="text-xs text-gray-500 mb-0.5">Bio</p>
-                    <p className="text-gray-700 text-sm">{profile.bio}</p>
+                    <p className="text-xs text-gray-700 mb-0.5">Bio</p>
+                    <p className="text-gray-800 text-sm">{profile.bio}</p>
                   </div>
                 )}
               </>
@@ -262,7 +262,7 @@ export default function ProfilePage() {
                     {saving ? 'Saving...' : 'Save Changes'}
                   </button>
                   <button onClick={() => setEditing(false)}
-                    className="flex-1 bg-gray-100 text-gray-700 py-2 rounded-xl hover:bg-gray-200 transition">
+                    className="flex-1 bg-gray-100 text-gray-800 py-2 rounded-xl hover:bg-gray-200 transition">
                     Cancel
                   </button>
                 </>
@@ -276,7 +276,7 @@ export default function ProfilePage() {
             
             {!editing && role === 'student' && (
               <div className="pt-4 mt-4 border-t border-gray-100">
-                <h3 className="text-sm font-semibold text-gray-700 mb-2">Biometric Security</h3>
+                <h3 className="text-sm font-semibold text-gray-800 mb-2">Biometric Security</h3>
                 {(() => {
                   const lastUpdate = profile.signup_info?.last_face_update;
                   let canUpdate = true;
@@ -299,13 +299,13 @@ export default function ProfilePage() {
                             alert(`You can only update your Face ID once every 30 days.\nPlease try again after ${daysLeft} days.`);
                           }
                         }}
-                        className={`flex items-center justify-center gap-2 py-2.5 rounded-xl font-medium transition ${canUpdate ? 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100' : 'bg-gray-50 text-gray-500 cursor-not-allowed'}`}>
+                        className={`flex items-center justify-center gap-2 py-2.5 rounded-xl font-medium transition ${canUpdate ? 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100' : 'bg-gray-50 text-gray-700 cursor-not-allowed'}`}>
                         <span>📸</span> 
                         {profile.signup_info?.face_descriptor ? 'Update Face ID' : 'Register Face ID'}
                       </Link>
                       {!canUpdate && (
                         <>
-                          <p className="text-xs text-center text-gray-500">
+                          <p className="text-xs text-center text-gray-700">
                             Next update available in {daysLeft} days
                           </p>
                           <p className="text-xs text-center text-red-500 font-medium">
@@ -314,7 +314,7 @@ export default function ProfilePage() {
                         </>
                       )}
                       {canUpdate && profile.signup_info?.face_descriptor && (
-                         <p className="text-xs text-center text-gray-500">
+                         <p className="text-xs text-center text-gray-700">
                           You can update your Face ID once per month.
                         </p>
                       )}

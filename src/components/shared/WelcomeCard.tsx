@@ -45,12 +45,12 @@ export function WelcomeCard({ subtitle, isCr }: Props) {
 
       {/* Text */}
       <div className="min-w-0">
-        <p className="text-sm text-gray-500 mb-0.5">{subtitle || 'Welcome back!'}</p>
+        <p className="text-sm text-gray-700 mb-0.5">{subtitle || 'Welcome back!'}</p>
         <div className="flex items-center gap-2">
           <h1 className="text-xl font-bold text-gray-800 truncate">{name}</h1>
           {isCr && <span className="bg-purple-100 text-purple-700 text-xs px-2 py-0.5 rounded-full font-bold border border-purple-200">CR / Leader</span>}
         </div>
-        <p className="text-sm text-gray-500 truncate">{email}</p>
+        <p className="text-sm text-gray-700 truncate">{email}</p>
         <span className="inline-flex items-center gap-1 text-xs text-green-600 font-medium mt-1">
           <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"/>
           Online

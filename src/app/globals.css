@@ -24,3 +24,16 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Fix for iOS Safari fading out disabled inputs and texts */
+input:disabled, textarea:disabled, select:disabled {
+  opacity: 1 !important;
+  -webkit-text-fill-color: #374151; /* text-gray-700 */
+  color: #374151;
+}
+
+/* Make all placeholders significantly darker for better visibility */
+::placeholder {
+  color: #4b5563 !important; /* text-gray-600 */
+  opacity: 1 !important;
+}

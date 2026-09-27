@@ -22,7 +22,7 @@ function AttendanceCard({ subject }: { subject: StudentAttendanceSummary & { saf
       <div className="flex justify-between items-start mb-3">
         <div>
           <h3 className="font-semibold text-gray-800">{subject.subject_name}</h3>
-          <p className="text-sm text-gray-500">{subject.subject_code}</p>
+          <p className="text-sm text-gray-700">{subject.subject_code}</p>
         </div>
         <span className="text-2xl font-bold">{pct}%</span>
       </div>
@@ -33,7 +33,7 @@ function AttendanceCard({ subject }: { subject: StudentAttendanceSummary & { saf
       <div className="flex justify-between text-sm">
         <span>{subject.attended}/{subject.total_classes} classes</span>
         {subject.total_classes === 0 ? (
-          <span className="text-gray-500">No classes yet</span>
+          <span className="text-gray-700">No classes yet</span>
         ) : pct >= 75 ? (
           <span className="text-green-700">✅ Can miss {subject.safe_to_miss} more</span>
         ) : (
@@ -282,13 +282,13 @@ export default function StudentDashboard() {
         </div>
 
         {/* Subject-wise */}
-        <h2 className="text-lg font-semibold text-gray-700 mb-4">Subject-wise Breakdown</h2>
+        <h2 className="text-lg font-semibold text-gray-800 mb-4">Subject-wise Breakdown</h2>
         {loading ? (
           <div className="grid gap-4 md:grid-cols-2">
             {[1,2,3,4].map(i => <div key={i} className="h-36 bg-gray-200 rounded-xl animate-pulse"/>)}
           </div>
         ) : summary.length === 0 ? (
-          <div className="text-center text-gray-500 py-12 bg-white rounded-xl">
+          <div className="text-center text-gray-700 py-12 bg-white rounded-xl">
             <p className="text-4xl mb-2">📚</p>
             <p>No subjects enrolled yet</p>
           </div>
@@ -304,7 +304,7 @@ export default function StudentDashboard() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl">
             <h2 className="text-xl font-bold mb-2">Mark Attendance</h2>
-            <p className="text-sm text-gray-500 mb-4">Enter the 4-digit OTP or paste the QR Token shown by your teacher.</p>
+            <p className="text-sm text-gray-700 mb-4">Enter the 4-digit OTP or paste the QR Token shown by your teacher.</p>
             
             {(faceCheckState === 'loading_models' || faceCheckState === 'scanning') && (
               <div className="mb-4 text-center">
@@ -330,12 +330,12 @@ export default function StudentDashboard() {
                 value={markForm.code} 
                 onChange={e => setMarkForm({ code: e.target.value.trim() })}
                 disabled={marking}
-                className="flex-1 min-w-0 border-2 rounded-xl px-3 py-3 text-center text-lg font-bold tracking-wider focus:border-blue-500 outline-none disabled:bg-gray-100 disabled:opacity-60"
+                className="flex-1 min-w-0 border-2 rounded-xl px-3 py-3 text-center text-lg font-bold tracking-wider focus:border-blue-500 outline-none disabled:bg-gray-100 disabled:text-gray-800"
               />
               <button 
                 onClick={() => setShowScanner(true)}
                 disabled={marking}
-                className="bg-gray-100 hover:bg-gray-200 text-gray-800 px-4 rounded-xl flex items-center justify-center font-bold transition whitespace-nowrap disabled:opacity-60"
+                className="bg-gray-100 hover:bg-gray-200 text-gray-800 px-4 rounded-xl flex items-center justify-center font-bold transition whitespace-nowrap disabled:text-gray-800"
               >
                 📷 Scan
               </button>
@@ -353,12 +353,12 @@ export default function StudentDashboard() {
             )}
             
             <div className="flex gap-3">
-              <button onClick={() => setShowMarkModal(false)} className="flex-1 py-2.5 bg-gray-100 text-gray-700 font-medium rounded-xl hover:bg-gray-200">Cancel</button>
+              <button onClick={() => setShowMarkModal(false)} className="flex-1 py-2.5 bg-gray-100 text-gray-800 font-medium rounded-xl hover:bg-gray-200">Cancel</button>
               <button onClick={handleMarkAttendance} disabled={marking} className="flex-1 py-2.5 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 disabled:opacity-70">
                 {marking ? 'Marking...' : 'Submit'}
               </button>
             </div>
-            <p className="text-xs text-center text-gray-500 mt-4">Location + AI Face verification is required.</p>
+            <p className="text-xs text-center text-gray-700 mt-4">Location + AI Face verification is required.</p>
           </div>
         </div>
       )}

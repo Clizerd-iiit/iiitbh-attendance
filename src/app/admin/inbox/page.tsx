@@ -114,7 +114,7 @@ export default function AdminInbox() {
           <div className="p-4 bg-white border-b space-y-3">
             <h2 className="font-bold text-lg text-gray-800">Admin Inbox</h2>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">🔍</span>
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-700">🔍</span>
               <input 
                 type="text" 
                 placeholder="Search teacher/student..." 
@@ -133,7 +133,7 @@ export default function AdminInbox() {
                   (u.name?.toLowerCase().includes(q) || u.email?.toLowerCase().includes(q))
                 );
                 
-                if (filtered.length === 0) return <p className="p-4 text-gray-500 text-sm text-center">No user found.</p>;
+                if (filtered.length === 0) return <p className="p-4 text-gray-700 text-sm text-center">No user found.</p>;
                 
                 return filtered.map(u => (
                   <button 
@@ -147,7 +147,7 @@ export default function AdminInbox() {
                     }}
                     className={`w-full p-4 text-left border-b hover:bg-gray-100 transition flex gap-3 ${activeUser?.user_id === u.id ? 'bg-blue-50' : ''}`}
                   >
-                    <div className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden flex-shrink-0 flex items-center justify-center text-gray-500 font-bold">
+                    <div className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden flex-shrink-0 flex items-center justify-center text-gray-700 font-bold">
                       {u.profile_photo_url ? (
                         <img src={u.profile_photo_url} alt="" className="w-full h-full object-cover"/>
                       ) : (u.name?.charAt(0) || '?')}
@@ -156,15 +156,15 @@ export default function AdminInbox() {
                       <div className="flex justify-between items-baseline mb-1">
                         <h3 className="font-medium text-sm text-gray-900 truncate">{u.name || 'Unknown'}</h3>
                       </div>
-                      <p className="text-xs text-gray-500 capitalize">{u.role}</p>
-                      <p className="text-xs text-gray-500 truncate">{u.email}</p>
+                      <p className="text-xs text-gray-700 capitalize">{u.role}</p>
+                      <p className="text-xs text-gray-700 truncate">{u.email}</p>
                     </div>
                   </button>
                 ));
               }
 
               // Otherwise show inbox
-              if (inbox.length === 0) return <p className="p-4 text-gray-500 text-sm text-center">No messages yet.</p>;
+              if (inbox.length === 0) return <p className="p-4 text-gray-700 text-sm text-center">No messages yet.</p>;
 
               return inbox.map(chat => (
                 <button 
@@ -172,7 +172,7 @@ export default function AdminInbox() {
                   onClick={() => setActiveUser(chat)}
                   className={`w-full p-4 text-left border-b hover:bg-gray-100 transition flex gap-3 ${activeUser?.user_id === chat.user_id ? 'bg-blue-50' : ''}`}
                 >
-                  <div className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden flex-shrink-0 flex items-center justify-center text-gray-500 font-bold">
+                  <div className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden flex-shrink-0 flex items-center justify-center text-gray-700 font-bold">
                     {chat.user?.profile_photo_url ? (
                       <img src={chat.user.profile_photo_url} alt="" className="w-full h-full object-cover"/>
                     ) : (chat.user?.name?.charAt(0) || '?')}
@@ -180,11 +180,11 @@ export default function AdminInbox() {
                   <div className="flex-1 min-w-0">
                     <div className="flex justify-between items-baseline mb-1">
                       <h3 className="font-medium text-sm text-gray-900 truncate">{chat.user?.name || 'Unknown User'}</h3>
-                      <span className="text-xs text-gray-500 flex-shrink-0">
+                      <span className="text-xs text-gray-700 flex-shrink-0">
                         {new Date(chat.created_at).toLocaleDateString()}
                       </span>
                     </div>
-                    <p className="text-xs text-gray-500 truncate">{chat.latest_message}</p>
+                    <p className="text-xs text-gray-700 truncate">{chat.latest_message}</p>
                   </div>
                   {chat.unread_count > 0 && (
                     <div className="w-5 h-5 bg-blue-600 rounded-full flex items-center justify-center text-white text-xs font-bold">
@@ -206,7 +206,7 @@ export default function AdminInbox() {
                    {activeUser.user?.profile_photo_url ? (
                      <img src={activeUser.user.profile_photo_url} alt="" className="w-full h-full object-cover"/>
                    ) : (
-                     <div className="w-full h-full flex items-center justify-center text-gray-500 font-bold">{activeUser.user?.name?.charAt(0) || '?'}</div>
+                     <div className="w-full h-full flex items-center justify-center text-gray-700 font-bold">{activeUser.user?.name?.charAt(0) || '?'}</div>
                    )}
                 </div>
                 <div>
@@ -215,12 +215,12 @@ export default function AdminInbox() {
                     {isOnline(activeUser.user?.last_seen_at) ? (
                        <span className="flex items-center gap-1 text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded-full border border-green-100"><span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>Online</span>
                     ) : (
-                       <span className="text-xs text-gray-500 font-normal">
+                       <span className="text-xs text-gray-700 font-normal">
                          Last seen: {activeUser.user?.last_seen_at ? new Date(activeUser.user.last_seen_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Offline'}
                        </span>
                     )}
                   </h3>
-                  <p className="text-xs text-gray-500 capitalize">{activeUser.user?.role}</p>
+                  <p className="text-xs text-gray-700 capitalize">{activeUser.user?.role}</p>
                 </div>
               </div>
               <button onClick={() => clearChat(activeUser.user_id)} className="text-red-500 hover:bg-red-50 p-2 rounded-lg text-sm font-medium flex items-center gap-1 transition flex-shrink-0">
@@ -241,7 +241,7 @@ export default function AdminInbox() {
                         </button>
                       )}
                       <p className="text-sm whitespace-pre-wrap">{m.content}</p>
-                      <div className={`flex items-center justify-end gap-1 mt-1 ${isMe ? 'text-blue-200' : 'text-gray-500'}`}>
+                      <div className={`flex items-center justify-end gap-1 mt-1 ${isMe ? 'text-blue-200' : 'text-gray-700'}`}>
                         <span className="text-xs">
                           {new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </span>
@@ -273,7 +273,7 @@ export default function AdminInbox() {
             </form>
           </div>
         ) : (
-          <div className="flex-1 flex items-center justify-center bg-gray-50 text-gray-500">
+          <div className="flex-1 flex items-center justify-center bg-gray-50 text-gray-700">
             <div className="text-center">
               <div className="text-4xl mb-2">💬</div>
               <p>Select a conversation to start messaging</p>

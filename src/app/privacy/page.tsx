@@ -5,7 +5,7 @@ export default function PrivacyPage() {
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <div className="bg-white max-w-3xl w-full rounded-2xl shadow-sm p-8 md:p-12">
         <h1 className="text-3xl font-bold text-gray-800 mb-6">Privacy Policy</h1>
-        <div className="prose text-gray-600 space-y-4 text-sm md:text-base">
+        <div className="prose text-gray-700 space-y-4 text-sm md:text-base">
           <p>At IIIT-BH Attendance System, we take your privacy seriously. This policy explains how we collect, use, and protect your personal information.</p>
           <h2 className="text-xl font-semibold text-gray-800 mt-6">1. Information Collection</h2>
           <p>We collect information you provide directly to us when you create an account, including your name, institutional email address, roll number, and profile photo.</p>

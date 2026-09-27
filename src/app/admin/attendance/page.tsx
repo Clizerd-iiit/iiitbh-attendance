@@ -108,10 +108,10 @@ export default function AdminAttendancePage() {
                 <div key={s.id} onClick={() => selectStudent(s)}
                   className={`p-3 rounded-xl cursor-pointer border transition ${selStudent?.id === s.id ? 'bg-blue-50 border-blue-200' : 'hover:bg-gray-50 border-transparent'}`}>
                   <p className="font-semibold text-gray-800 text-sm">{s.name}</p>
-                  <p className="text-xs text-gray-500 font-mono">{s.roll_no || 'No Roll No'}</p>
+                  <p className="text-xs text-gray-700 font-mono">{s.roll_no || 'No Roll No'}</p>
                 </div>
               ))}
-              {filteredStudents.length === 0 && <p className="text-sm text-gray-500 text-center py-4">No students found</p>}
+              {filteredStudents.length === 0 && <p className="text-sm text-gray-700 text-center py-4">No students found</p>}
             </div>
           </div>
 
@@ -126,17 +126,17 @@ export default function AdminAttendancePage() {
                   <div className="flex flex-wrap gap-2">
                     {subjects.map(sub => (
                       <button key={sub.id} onClick={() => selectSubject(sub)}
-                        className={`px-4 py-2 rounded-xl text-sm font-medium transition border ${selSubject?.id === sub.id ? 'bg-blue-600 text-white border-blue-600' : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border-gray-200'}`}>
+                        className={`px-4 py-2 rounded-xl text-sm font-medium transition border ${selSubject?.id === sub.id ? 'bg-blue-600 text-white border-blue-600' : 'bg-gray-50 text-gray-800 hover:bg-gray-100 border-gray-200'}`}>
                         {sub.code} - {sub.name}
                       </button>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-gray-500">This student is not enrolled in any subjects.</p>
+                  <p className="text-sm text-gray-700">This student is not enrolled in any subjects.</p>
                 )}
               </div>
             ) : (
-              <div className="bg-white rounded-2xl shadow-sm p-8 border text-center text-gray-500">
+              <div className="bg-white rounded-2xl shadow-sm p-8 border text-center text-gray-700">
                 Please select a student first.
               </div>
             )}
@@ -158,14 +158,14 @@ export default function AdminAttendancePage() {
                 </div>
 
                 {loadingHist ? (
-                  <p className="text-sm text-gray-500 p-4">Loading history...</p>
+                  <p className="text-sm text-gray-700 p-4">Loading history...</p>
                 ) : history.length > 0 ? (
                   <div className="flex-1 overflow-y-auto pr-2 space-y-6">
                     {Object.entries(groupedHistory).map(([month, records]: any) => (
                       <div key={month}>
-                        <h3 className="font-semibold text-gray-700 bg-gray-100 px-3 py-1 rounded-md mb-2">{month}</h3>
+                        <h3 className="font-semibold text-gray-800 bg-gray-100 px-3 py-1 rounded-md mb-2">{month}</h3>
                         <table className="w-full text-sm">
-                          <thead className="text-gray-500 border-b">
+                          <thead className="text-gray-700 border-b">
                             <tr>
                               <th className="text-left py-2 font-medium">Date</th>
                               <th className="text-left py-2 font-medium">Current Status</th>
@@ -178,15 +178,15 @@ export default function AdminAttendancePage() {
                               return (
                                 <tr key={h.class_id} className="hover:bg-gray-50 transition">
                                   <td className="py-2 text-gray-800">
-                                    {format(new Date(h.date), 'dd MMM (EEE)')} <span className="text-gray-500 text-xs ml-1">{h.start_time.slice(0,5)}</span>
+                                    {format(new Date(h.date), 'dd MMM (EEE)')} <span className="text-gray-700 text-xs ml-1">{h.start_time.slice(0,5)}</span>
                                   </td>
                                   <td className="py-2">
                                     {currentStatus ? (
-                                      <span className={`text-xs px-2 py-1 rounded font-medium ${statusColor[currentStatus]||'bg-gray-100 text-gray-600'}`}>
+                                      <span className={`text-xs px-2 py-1 rounded font-medium ${statusColor[currentStatus]||'bg-gray-100 text-gray-700'}`}>
                                         {currentStatus}
                                       </span>
                                     ) : (
-                                      <span className="text-xs px-2 py-1 rounded bg-gray-100 text-gray-500">Unmarked</span>
+                                      <span className="text-xs px-2 py-1 rounded bg-gray-100 text-gray-700">Unmarked</span>
                                     )}
                                   </td>
                                   <td className="py-2">
@@ -210,7 +210,7 @@ export default function AdminAttendancePage() {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-gray-500">No classes found for this subject.</p>
+                  <p className="text-sm text-gray-700">No classes found for this subject.</p>
                 )}
               </div>
             )}

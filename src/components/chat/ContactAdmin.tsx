@@ -82,7 +82,7 @@ export default function ContactAdmin() {
       </div>
       <div className="bg-yellow-50 border-b border-yellow-100 p-3 text-center space-y-1">
         <p className="text-xs font-bold text-red-600">🚨 Report Bugs, Issues & Errors HERE!!</p>
-        <p className="text-xs text-gray-500 font-medium flex items-center justify-center gap-1">🔒 Your Messages Would be Private & only be sent to the ADMIN Only!!</p>
+        <p className="text-xs text-gray-700 font-medium flex items-center justify-center gap-1">🔒 Your Messages Would be Private & only be sent to the ADMIN Only!!</p>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
@@ -92,7 +92,7 @@ export default function ContactAdmin() {
             <div key={m.id || i} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
               <div className={`max-w-[75%] p-3 rounded-2xl ${isMe ? 'bg-blue-600 text-white rounded-br-sm' : 'bg-white border text-gray-800 rounded-bl-sm shadow-sm'}`}>
                 <p className="text-sm whitespace-pre-wrap">{m.content}</p>
-                <div className={`flex items-center justify-end gap-1 mt-1 ${isMe ? 'text-blue-200' : 'text-gray-500'}`}>
+                <div className={`flex items-center justify-end gap-1 mt-1 ${isMe ? 'text-blue-200' : 'text-gray-700'}`}>
                   <span className="text-xs">
                     {new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </span>

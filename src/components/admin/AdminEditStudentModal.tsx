@@ -109,13 +109,13 @@ export function AdminEditStudentModal({ student, onClose, onSaved }: { student: 
       <div className="bg-white rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
         <div className="flex justify-between items-center p-5 border-b bg-gray-50">
           <h2 className="text-xl font-bold text-gray-800">Manage Student: {student.name}</h2>
-          <button onClick={() => { stopCamera(); onClose(); }} className="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
+          <button onClick={() => { stopCamera(); onClose(); }} className="text-gray-700 hover:text-gray-800 text-2xl">&times;</button>
         </div>
         
         <div className="flex border-b bg-gray-50 overflow-x-auto shrink-0">
-          <button onClick={() => { setMode('details'); stopCamera(); }} className={`flex-1 py-3 px-4 font-medium text-sm whitespace-nowrap ${mode==='details'?'border-b-2 border-blue-600 text-blue-600':'text-gray-500 hover:bg-gray-100'}`}>Basic Details</button>
-          <button onClick={() => { setMode('face'); startCamera(); }} className={`flex-1 py-3 px-4 font-medium text-sm whitespace-nowrap ${mode==='face'?'border-b-2 border-blue-600 text-blue-600':'text-gray-500 hover:bg-gray-100'}`}>Face ID</button>
-          <button onClick={() => { setMode('enrollments'); stopCamera(); }} className={`flex-1 py-3 px-4 font-medium text-sm whitespace-nowrap ${mode==='enrollments'?'border-b-2 border-blue-600 text-blue-600':'text-gray-500 hover:bg-gray-100'}`}>Subjects & Teachers</button>
+          <button onClick={() => { setMode('details'); stopCamera(); }} className={`flex-1 py-3 px-4 font-medium text-sm whitespace-nowrap ${mode==='details'?'border-b-2 border-blue-600 text-blue-600':'text-gray-700 hover:bg-gray-100'}`}>Basic Details</button>
+          <button onClick={() => { setMode('face'); startCamera(); }} className={`flex-1 py-3 px-4 font-medium text-sm whitespace-nowrap ${mode==='face'?'border-b-2 border-blue-600 text-blue-600':'text-gray-700 hover:bg-gray-100'}`}>Face ID</button>
+          <button onClick={() => { setMode('enrollments'); stopCamera(); }} className={`flex-1 py-3 px-4 font-medium text-sm whitespace-nowrap ${mode==='enrollments'?'border-b-2 border-blue-600 text-blue-600':'text-gray-700 hover:bg-gray-100'}`}>Subjects & Teachers</button>
         </div>
 
         <div className="p-6 overflow-y-auto">
@@ -159,7 +159,7 @@ export function AdminEditStudentModal({ student, onClose, onSaved }: { student: 
                     await fetch(`/api/teacher/students/face?student_id=${student.id}`, { method: 'DELETE' });
                     setSaving(false);
                     alert('Limit reset successfully! Student can now update their Face ID.');
-                  }} disabled={saving} className="w-full py-3 bg-gray-100 text-gray-700 hover:bg-gray-200 rounded-xl font-medium">Reset Face ID Limit</button>
+                  }} disabled={saving} className="w-full py-3 bg-gray-100 text-gray-800 hover:bg-gray-200 rounded-xl font-medium">Reset Face ID Limit</button>
                 </div>
               ) : (
                 <div className="flex gap-2 max-w-sm mx-auto">
@@ -167,20 +167,20 @@ export function AdminEditStudentModal({ student, onClose, onSaved }: { student: 
                   <button onClick={saveFace} disabled={saving} className="flex-1 py-3 bg-green-600 text-white rounded-xl font-medium">{saving?'Saving...':'Confirm & Save'}</button>
                 </div>
               )}
-              <p className="text-xs text-gray-500 mt-4">This will immediately overwrite the student's Face ID and bypass the 30-day limit.</p>
+              <p className="text-xs text-gray-700 mt-4">This will immediately overwrite the student's Face ID and bypass the 30-day limit.</p>
             </div>
           ) : (
             <div className="space-y-3">
               {loadingEnrollments ? (
-                <div className="text-center py-8 text-gray-500">Loading subjects...</div>
+                <div className="text-center py-8 text-gray-700">Loading subjects...</div>
               ) : enrollments.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">Student is not enrolled in any subjects.</div>
+                <div className="text-center py-8 text-gray-700">Student is not enrolled in any subjects.</div>
               ) : (
                 enrollments.map(e => (
                   <div key={e.enrollment_id} className="bg-gray-50 border p-4 rounded-xl flex items-center justify-between gap-4">
                     <div className="min-w-0 flex-1">
                       <div className="font-bold text-gray-800 text-lg truncate">{e.subject_code} - {e.subject_name}</div>
-                      <div className="text-sm text-gray-500 mt-1 truncate">Teachers: <span className="font-medium text-gray-700">{e.teachers}</span></div>
+                      <div className="text-sm text-gray-700 mt-1 truncate">Teachers: <span className="font-medium text-gray-800">{e.teachers}</span></div>
                     </div>
                     <button 
                       onClick={() => removeEnrollment(e.enrollment_id)}

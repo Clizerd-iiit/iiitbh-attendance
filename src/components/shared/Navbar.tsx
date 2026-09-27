@@ -135,7 +135,7 @@ export function Navbar() {
         )}
         {/* Collapse button — desktop only */}
         <button onClick={() => setCollapsed(c => !c)}
-          className="hidden md:flex w-7 h-7 rounded-lg bg-gray-100 hover:bg-gray-200 items-center justify-center text-gray-500 flex-shrink-0 transition"
+          className="hidden md:flex w-7 h-7 rounded-lg bg-gray-100 hover:bg-gray-200 items-center justify-center text-gray-700 flex-shrink-0 transition"
           title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
           {collapsed ? '›' : '‹'}
         </button>
@@ -157,7 +157,7 @@ export function Navbar() {
               className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition group relative
                 ${active
                   ? 'bg-blue-50 text-blue-700 font-semibold'
-                  : 'text-gray-600 hover:bg-gray-100 hover:text-gray-800'
+                  : 'text-gray-700 hover:bg-gray-100 hover:text-gray-800'
                 }
                 ${collapsed ? 'justify-center' : ''}
               `}
@@ -204,7 +204,7 @@ export function Navbar() {
           {!collapsed && (
             <div className="min-w-0">
               <p className="text-sm font-semibold text-gray-800 truncate">{name}</p>
-              <p className="text-xs text-gray-500 truncate">{displayRole}</p>
+              <p className="text-xs text-gray-700 truncate">{displayRole}</p>
             </div>
           )}
         </div>
@@ -225,7 +225,7 @@ export function Navbar() {
       {/* ── Mobile hamburger ── */}
       <div className="md:hidden fixed top-0 left-0 right-0 z-40 bg-white border-b flex items-center px-4 py-3 gap-3 shadow-sm">
         <button onClick={() => setOpen(o => !o)}
-          className="p-2 rounded-lg hover:bg-gray-100 text-gray-600 transition">
+          className="p-2 rounded-lg hover:bg-gray-100 text-gray-700 transition">
           {open ? '✕' : '☰'}
         </button>
         <div className="flex items-center gap-2">

@@ -26,7 +26,7 @@ function ErrorContent() {
           <span className="text-3xl">{icon}</span>
         </div>
         <h1 className="text-xl font-bold text-gray-800 mb-2">{title}</h1>
-        <p className="text-gray-600 mb-6">{msg}</p>
+        <p className="text-gray-700 mb-6">{msg}</p>
         <button onClick={() => signOut({ callbackUrl: '/auth/login' })}
           className="bg-blue-600 text-white px-6 py-2.5 rounded-xl hover:bg-blue-700 transition inline-block font-medium">
           Back to Login (Sign Out)

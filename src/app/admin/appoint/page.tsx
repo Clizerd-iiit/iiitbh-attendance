@@ -136,7 +136,7 @@ export default function AppointPositionPage() {
                 <div className="h-12 bg-gray-100 rounded-xl"></div>
               </div>
             ) : currentCRs.length === 0 ? (
-              <p className="text-gray-500 text-sm text-center py-10">No students are currently holding a position.</p>
+              <p className="text-gray-700 text-sm text-center py-10">No students are currently holding a position.</p>
             ) : (
               <div className="space-y-3 max-h-[500px] overflow-y-auto pr-1">
                 {currentCRs.map(s => (
@@ -146,7 +146,7 @@ export default function AppointPositionPage() {
                         {s.name}
                         <span className="bg-purple-100 text-purple-700 text-xs px-1.5 py-0.5 rounded font-bold">CR</span>
                       </div>
-                      <div className="text-xs text-gray-500 mt-0.5">
+                      <div className="text-xs text-gray-700 mt-0.5">
                         {s.roll_no} • {(s as any).branch || 'N/A'} • {s.section || 'N/A'}
                       </div>
                     </div>

@@ -144,7 +144,7 @@ useEffect(() => {
         <div className="flex gap-2 mb-6 flex-wrap">
           {subjects.map(s => (
             <button key={s.id} onClick={() => setSelected(s.id)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition ${selected===s.id ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 border hover:bg-gray-50'}`}>
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition ${selected===s.id ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 border hover:bg-gray-50'}`}>
               {s.code}
             </button>
           ))}
@@ -153,7 +153,7 @@ useEffect(() => {
         <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
           <div className="px-6 py-4 border-b flex flex-col sm:flex-row justify-between items-center gap-4">
             <div className="flex flex-col sm:flex-row items-center gap-3 w-full lg:w-auto">
-              <span className="font-medium text-gray-700 whitespace-nowrap">{students.length} enrolled</span>
+              <span className="font-medium text-gray-800 whitespace-nowrap">{students.length} enrolled</span>
               <select value={branchFilter} onChange={e=>setBranchFilter(e.target.value)} className="w-full sm:w-auto border rounded-xl px-3 py-1.5 text-sm focus:outline-none focus:border-blue-500 bg-white">
                 <option value="">All Branches</option>
                 <option value="CSE">CSE</option>
@@ -177,18 +177,18 @@ useEffect(() => {
           <table className="w-full">
             <thead className="bg-gray-50 border-b">
               <tr>
-                <th className="text-left p-4 text-sm font-medium text-gray-600">Roll No</th>
-                <th className="text-left p-4 text-sm font-medium text-gray-600">Name</th>
-                <th className="text-left p-4 text-sm font-medium text-gray-600">Face ID</th>
-                <th className="text-left p-4 text-sm font-medium text-gray-600">Section</th>
-                <th className="text-left p-4 text-sm font-medium text-gray-600">Attendance</th>
-                <th className="text-left p-4 text-sm font-medium text-gray-600">Status</th>
-                <th className="text-right p-4 text-sm font-medium text-gray-600">Actions</th>
+                <th className="text-left p-4 text-sm font-medium text-gray-700">Roll No</th>
+                <th className="text-left p-4 text-sm font-medium text-gray-700">Name</th>
+                <th className="text-left p-4 text-sm font-medium text-gray-700">Face ID</th>
+                <th className="text-left p-4 text-sm font-medium text-gray-700">Section</th>
+                <th className="text-left p-4 text-sm font-medium text-gray-700">Attendance</th>
+                <th className="text-left p-4 text-sm font-medium text-gray-700">Status</th>
+                <th className="text-right p-4 text-sm font-medium text-gray-700">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {loading ? (
-                <tr><td colSpan={6} className="p-8 text-center text-gray-500">Loading...</td></tr>
+                <tr><td colSpan={6} className="p-8 text-center text-gray-700">Loading...</td></tr>
               ) : students.filter(s => {
                   const br = s.signup_info?.branch || s.branch || '';
                   const gr = s.signup_info?.group || s.section || '';
@@ -201,7 +201,7 @@ useEffect(() => {
                   return true;
                 }).map(s => {
                 const pct = summary[s.id] ?? null;
-                const color = pct === null ? 'text-gray-500' : pct >= 85 ? 'text-green-600' : pct >= 75 ? 'text-yellow-600' : 'text-red-600';
+                const color = pct === null ? 'text-gray-700' : pct >= 85 ? 'text-green-600' : pct >= 75 ? 'text-yellow-600' : 'text-red-600';
                 
   const unenroll = async (studentId: string) => {
     if (!window.confirm('Remove this student from the subject?')) return;
@@ -259,7 +259,7 @@ useEffect(() => {
 
   return (
                   <tr key={s.id} className={`hover:bg-gray-50 ${pct !== null && pct < 75 ? 'bg-red-50' : ''}`}>
-                    <td className="p-4 text-sm font-mono text-gray-600">{s.roll_no || '—'}</td>
+                    <td className="p-4 text-sm font-mono text-gray-700">{s.roll_no || '—'}</td>
                     <td className="p-4 font-medium text-gray-800 flex items-center gap-2">
                       {s.name}
                       {s.is_cr && <span className="bg-purple-100 text-purple-700 text-xs px-1.5 py-0.5 rounded font-bold border border-purple-200">CR</span>}
@@ -314,7 +314,7 @@ useEffect(() => {
             <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden shadow-2xl">
               <div className="p-5 border-b border-gray-100 flex justify-between items-center bg-gray-50">
                 <h2 className="text-xl font-bold text-gray-800">Add Students to Subject</h2>
-                <button onClick={() => setShowAddModal(false)} className="text-gray-500 hover:text-gray-700 text-2xl leading-none">&times;</button>
+                <button onClick={() => setShowAddModal(false)} className="text-gray-700 hover:text-gray-800 text-2xl leading-none">&times;</button>
               </div>
               
               <div className="p-4 flex-1 overflow-y-auto">
@@ -376,19 +376,19 @@ useEffect(() => {
                           checked={selectedStudents.has(s.id)} onChange={() => toggleStudentSelection(s.id)} />
                         <div className="min-w-0">
                           <p className="font-semibold text-gray-800 text-sm truncate">{s.name}</p>
-                          <p className="text-xs text-gray-500 font-mono">{s.roll_no}</p>
+                          <p className="text-xs text-gray-700 font-mono">{s.roll_no}</p>
                         </div>
                       </label>
                     );
                   })}
                   {allStudents.filter(s => !students.some(e => e.id === s.id)).length === 0 && (
-                    <div className="col-span-2 text-center text-gray-500 py-8">All students are already enrolled!</div>
+                    <div className="col-span-2 text-center text-gray-700 py-8">All students are already enrolled!</div>
                   )}
                 </div>
               </div>
 
               <div className="p-4 border-t border-gray-100 bg-gray-50 flex justify-end gap-3">
-                <button onClick={() => setShowAddModal(false)} className="px-5 py-2 rounded-xl text-gray-600 hover:bg-gray-200 transition">Cancel</button>
+                <button onClick={() => setShowAddModal(false)} className="px-5 py-2 rounded-xl text-gray-700 hover:bg-gray-200 transition">Cancel</button>
                 <button onClick={handleAddStudents} disabled={adding || selectedStudents.size === 0} 
                   className="px-5 py-2 rounded-xl bg-blue-600 text-white font-medium hover:bg-blue-700 transition disabled:opacity-70">
                   {adding ? 'Adding...' : `Add ${selectedStudents.size} Students`}

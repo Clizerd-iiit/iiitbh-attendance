@@ -10,7 +10,7 @@ const typeConfig = {
   test: { icon: '📝', label: 'Test', color: 'bg-orange-100 text-orange-700' },
   quiz: { icon: '❓', label: 'Quiz', color: 'bg-purple-100 text-purple-700' },
   update: { icon: '📌', label: 'Update', color: 'bg-blue-100 text-blue-700' },
-  pdf: { icon: '📄', label: 'PDF', color: 'bg-gray-100 text-gray-700' },
+  pdf: { icon: '📄', label: 'PDF', color: 'bg-gray-100 text-gray-800' },
   link: { icon: '🔗', label: 'Link', color: 'bg-cyan-100 text-cyan-700' },
   text: { icon: '💬', label: 'Notice', color: 'bg-yellow-100 text-yellow-700' },
 };
@@ -69,7 +69,7 @@ export default function AnnouncementsPage() {
         {loading ? (
           <div className="space-y-4">{[1,2,3].map(i => <div key={i} className="h-24 bg-gray-200 rounded-xl animate-pulse"/>)}</div>
         ) : announcements.length === 0 ? (
-          <div className="text-center text-gray-500 py-16">No announcements yet</div>
+          <div className="text-center text-gray-700 py-16">No announcements yet</div>
         ) : (
           <div className="space-y-4">
             {announcements.map(a => {
@@ -83,14 +83,14 @@ export default function AnnouncementsPage() {
                       <span className={`text-xs px-2 py-1 rounded font-medium ${cfg.color}`}>
                         {cfg.icon} {cfg.label}
                       </span>
-                      {sub?.code && <span className="text-xs text-gray-500">{sub.code}</span>}
+                      {sub?.code && <span className="text-xs text-gray-700">{sub.code}</span>}
                     </div>
-                    <span className="text-xs text-gray-500">
+                    <span className="text-xs text-gray-700">
                       {format(new Date(a.created_at), 'dd MMM, HH:mm')}
                     </span>
                   </div>
                   <h3 className="font-semibold text-gray-800 mb-1">{a.title}</h3>
-                  {a.content && <p className="text-gray-600 text-sm">{a.content}</p>}
+                  {a.content && <p className="text-gray-700 text-sm">{a.content}</p>}
                   {a.link_url && (
                     <a href={a.link_url} target="_blank" rel="noopener noreferrer"
                       className="text-blue-600 text-sm hover:underline mt-2 inline-block">
@@ -113,8 +113,8 @@ export default function AnnouncementsPage() {
                           {teacher?.name?.charAt(0)?.toUpperCase() || '?'}
                         </div>
                       )}
-                      <p className={`text-xs ${teacher?.role === 'superadmin' ? 'font-bold text-gray-900 text-[13px]' : 'font-medium text-gray-600'}`}>
-                        By {teacher?.name || 'Unknown'} <span className="text-gray-500 font-normal">({teacher?.role === 'superadmin' ? 'Administrator' : teacher?.role === 'teacher' ? 'Professor' : 'Class Representative'})</span> {a.teacher_id === userId ? ' (You)' : ''}
+                      <p className={`text-xs ${teacher?.role === 'superadmin' ? 'font-bold text-gray-900 text-[13px]' : 'font-medium text-gray-700'}`}>
+                        By {teacher?.name || 'Unknown'} <span className="text-gray-700 font-normal">({teacher?.role === 'superadmin' ? 'Administrator' : teacher?.role === 'teacher' ? 'Professor' : 'Class Representative'})</span> {a.teacher_id === userId ? ' (You)' : ''}
                       </p>
                     </div>
                     {a.teacher_id === userId && (
