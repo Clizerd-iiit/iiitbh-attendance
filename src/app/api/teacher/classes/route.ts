@@ -3,11 +3,14 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { supabaseAdmin } from '@/lib/supabase';
 import { v4 as uuidv4 } from 'uuid';
+import { autoCloseAbandonedClasses } from '@/lib/autoCloseClasses';
+
 
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
+  await autoCloseAbandonedClasses();
   const { searchParams } = new URL(req.url);
   const subjectId = searchParams.get('subject_id');
   const limit = parseInt(searchParams.get('limit') || '20');
@@ -105,6 +108,7 @@ export async function DELETE(req: NextRequest) {
   if (!session?.user || !['teacher', 'superadmin'].includes(session.user.role as string))
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
+  await autoCloseAbandonedClasses();
   const { searchParams } = new URL(req.url);
   const classId = searchParams.get('classId');
   if (!classId) return NextResponse.json({ error: 'Missing classId' }, { status: 400 });
