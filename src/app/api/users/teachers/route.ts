@@ -5,6 +5,8 @@ import { supabaseAdmin } from '@/lib/supabase';
 
 const ONLINE_MS = 5 * 60 * 1000;
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

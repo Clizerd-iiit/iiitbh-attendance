@@ -5,6 +5,8 @@ import { supabaseAdmin } from '@/lib/supabase';
 import { cleanupRejectedUsers } from '@/lib/cleanupRejectedUsers';
 
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   const session = await getServerSession(authOptions);
   if (!session?.user?.userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

@@ -6,6 +6,8 @@ import { logAudit } from '@/lib/audit';
 import { cleanupRejectedUsers } from '@/lib/cleanupRejectedUsers';
 
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session?.user || !['superadmin', 'teacher'].includes(session.user.role as string))

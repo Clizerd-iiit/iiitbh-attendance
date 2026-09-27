@@ -4,6 +4,8 @@ import { authOptions } from '@/lib/auth';
 import { supabaseAdmin } from '@/lib/supabase';
 
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(req: NextRequest) {
   // --- AUTO CLEANUP: Delete messages older than 14 days ---
   const fourteenDaysAgo = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString();

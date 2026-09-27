@@ -3,6 +3,8 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { supabaseAdmin } from '@/lib/supabase';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session?.user || session.user.role !== 'superadmin') return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -10,17 +12,29 @@ export async function GET(req: NextRequest) {
   const studentId = req.nextUrl.searchParams.get('studentId');
   if (!studentId) return NextResponse.json({ error: 'Missing studentId' }, { status: 400 });
 
-  const { data: enrollments } = await supabaseAdmin
+  const { data: enrollments, error: enrError } = await supabaseAdmin
     .from('enrollments')
-    .select('id, subject_id, joined_at, subjects(name, code, teacher_ids)')
+    .select('id, subject_id, joined_at')
     .eq('student_id', studentId);
+    
+  if (enrError) console.error("Enrollments fetch error:", enrError);
+  if (!enrollments || enrollments.length === 0) return NextResponse.json({ subjects: [] });
 
-  if (!enrollments) return NextResponse.json({ subjects: [] });
+  const subjectIds = enrollments.map(e => e.subject_id);
+  const { data: subjectsData, error: subError } = await supabaseAdmin
+    .from('subjects')
+    .select('id, name, code, teacher_ids')
+    .in('id', subjectIds);
+    
+  if (subError) console.error("Subjects fetch error:", subError);
+  
+  const subjectsMap = new Map();
+  (subjectsData || []).forEach(s => subjectsMap.set(s.id, s));
 
   // Get teacher names
   const allTeacherIds = new Set<string>();
-  enrollments.forEach(e => {
-    const tids = (e.subjects as any)?.teacher_ids || [];
+  (subjectsData || []).forEach(s => {
+    const tids = s.teacher_ids || [];
     tids.forEach((id: string) => allTeacherIds.add(id));
   });
 
@@ -31,7 +45,7 @@ export async function GET(req: NextRequest) {
   }
 
   const result = enrollments.map(e => {
-    const subj = e.subjects as any;
+    const subj = subjectsMap.get(e.subject_id);
     const teacherNames = (subj?.teacher_ids || []).map((id: string) => teachersMap[id] || 'Unknown').join(', ');
     return {
       enrollment_id: e.id,
