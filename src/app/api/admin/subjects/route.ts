@@ -1,8 +1,24 @@
+import { z } from 'zod';
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { supabaseAdmin } from '@/lib/supabase';
 import { logAudit } from '@/lib/audit';
+
+
+const subjectSchema = z.object({
+  name: z.string().min(1),
+  code: z.string().min(1),
+  section: z.string().optional(),
+  branch: z.string().optional(),
+  semester: z.number().int().positive().optional(),
+  teacher_ids: z.array(z.string().uuid()).optional(),
+  is_active: z.boolean().optional()
+}).strict();
+
+const subjectUpdateSchema = subjectSchema.partial().extend({
+  id: z.string().uuid()
+});
 
 export const dynamic = 'force-dynamic';
 
@@ -22,7 +38,12 @@ export async function POST(req: NextRequest) {
   if (!session?.user || session.user.role !== 'superadmin')
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
-  const body = await req.json();
+  let body;
+  try {
+    body = subjectSchema.parse(await req.json());
+  } catch (e: any) {
+    return NextResponse.json({ error: 'Invalid input data', details: e.errors }, { status: 400 });
+  }
   const { data, error } = await supabaseAdmin.from('subjects').insert(body).select().single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   await logAudit({ userId: session.user.userId!, action: 'CREATE_SUBJECT',
@@ -36,7 +57,12 @@ export async function PATCH(req: NextRequest) {
   if (!session?.user || session.user.role !== 'superadmin')
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
-  const body = await req.json();
+  let body;
+  try {
+    body = subjectUpdateSchema.parse(await req.json());
+  } catch (e: any) {
+    return NextResponse.json({ error: 'Invalid input data', details: e.errors }, { status: 400 });
+  }
   const { id, ...updates } = body;
   const { data: old } = await supabaseAdmin.from('subjects').select('*').eq('id', id).single();
   const { data, error } = await supabaseAdmin.from('subjects').update(updates).eq('id', id).select().single();

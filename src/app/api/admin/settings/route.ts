@@ -1,7 +1,11 @@
+import { z } from 'zod';
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { supabaseAdmin } from '@/lib/supabase';
+
+
+const settingsSchema = z.record(z.string(), z.union([z.string(), z.number(), z.boolean()]));
 
 export const dynamic = 'force-dynamic';
 
@@ -20,7 +24,12 @@ export async function PATCH(req: NextRequest) {
   if (!session?.user || session.user.role !== 'superadmin')
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
-  const body = await req.json();
+  let body;
+  try {
+    body = settingsSchema.parse(await req.json());
+  } catch (e: any) {
+    return NextResponse.json({ error: 'Invalid settings format', details: e.errors }, { status: 400 });
+  }
   const updates = Object.entries(body).map(([key, value]) => ({
     key, value: String(value), updated_by: session.user.userId,
     updated_at: new Date().toISOString(),

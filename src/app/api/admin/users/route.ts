@@ -1,8 +1,26 @@
+import { z } from 'zod';
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { supabaseAdmin } from '@/lib/supabase';
 import { logAudit } from '@/lib/audit';
+
+
+const userUpdateSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string().optional(),
+  roll_no: z.string().optional(),
+  section: z.string().optional(),
+  branch: z.string().optional(),
+  group: z.string().optional(),
+  sub_group: z.string().optional(),
+  is_cr: z.boolean().optional(),
+  is_active: z.boolean().optional(),
+  bio: z.string().nullable().optional(),
+  profile_photo_url: z.string().nullable().optional(),
+  email: z.string().email().optional(),
+  role: z.enum(['student', 'teacher', 'superadmin']).optional(),
+}).catchall(z.any());
 
 export const dynamic = 'force-dynamic';
 
@@ -81,7 +99,12 @@ export async function PATCH(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const body = await req.json();
+  let body;
+  try {
+    body = userUpdateSchema.parse(await req.json());
+  } catch (e: any) {
+    return NextResponse.json({ error: 'Invalid input data', details: e.errors }, { status: 400 });
+  }
   const { id, ...updates } = body;
 
   if (session.user.role === 'teacher') {
