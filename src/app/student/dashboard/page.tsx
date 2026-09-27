@@ -24,12 +24,18 @@ function AttendanceCard({ subject, showPercentage }: { subject: StudentAttendanc
           <h3 className="font-semibold text-gray-800">{subject.subject_name}</h3>
           <p className="text-sm text-gray-700">{subject.subject_code}</p>
         </div>
-        <span className="text-2xl font-bold">{pct}%</span>
+        {showPercentage ? (
+          <span className="text-2xl font-bold">{pct}%</span>
+        ) : (
+          <span className="text-2xl opacity-60">🔒</span>
+        )}
       </div>
-      <div className="w-full bg-white rounded-full h-2 mb-3">
-        <div className={`${barMap[color]} h-2 rounded-full transition-all`}
-          style={{ width: `${Math.min(pct, 100)}%` }} />
-      </div>
+      {showPercentage && (
+        <div className="w-full bg-white rounded-full h-2 mb-3">
+          <div className={`${barMap[color]} h-2 rounded-full transition-all`}
+            style={{ width: `${Math.min(pct, 100)}%` }} />
+        </div>
+      )}
       <div className="flex justify-between text-sm">
         <span>{subject.attended}/{subject.total_classes} classes</span>
         {subject.total_classes === 0 ? (
@@ -278,10 +284,18 @@ export default function StudentDashboard() {
         <div className="grid grid-cols-3 gap-4 mb-6">
           <div className="col-span-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl p-6 shadow-sm">
             <p className="text-blue-200 text-sm mb-1">Overall Attendance</p>
-            <p className="text-5xl font-bold">{overall}%</p>
-            <p className="text-blue-200 mt-2 text-sm">
-              {overall >= 75 ? '✅ You are safe! Keep it up.' : '⚠️ Below 75% threshold — attend more classes!'}
-            </p>
+            {showPercentage ? (
+              <>
+                <p className="text-5xl font-bold">{overall}%</p>
+                <p className="text-blue-200 mt-2 text-sm">
+                  {overall >= 75 ? '✅ You are safe! Keep it up.' : '⚠️ Below 75% threshold — attend more classes!'}
+                </p>
+              </>
+            ) : (
+              <div className="mt-2 flex items-center justify-center w-16 h-16 rounded-full bg-blue-700/50">
+                 <span className="text-2xl opacity-80">🔒</span>
+              </div>
+            )}
           </div>
           <div className="col-span-1 bg-gradient-to-br from-orange-400 to-red-500 text-white rounded-2xl p-6 shadow-sm flex flex-col items-center justify-center text-center">
             <p className="text-red-100 text-sm font-medium mb-1">Current Streak</p>
