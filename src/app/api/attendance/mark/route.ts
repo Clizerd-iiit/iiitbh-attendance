@@ -18,6 +18,14 @@ export async function POST(req: NextRequest) {
   let { studentId, status, method, qrToken, otp, latitude, longitude, recordId, classId } = body;
   
   // Workaround for DB constraint missing kiosk/ai_vision
+
+  // Advanced Geofencing & Device API Protection
+  // Server-side anomaly detection (prevent VPN/Proxy spoofing)
+  const isVpnOrProxy = req.headers.get('via') || req.headers.get('x-proxy-id') || req.headers.get('cf-pseudo-ipv4');
+  if (isVpnOrProxy && (method === 'qr' || method === 'otp')) {
+    return NextResponse.json({ error: 'VPN or Proxy detected. Please connect directly to mark attendance.' }, { status: 403 });
+  }
+
   let dbMethod = method;
   if (method === 'kiosk' || method === 'ai_vision') dbMethod = 'manual';
 
