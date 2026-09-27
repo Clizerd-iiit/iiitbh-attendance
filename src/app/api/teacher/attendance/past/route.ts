@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
 
   if (!cls) {
     const { data: newCls, error: err } = await supabaseAdmin.from('classes')
-      .insert({ subject_id, date, start_time: '10:00:00', end_time: '11:00:00', status: 'closed' })
+      .insert({ subject_id, date, start_time: '10:00:00', end_time: '11:00:00', status: 'closed', created_by: session.user.userId })
       .select('id').single();
     if (err || !newCls) return NextResponse.json({ error: 'Failed to create class record' }, { status: 500 });
     cls = newCls;
