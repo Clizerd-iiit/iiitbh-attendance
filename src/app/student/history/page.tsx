@@ -49,12 +49,12 @@ export default function HistoryPage() {
           <h1 className="text-2xl font-bold text-gray-800">📅 Attendance History</h1>
           <div className="flex items-center gap-3">
             <button onClick={() => setMonth(m => new Date(m.getFullYear(), m.getMonth()-1,1))}
-              className="px-3 py-1 bg-white border rounded-lg hover:bg-gray-100 transition">←</button>
+              className="px-4 py-1 text-black font-black text-lg bg-white border-2 border-gray-300 rounded-lg hover:bg-gray-100 transition">←</button>
             <span className="font-semibold text-gray-800 w-36 text-center">
               {format(month, 'MMMM yyyy')}
             </span>
             <button onClick={() => setMonth(m => new Date(m.getFullYear(), m.getMonth()+1,1))}
-              className="px-3 py-1 bg-white border rounded-lg hover:bg-gray-100 transition">→</button>
+              className="px-4 py-1 text-black font-black text-lg bg-white border-2 border-gray-300 rounded-lg hover:bg-gray-100 transition">→</button>
           </div>
         </div>
 

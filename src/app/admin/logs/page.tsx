@@ -122,7 +122,7 @@ export default function AuditLogsPage() {
 
         <input value={search} onChange={e => setSearch(e.target.value)}
           placeholder="Search by name, email, roll no, action…"
-          className="w-full bg-white border rounded-xl px-4 py-2.5 mb-4 text-sm focus:outline-none focus:border-blue-400 shadow-sm"/>
+          className="w-full text-black font-bold bg-white border-2 border-gray-300 rounded-xl px-4 py-3 mb-4 text-base focus:outline-none focus:border-blue-400 shadow-sm"/>
 
         <div className="space-y-2">
           {filtered.length === 0 && (

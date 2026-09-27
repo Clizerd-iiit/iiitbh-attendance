@@ -71,7 +71,7 @@ export default function StudentDirectoryPage() {
         <h1 className="text-2xl font-bold text-gray-800 mb-4">👥 Student Directory</h1>
         <input value={search} onChange={e => setSearch(e.target.value)}
           placeholder="Search by name, roll no, or email…"
-          className="w-full bg-white border rounded-xl px-4 py-3 mb-4 focus:outline-none focus:border-blue-500 shadow-sm text-sm"/>
+          className="w-full text-black font-bold border-2 border-gray-300 bg-white rounded-xl px-4 py-3 mb-4 focus:outline-none focus:border-blue-500 shadow-sm text-base"/>
 
         <div className="flex flex-wrap gap-3 mb-6 items-center bg-white p-3 rounded-xl border shadow-sm">
           <select value={branchFilter} onChange={e => setBranchFilter(e.target.value)} className="bg-gray-50 text-gray-900 font-bold border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-blue-500 shadow-sm">

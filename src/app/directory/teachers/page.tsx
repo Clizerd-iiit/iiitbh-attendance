@@ -87,7 +87,7 @@ export default function TeachersPage() {
             placeholder="Search faculties by name or email..." 
             value={search} 
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full bg-white border border-gray-200 rounded-xl pl-10 pr-4 py-3 text-sm focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 shadow-sm transition"
+            className="w-full text-black font-bold bg-white border-2 border-gray-300 rounded-xl pl-10 pr-4 py-3 text-base focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 shadow-sm transition"
           />
           <span className="absolute left-3 top-3.5 opacity-70">🔍</span>
         </div>

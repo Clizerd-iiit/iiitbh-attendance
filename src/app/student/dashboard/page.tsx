@@ -330,7 +330,7 @@ export default function StudentDashboard() {
                 value={markForm.code} 
                 onChange={e => setMarkForm({ code: e.target.value.trim() })}
                 disabled={marking}
-                className="flex-1 min-w-0 border-2 rounded-xl px-3 py-3 text-center text-lg font-bold tracking-wider focus:border-blue-500 outline-none disabled:bg-gray-100 disabled:text-gray-800"
+                className="flex-1 min-w-0 text-black font-black border-2 border-gray-300 rounded-xl px-3 py-3 text-center text-xl tracking-wider focus:border-blue-500 outline-none disabled:bg-gray-100 disabled:text-gray-900"
               />
               <button 
                 onClick={() => setShowScanner(true)}
