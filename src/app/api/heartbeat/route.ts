@@ -37,6 +37,17 @@ export async function POST(req: Request) {
   const minAnnDate = lastSeenAnn && lastSeenAnn > today.toISOString() ? lastSeenAnn : today.toISOString();
   const minLogDate = lastSeenLogs && lastSeenLogs > today.toISOString() ? lastSeenLogs : today.toISOString();
 
+  
+  let activeClass = false;
+  if (session.user.role === 'student') {
+    const { data: enrollments } = await supabaseAdmin.from('enrollments').select('subject_id').eq('student_id', session.user.userId);
+    if (enrollments && enrollments.length > 0) {
+      const subjectIds = enrollments.map(e => e.subject_id);
+      const { data: activeClasses } = await supabaseAdmin.from('classes').select('id').in('subject_id', subjectIds).eq('status', 'active').limit(1);
+      if (activeClasses && activeClasses.length > 0) activeClass = true;
+    }
+  }
+
   let pendingQuery = supabaseAdmin.from('users').select('*', { count: 'exact', head: true }).eq('verification_status', 'pending');
   if (lastSeenVerify) pendingQuery = pendingQuery.gt('created_at', lastSeenVerify);
 
@@ -57,6 +68,7 @@ export async function POST(req: Request) {
   return NextResponse.json({ 
     ok: true, 
     deactivated: false,
+    activeClass,
     counts: {
       pending: pendingUsers || 0,
       logs: todayLogs || 0,
