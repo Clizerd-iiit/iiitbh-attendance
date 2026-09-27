@@ -1,25 +1,38 @@
 import { useEffect, useRef } from 'react';
-import { Html5QrcodeScanner } from 'html5-qrcode';
+import { Html5Qrcode } from 'html5-qrcode';
 
 export function QrScanner({ onScan, onClose }: { onScan: (token: string) => void, onClose: () => void }) {
   const scannerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const scanner = new Html5QrcodeScanner(
-      "qr-reader",
-      { fps: 10, qrbox: { width: 250, height: 250 } },
-      false
-    );
-
-    scanner.render((text) => {
-      scanner.clear();
-      onScan(text);
-    }, (err) => {
-      // ignore
-    });
+    let html5QrCode: Html5Qrcode | null = null;
+    
+    const startScanner = async () => {
+      try {
+        html5QrCode = new Html5Qrcode("qr-reader");
+        await html5QrCode.start(
+          { facingMode: "environment" },
+          { fps: 10, qrbox: { width: 250, height: 250 } },
+          (decodedText) => {
+            if (html5QrCode?.isScanning) {
+              html5QrCode.stop().then(() => onScan(decodedText)).catch(() => onScan(decodedText));
+            } else {
+              onScan(decodedText);
+            }
+          },
+          (err) => { /* ignore */ }
+        );
+      } catch (err) {
+        console.error("Failed to start camera", err);
+      }
+    };
+    
+    startScanner();
 
     return () => {
-      scanner.clear().catch(e => console.error(e));
+      if (html5QrCode && html5QrCode.isScanning) {
+        html5QrCode.stop().catch(console.error);
+      }
     };
   }, [onScan]);
 
