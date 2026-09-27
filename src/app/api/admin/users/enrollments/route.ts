@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
 
   const { data: enrollments, error: enrError } = await supabaseAdmin
     .from('enrollments')
-    .select('id, subject_id, joined_at')
+    .select('id, subject_id, enrolled_at')
     .eq('student_id', studentId);
     
   if (enrError) console.error("Enrollments fetch error:", enrError);
@@ -53,7 +53,7 @@ export async function GET(req: NextRequest) {
       subject_code: subj?.code,
       subject_name: subj?.name,
       teachers: teacherNames || 'None',
-      joined_at: e.joined_at
+      enrolled_at: e.enrolled_at
     };
   });
 
