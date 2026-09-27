@@ -170,7 +170,7 @@ export function Navbar() {
                   <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse border border-white"/>
                 )}
               </span>
-              {!collapsed && <span className="text-sm flex-1 truncate flex items-center gap-1">{item.label}{item.label === 'Dashboard' && activeClass && <span className="text-yellow-500 animate-pulse" title="Active class going on">⭐</span>}</span>}
+              {!collapsed && <span className="text-sm flex-1 truncate flex items-center gap-2">{item.label}{item.label === 'Dashboard' && activeClass && <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded animate-pulse shadow-sm tracking-wide">LIVE CLASS</span>}</span>}
               
               {!collapsed && badge > 0 && (
                 <span className="bg-red-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 animate-pulse">
@@ -181,7 +181,7 @@ export function Navbar() {
               {active && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-blue-600 rounded-r-full"/>}
               {collapsed && (
                 <span className="absolute left-full ml-2 px-2 py-1 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition pointer-events-none whitespace-nowrap z-50 flex items-center gap-2">
-                  {item.label} {item.label === 'Dashboard' && activeClass && '⭐'} {badge > 0 && `(${badge})`}
+                  {item.label} {item.label === 'Dashboard' && activeClass && '(LIVE CLASS)'} {badge > 0 && `(${badge})`}
                 </span>
               )}
             </Link>
