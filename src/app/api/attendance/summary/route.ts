@@ -65,5 +65,7 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  return NextResponse.json({ summary: enriched, streak });
+  const { data: settingsData } = await supabaseAdmin.from('system_settings').select('*');
+  const settings = Object.fromEntries((settingsData || []).map((s: any) => [s.key, s.value]));
+  return NextResponse.json({ summary: enriched, streak, settings });
 }

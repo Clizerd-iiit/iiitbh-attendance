@@ -30,7 +30,7 @@ export function QrScanner({ onScan, onClose }: { onScan: (token: string) => void
           <h3 className="font-bold text-lg">Scan QR Code</h3>
           <button onClick={onClose} className="text-gray-700 hover:bg-gray-100 p-2 rounded-lg">✕</button>
         </div>
-        <div id="qr-reader" className="w-full overflow-hidden rounded-xl"></div>
+        <div id="qr-reader" className="w-full min-h-[300px] overflow-hidden rounded-xl [&>video]:w-full [&>video]:object-cover"></div>
       </div>
     </div>
   );

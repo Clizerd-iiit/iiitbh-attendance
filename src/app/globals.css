@@ -37,3 +37,20 @@ input:disabled, textarea:disabled, select:disabled {
   color: #4b5563 !important; /* text-gray-600 */
   opacity: 1 !important;
 }
+
+#qr-reader {
+  width: 100% !important;
+  border: none !important;
+}
+#qr-reader video {
+  width: 100% !important;
+  object-fit: cover !important;
+  border-radius: 0.75rem !important;
+}
+#qr-reader__dashboard_section_csr {
+  padding: 10px !important;
+}
+#qr-reader__dashboard_section_csr span {
+  font-weight: bold !important;
+  color: #374151 !important;
+}

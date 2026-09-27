@@ -7,7 +7,7 @@ import { QrScanner } from '@/components/student/QrScanner';
 import { StudentAttendanceSummary } from '@/types';
 import * as faceapi from 'face-api.js';
 
-function AttendanceCard({ subject }: { subject: StudentAttendanceSummary & { safe_to_miss: number; classes_to_attend: number } }) {
+function AttendanceCard({ subject, showPercentage }: { subject: StudentAttendanceSummary & { safe_to_miss: number; classes_to_attend: number }, showPercentage: boolean }) {
   const pct = subject.percentage === null ? 100 : subject.percentage;
   const color = pct >= 85 ? 'green' : pct >= 75 ? 'yellow' : 'red';
   const colorMap = {
@@ -63,6 +63,7 @@ export default function StudentDashboard() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [summary, setSummary] = useState<(StudentAttendanceSummary & { safe_to_miss: number; classes_to_attend: number })[]>([]);
     const [loading, setLoading] = useState(true);
+  const [showPercentage, setShowPercentage] = useState(true);
 
   useEffect(() => {
     // If URL has ?token=..., open the modal automatically
@@ -81,6 +82,7 @@ export default function StudentDashboard() {
       fetch('/api/attendance/summary').then(r => r.json()).then(d => {
       setSummary(d.summary || []);
       setStreak(d.streak || 0);
+      setShowPercentage(d.settings?.show_student_attendance_percentage !== 'false');
       setLoading(false);
     });
     fetch('/api/polls/active').then(r=>r.json()).then(d => {
@@ -130,6 +132,7 @@ export default function StudentDashboard() {
       fetch('/api/attendance/summary').then(r => r.json()).then(data => {
         setSummary(data.summary || []);
         setStreak(data.streak || 0);
+        setShowPercentage(data.settings?.show_student_attendance_percentage !== 'false');
       });
     } else {
       alert("❌ " + (d.error || "Failed to mark attendance"));
@@ -182,7 +185,16 @@ export default function StudentDashboard() {
       // If face passes, get GPS and execute
       let lat = null, lon = null;
       try {
-        const pos = await new Promise<GeolocationPosition>((res, rej) => navigator.geolocation.getCurrentPosition(res, rej, { timeout: 5000 }));
+        const pos = await new Promise<GeolocationPosition>((res, rej) => navigator.geolocation.getCurrentPosition(res, rej, { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }));
+        
+        // Check for approximate location (accuracy > 200 meters typically means Precise Location is OFF)
+        if (pos.coords.accuracy > 200) {
+          alert("Precise location is required! You seem to be using an 'Approximate Location'. Please go to your device settings, enable 'Precise Location' for your browser, and try again.");
+          setMarking(false);
+          setFaceCheckState('idle');
+          return;
+        }
+        
         lat = pos.coords.latitude;
         lon = pos.coords.longitude;
       } catch (e) {
@@ -294,7 +306,7 @@ export default function StudentDashboard() {
           </div>
         ) : (
           <div className="grid gap-4 md:grid-cols-2">
-            {summary.map(s => <AttendanceCard key={s.subject_id} subject={s}/>)}
+            {summary.map(s => <AttendanceCard key={s.subject_id} subject={s} showPercentage={showPercentage}/>)}
           </div>
         )}
       </div>

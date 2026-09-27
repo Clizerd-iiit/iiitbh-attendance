@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { Navbar } from '@/components/shared/Navbar';
 
 interface Settings {
+  show_student_attendance_percentage?: string;
   attendance_threshold: string;
   allowed_email_domain: string;
   qr_expiry_seconds: string;
@@ -131,6 +132,18 @@ export default function SettingsPage() {
                   onClick={() => setSettings({...settings, share_logs_with_students: settings.share_logs_with_students === 'true' ? 'false' : 'true'})}
                   className={`w-12 h-6 rounded-full transition-colors relative flex items-center ${settings.share_logs_with_students === 'true' ? 'bg-green-500' : 'bg-gray-300'}`}>
                   <div className={`w-5 h-5 bg-white rounded-full absolute shadow-sm transition-all duration-300 ${settings.share_logs_with_students === 'true' ? 'left-6' : 'left-0.5'}`} />
+                </button>
+              </div>
+
+              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100">
+                <div>
+                  <h3 className="font-semibold text-gray-800">Student Attendance %</h3>
+                  <p className="text-xs text-gray-700 mt-0.5">Show attendance % on student dashboard</p>
+                </div>
+                <button 
+                  onClick={() => setSettings({...settings, show_student_attendance_percentage: settings.show_student_attendance_percentage === 'false' ? 'true' : 'false'})}
+                  className={`w-12 h-6 rounded-full transition-colors relative flex items-center ${settings.show_student_attendance_percentage !== 'false' ? 'bg-green-500' : 'bg-gray-300'}`}>
+                  <div className={`w-5 h-5 bg-white rounded-full absolute shadow-sm transition-all duration-300 ${settings.show_student_attendance_percentage !== 'false' ? 'left-6' : 'left-0.5'}`} />
                 </button>
               </div>
 
