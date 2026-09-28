@@ -180,15 +180,22 @@ export default function StudentDashboard() {
         return alert("No face detected! Please look clearly at the camera.");
       }
       
-      // Handle Multi-Angle vs Legacy Single-Angle
-      let dist = 1.0;
+      // Handle Multi-Angle vs Legacy Single-Angle using Centroid (Average) Embedding
+      let finalDescriptor = faceDescriptor;
       if (Array.isArray(faceDescriptor[0])) {
-         // Multi-angle: Find the minimum distance across all 5 angles
-         dist = Math.min(...faceDescriptor.map((d: any) => faceapi.euclideanDistance(detection.descriptor, new Float32Array(d))));
-      } else {
-         // Legacy single-angle
-         dist = faceapi.euclideanDistance(detection.descriptor, new Float32Array(faceDescriptor));
+         const numAngles = faceDescriptor.length;
+         finalDescriptor = new Array(128).fill(0);
+         for (let i = 0; i < numAngles; i++) {
+             for (let j = 0; j < 128; j++) {
+                 finalDescriptor[j] += faceDescriptor[i][j];
+             }
+         }
+         for (let j = 0; j < 128; j++) {
+             finalDescriptor[j] /= numAngles;
+         }
       }
+      
+      const dist = faceapi.euclideanDistance(detection.descriptor, new Float32Array(finalDescriptor));
 
       if (dist > 0.55) {
         setFaceCheckState('failed'); setMarking(false);

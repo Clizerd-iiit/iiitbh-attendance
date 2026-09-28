@@ -43,15 +43,25 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
         
         const labeledDescriptors = (data.students || []).map((s: any) => {
           // Check if the descriptor is multi-angle (array of arrays) or legacy (single array)
+          // Fallback to Centroid (Average) Embedding if 5-angle 2D array is detected
+          // This prevents face-api.js from crashing on multi-array inputs while preserving 3D accuracy
           const isMulti = Array.isArray(s.descriptor[0]);
-          let floatArrays = [];
+          let finalDescriptor = s.descriptor;
           
           if (isMulti) {
-             floatArrays = s.descriptor.map((d: any) => new Float32Array(d));
-          } else {
-             floatArrays = [new Float32Array(s.descriptor)];
+             const numAngles = s.descriptor.length;
+             finalDescriptor = new Array(128).fill(0);
+             for (let i = 0; i < numAngles; i++) {
+                 for (let j = 0; j < 128; j++) {
+                     finalDescriptor[j] += s.descriptor[i][j];
+                 }
+             }
+             for (let j = 0; j < 128; j++) {
+                 finalDescriptor[j] /= numAngles;
+             }
           }
-          return new faceapi.LabeledFaceDescriptors(s.id, floatArrays);
+          
+          return new faceapi.LabeledFaceDescriptors(s.id, [new Float32Array(finalDescriptor)]);
         });
 
         if (labeledDescriptors.length === 0) {
@@ -102,6 +112,7 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
              if (ctx) ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
 
              if (resizedDetections && resizedDetections.length > 0) {
+              try {
                 const newlyMarkedNames: string[] = [];
                 const markPromises: Promise<void>[] = [];
 
@@ -164,6 +175,9 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
                       setRecentMatches(prev => prev.filter(m => now - m.time < 3000));
                    }, 3000);
                 }
+              } catch (err) {
+                 console.error("Face matching error:", err);
+              }
              }
           }
           
