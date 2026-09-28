@@ -6,7 +6,7 @@ interface KioskModeProps {
   subjectId: string;
   onClose: () => void;
   onMark: (studentId: string) => Promise<void>;
-  markedMap: Record<string, string>; // student_id -> status
+  markedMap: Record<string, string>;
   students: { id: string; name: string; roll_no?: string }[];
 }
 
@@ -49,8 +49,8 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
           return;
         }
 
-        // Distance threshold 0.55 for good accuracy
-        const faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.42); // Ultra strict // Stricter for Kiosk to prevent false positives
+        // ORIGINAL ACCURACY: 0.45 is the exact threshold from your first version
+        const faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.45);
 
         // 3. Start Camera
         setStatus('starting_camera');
@@ -59,7 +59,6 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
           videoRef.current.srcObject = stream;
         }
 
-        // Wait for video to be ready
         await new Promise(r => {
            if (videoRef.current && videoRef.current.readyState >= 2) r(true);
            else if (videoRef.current) videoRef.current.onloadeddata = () => r(true);
@@ -73,7 +72,7 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
 
         setStatus('active');
 
-        // 4. Scanning Loop (Throttled for Accuracy)
+        // 4. Fast Tracking Loop (100ms) for high speed UI and real-time bounding boxes
         const scanLoop = async () => {
           if (!isRunning || !videoRef.current || !canvasRef.current) return;
           
@@ -81,8 +80,8 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
              const displaySize = { width: videoRef.current.videoWidth, height: videoRef.current.videoHeight };
              faceapi.matchDimensions(canvasRef.current, displaySize);
 
-             // HIGH scoreThreshold (0.75) to prevent ghost faces/background noise
-             const detections = await faceapi.detectAllFaces(videoRef.current, new faceapi.TinyFaceDetectorOptions({ scoreThreshold: 0.75 })).withFaceLandmarks().withFaceDescriptors();
+             // ORIGINAL ACCURACY: scoreThreshold 0.5 prevents ghost faces while staying highly sensitive
+             const detections = await faceapi.detectAllFaces(videoRef.current, new faceapi.TinyFaceDetectorOptions({ scoreThreshold: 0.5 })).withFaceLandmarks().withFaceDescriptors();
              const resizedDetections = faceapi.resizeResults(detections, displaySize);
              
              const ctx = canvasRef.current.getContext('2d');
@@ -95,21 +94,15 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
                 resizedDetections.forEach(det => {
                    const bestMatch = faceMatcher.findBestMatch(det.descriptor);
                    
-                   // EXTREMELY STRICT distance threshold (0.42) for Kiosk
-                   const isUnknown = bestMatch.label === 'unknown' || bestMatch.distance > 0.42;
+                   // Strict verification based on the original 0.45 threshold
+                   const isUnknown = bestMatch.label === 'unknown' || bestMatch.distance > 0.45;
                    const studentId = bestMatch.label;
                    
-                   let boxColor = '#ef4444'; // Red for unknown or not marked
-                   let labelText = isUnknown ? 'Unknown' : 'Recognizing...';
+                   let boxColor = '#ef4444'; // Red for unknown
+                   let labelText = 'Unknown';
                    const box = det.detection.box;
 
-                   // Enforce minimum face size for accuracy (prevent background noise matching)
-                   const isTooFar = box.width < 110 || box.height < 110;
-
-                   if (isTooFar) {
-                      boxColor = '#eab308'; // Yellow
-                      labelText = 'Come Closer!';
-                   } else if (!isUnknown) {
+                   if (!isUnknown) {
                       const s = students.find(x => x.id === studentId);
                       if (s) {
                          const nameParts = s.name.trim().split(' ');
@@ -121,14 +114,14 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
                          boxColor = '#22c55e'; // Green if already marked
                       } else {
                          // Newly marked
-                         boxColor = '#22c55e';
+                         boxColor = '#22c55e'; // Instantly turn green
                          markedRef.current[studentId] = 'P'; // Optimistic local update
                          markPromises.push(onMark(studentId));
                          newlyMarkedNames.push(labelText);
                       }
                    }
 
-                   // Draw bounding box
+                   // Draw bounding box (Square Frame + Name Badge)
                    const drawBox = new faceapi.draw.DrawBox(box, {
                       label: labelText,
                       boxColor: boxColor,
@@ -136,7 +129,7 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
                       drawLabelOptions: {
                          fontColor: '#ffffff',
                          fontSize: 22,
-                         padding: 8
+                         padding: 10
                       }
                    });
                    if (canvasRef.current) drawBox.draw(canvasRef.current);
@@ -151,7 +144,6 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
                    const newMatches = newlyMarkedNames.map((n, i) => ({ id: now + '-' + i, name: n, time: now }));
                    setRecentMatches(prev => [...prev, ...newMatches]);
                    
-                   // Auto-remove after 3 seconds
                    setTimeout(() => {
                       setRecentMatches(prev => prev.filter(m => now - m.time < 3000));
                    }, 3000);
@@ -159,8 +151,8 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
              }
           }
           
-          // Throttle to ~3 FPS to prevent "lucky bad frame" false positives
-          if (isRunning) setTimeout(scanLoop, 350);
+          // Fast tracking loop: ~10 FPS for instantaneous tracking and marking
+          if (isRunning) setTimeout(scanLoop, 100);
         };
 
         scanLoop();
@@ -178,7 +170,7 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
       isRunning = false;
       if (stream) stream.getTracks().forEach(t => t.stop());
     };
-  }, [subjectId]); // omit onMark and markedMap from deps to avoid re-init
+  }, [subjectId]);
 
   return (
     <div className="fixed inset-0 bg-black z-50 flex flex-col">
@@ -187,7 +179,7 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
           <span className="w-3 h-3 bg-red-500 rounded-full animate-pulse"/>
           Live AI Detection Attendance
         </h2>
-        <button onClick={onClose} className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium">
+        <button onClick={onClose} className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium shadow-sm transition">
           Close Kiosk
         </button>
       </div>
@@ -204,22 +196,23 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
         )}
         
         {status === 'error' && (
-          <div className="absolute z-10 bg-red-500 text-white px-6 py-4 rounded-xl font-bold max-w-md text-center">
+          <div className="absolute z-10 bg-red-500 text-white px-6 py-4 rounded-xl font-bold max-w-md text-center shadow-lg">
             {msg}
           </div>
         )}
 
         <div className="relative w-full h-full flex items-center justify-center">
            <video ref={videoRef} autoPlay muted playsInline className="absolute w-full h-full object-cover" />
+           {/* Realtime Bounding Box Overlay */}
            <canvas ref={canvasRef} className="absolute w-full h-full object-cover pointer-events-none" />
         </div>
         
-        {/* Vertical Recent Matches on the Right */}
+        {/* Realtime Toast Popups */}
         <div className="absolute right-6 top-6 bottom-6 w-72 md:w-80 overflow-hidden flex flex-col items-end gap-3 pointer-events-none p-2">
           {recentMatches.map((match) => (
-            <div key={match.id} className="bg-green-500 text-white px-6 py-4 rounded-2xl font-bold text-lg md:text-xl shadow-[0_0_30px_rgba(34,197,94,0.6)] animate-pulse flex items-center gap-3 w-full border-2 border-green-400">
+            <div key={match.id} className="bg-green-500 text-white px-6 py-4 rounded-2xl font-bold text-lg md:text-xl shadow-[0_0_20px_rgba(34,197,94,0.5)] animate-[bounce_0.5s_ease-in-out] flex items-center gap-3 w-full border-2 border-green-400">
               <span className="text-2xl shrink-0">✅</span>
-              <span className="truncate">{match.name}</span>
+              <span className="truncate drop-shadow-md">{match.name}</span>
             </div>
           ))}
         </div>
