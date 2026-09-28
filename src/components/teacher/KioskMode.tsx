@@ -12,15 +12,17 @@ interface KioskModeProps {
 
 export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: KioskModeProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const [status, setStatus] = useState<'loading_models'|'loading_faces'|'starting_camera'|'active'|'error'>('loading_models');
   const [msg, setMsg] = useState('');
   const [recentMatches, setRecentMatches] = useState<{id: string, name: string, time: number}[]>([]);
+  
   const markedRef = useRef(markedMap);
   useEffect(() => { markedRef.current = markedMap; }, [markedMap]);
 
   useEffect(() => {
     let stream: MediaStream | null = null;
-    let scanInterval: NodeJS.Timeout;
+    let isRunning = true;
     
     const init = async () => {
       try {
@@ -47,8 +49,8 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
           return;
         }
 
-        // Distance threshold 0.45
-        const faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.45);
+        // Distance threshold 0.55 for good accuracy
+        const faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.55);
 
         // 3. Start Camera
         setStatus('starting_camera');
@@ -57,55 +59,102 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
           videoRef.current.srcObject = stream;
         }
 
-        // Give camera time to init
-        await new Promise(r => setTimeout(r, 1000));
+        // Wait for video to be ready
+        await new Promise(r => {
+           if (videoRef.current && videoRef.current.readyState >= 2) r(true);
+           else if (videoRef.current) videoRef.current.onloadeddata = () => r(true);
+           else setTimeout(r, 1000);
+        });
+        
+        if (videoRef.current && canvasRef.current) {
+           canvasRef.current.width = videoRef.current.videoWidth;
+           canvasRef.current.height = videoRef.current.videoHeight;
+        }
+
         setStatus('active');
 
-        // 4. Scanning Loop (Group Scan Mode)
-        scanInterval = setInterval(async () => {
-          if (!videoRef.current) return;
+        // 4. Scanning Loop (Real-time Video Loop)
+        const scanLoop = async () => {
+          if (!isRunning || !videoRef.current || !canvasRef.current) return;
           
-          // detectAllFaces for group scanning
-          const detections = await faceapi.detectAllFaces(videoRef.current, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptors();
-          
-          if (detections && detections.length > 0) {
-            const newlyMarkedNames: string[] = [];
-            
-            // Process all detected faces in this single frame
-            const markPromises = detections.map(async (det) => {
-              const bestMatch = faceMatcher.findBestMatch(det.descriptor);
-              if (bestMatch.label !== 'unknown') {
-                const studentId = bestMatch.label;
-                
-                // If not already marked present
-                if (markedRef.current[studentId] !== 'P') {
-                  markedRef.current[studentId] = 'P'; // Optimistic local update
-                  await onMark(studentId);
-                  
-                  const s = students.find(x => x.id === studentId);
-                  if (s) {
-                                        const nameParts = s.name.trim().split(' ');
-                    const displayName = nameParts.length > 1 ? nameParts.slice(0, -1).join(' ') : s.name;
-                    newlyMarkedNames.push(displayName); // Exclude last name only
-                  }
+          if (videoRef.current.readyState === 4) {
+             const displaySize = { width: videoRef.current.videoWidth, height: videoRef.current.videoHeight };
+             faceapi.matchDimensions(canvasRef.current, displaySize);
+
+             const detections = await faceapi.detectAllFaces(videoRef.current, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptors();
+             const resizedDetections = faceapi.resizeResults(detections, displaySize);
+             
+             const ctx = canvasRef.current.getContext('2d');
+             if (ctx) ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+
+             if (resizedDetections && resizedDetections.length > 0) {
+                const newlyMarkedNames: string[] = [];
+                const markPromises: Promise<void>[] = [];
+
+                resizedDetections.forEach(det => {
+                   const bestMatch = faceMatcher.findBestMatch(det.descriptor);
+                   const isUnknown = bestMatch.label === 'unknown';
+                   const studentId = bestMatch.label;
+                   
+                   let boxColor = '#ef4444'; // Red for unknown or not marked
+                   let labelText = 'Unknown';
+
+                   if (!isUnknown) {
+                      const s = students.find(x => x.id === studentId);
+                      if (s) {
+                         const nameParts = s.name.trim().split(' ');
+                         labelText = nameParts.length > 1 ? nameParts.slice(0, -1).join(' ') : s.name;
+                      }
+
+                      // Check if already marked
+                      if (markedRef.current[studentId] === 'P') {
+                         boxColor = '#22c55e'; // Green if already marked
+                      } else {
+                         // Newly marked
+                         boxColor = '#22c55e';
+                         markedRef.current[studentId] = 'P'; // Optimistic local update
+                         markPromises.push(onMark(studentId));
+                         newlyMarkedNames.push(labelText);
+                      }
+                   }
+
+                   // Draw bounding box
+                   const box = det.detection.box;
+                   const drawBox = new faceapi.draw.DrawBox(box, {
+                      label: labelText,
+                      boxColor: boxColor,
+                      lineWidth: 4,
+                      drawLabelOptions: {
+                         fontColor: '#ffffff',
+                         fontSize: 24,
+                         padding: 10
+                      }
+                   });
+                   if (canvasRef.current) drawBox.draw(canvasRef.current);
+                });
+
+                if (markPromises.length > 0) {
+                   await Promise.all(markPromises);
                 }
-              }
-            });
-            
-            await Promise.all(markPromises);
-            
-            if (newlyMarkedNames.length > 0) {
-               const now = Date.now();
-               const newMatches = newlyMarkedNames.map((n, i) => ({ id: now + '-' + i, name: n, time: now }));
-               setRecentMatches(prev => [...prev, ...newMatches]);
-               
-               // Auto-remove after 3 seconds (3000ms)
-               setTimeout(() => {
-                  setRecentMatches(prev => prev.filter(m => now - m.time < 3000));
-               }, 3000);
-            }
+
+                if (newlyMarkedNames.length > 0) {
+                   const now = Date.now();
+                   const newMatches = newlyMarkedNames.map((n, i) => ({ id: now + '-' + i, name: n, time: now }));
+                   setRecentMatches(prev => [...prev, ...newMatches]);
+                   
+                   // Auto-remove after 3 seconds
+                   setTimeout(() => {
+                      setRecentMatches(prev => prev.filter(m => now - m.time < 3000));
+                   }, 3000);
+                }
+             }
           }
-        }, 1000); // scan every 1s
+          
+          // Call next frame via requestAnimationFrame for max smoothness
+          if (isRunning) requestAnimationFrame(scanLoop);
+        };
+
+        scanLoop();
 
       } catch (e: any) {
         console.error(e);
@@ -117,12 +166,10 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
     init();
 
     return () => {
+      isRunning = false;
       if (stream) stream.getTracks().forEach(t => t.stop());
-      if (scanInterval) clearInterval(scanInterval);
     };
-  }, [subjectId]); // We omit onMark and markedMap from deps to avoid re-init
-
-
+  }, [subjectId]); // omit onMark and markedMap from deps to avoid re-init
 
   return (
     <div className="fixed inset-0 bg-black z-50 flex flex-col">
@@ -153,18 +200,11 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
           </div>
         )}
 
-        <video ref={videoRef} autoPlay muted playsInline className="w-full h-full object-cover opacity-60" />
-        
-        {/* Overlay frame */}
-        <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
-          <div className="w-72 h-72 border-4 border-dashed border-white/50 rounded-3xl relative">
-             <div className="absolute -top-1 -left-1 w-8 h-8 border-t-4 border-l-4 border-blue-500 rounded-tl-3xl"/>
-             <div className="absolute -top-1 -right-1 w-8 h-8 border-t-4 border-r-4 border-blue-500 rounded-tr-3xl"/>
-             <div className="absolute -bottom-1 -left-1 w-8 h-8 border-b-4 border-l-4 border-blue-500 rounded-bl-3xl"/>
-             <div className="absolute -bottom-1 -right-1 w-8 h-8 border-b-4 border-r-4 border-blue-500 rounded-br-3xl"/>
-          </div>
+        <div className="relative w-full h-full flex items-center justify-center">
+           <video ref={videoRef} autoPlay muted playsInline className="absolute w-full h-full object-cover" />
+           <canvas ref={canvasRef} className="absolute w-full h-full object-cover pointer-events-none" />
         </div>
-
+        
         {/* Vertical Recent Matches on the Right */}
         <div className="absolute right-6 top-6 bottom-6 w-72 md:w-80 overflow-hidden flex flex-col items-end gap-3 pointer-events-none p-2">
           {recentMatches.map((match) => (
