@@ -16,8 +16,10 @@ export async function POST(req: NextRequest) {
   const { data: user } = await supabaseAdmin.from('users').select('signup_info').eq('id', session.user.userId).single();
   const signupInfo = user?.signup_info || {};
   
-  // Check 30 day limit
-  if (signupInfo.last_face_update) {
+  // Check 30 day limit, BUT allow bypass if upgrading from old 1D model to new 3D Multi-Angle model
+  const isLegacy = signupInfo.face_descriptor && !Array.isArray(signupInfo.face_descriptor[0]);
+  
+  if (signupInfo.last_face_update && !isLegacy) {
     const lastUpdate = new Date(signupInfo.last_face_update).getTime();
     const now = Date.now();
     const daysSince = (now - lastUpdate) / (1000 * 60 * 60 * 24);
