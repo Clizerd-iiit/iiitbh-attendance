@@ -50,7 +50,7 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
         }
 
         // Distance threshold 0.55 for good accuracy
-        const faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.45); // Stricter for Kiosk to prevent false positives
+        const faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.42); // Ultra strict // Stricter for Kiosk to prevent false positives
 
         // 3. Start Camera
         setStatus('starting_camera');
@@ -73,7 +73,7 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
 
         setStatus('active');
 
-        // 4. Scanning Loop (Real-time Video Loop)
+        // 4. Scanning Loop (Throttled for Accuracy)
         const scanLoop = async () => {
           if (!isRunning || !videoRef.current || !canvasRef.current) return;
           
@@ -81,7 +81,8 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
              const displaySize = { width: videoRef.current.videoWidth, height: videoRef.current.videoHeight };
              faceapi.matchDimensions(canvasRef.current, displaySize);
 
-             const detections = await faceapi.detectAllFaces(videoRef.current, new faceapi.TinyFaceDetectorOptions({ scoreThreshold: 0.6 })).withFaceLandmarks().withFaceDescriptors();
+             // HIGH scoreThreshold (0.75) to prevent ghost faces/background noise
+             const detections = await faceapi.detectAllFaces(videoRef.current, new faceapi.TinyFaceDetectorOptions({ scoreThreshold: 0.75 })).withFaceLandmarks().withFaceDescriptors();
              const resizedDetections = faceapi.resizeResults(detections, displaySize);
              
              const ctx = canvasRef.current.getContext('2d');
@@ -93,15 +94,17 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
 
                 resizedDetections.forEach(det => {
                    const bestMatch = faceMatcher.findBestMatch(det.descriptor);
-                   const isUnknown = bestMatch.label === 'unknown';
+                   
+                   // EXTREMELY STRICT distance threshold (0.42) for Kiosk
+                   const isUnknown = bestMatch.label === 'unknown' || bestMatch.distance > 0.42;
                    const studentId = bestMatch.label;
                    
                    let boxColor = '#ef4444'; // Red for unknown or not marked
-                   let labelText = 'Unknown';
+                   let labelText = isUnknown ? 'Unknown' : 'Recognizing...';
                    const box = det.detection.box;
 
                    // Enforce minimum face size for accuracy (prevent background noise matching)
-                   const isTooFar = box.width < 90 || box.height < 90;
+                   const isTooFar = box.width < 110 || box.height < 110;
 
                    if (isTooFar) {
                       boxColor = '#eab308'; // Yellow
@@ -132,8 +135,8 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
                       lineWidth: 4,
                       drawLabelOptions: {
                          fontColor: '#ffffff',
-                         fontSize: 24,
-                         padding: 10
+                         fontSize: 22,
+                         padding: 8
                       }
                    });
                    if (canvasRef.current) drawBox.draw(canvasRef.current);
@@ -156,8 +159,8 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
              }
           }
           
-          // Call next frame via requestAnimationFrame for max smoothness
-          if (isRunning) requestAnimationFrame(scanLoop);
+          // Throttle to ~3 FPS to prevent "lucky bad frame" false positives
+          if (isRunning) setTimeout(scanLoop, 350);
         };
 
         scanLoop();
