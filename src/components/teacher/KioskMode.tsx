@@ -50,7 +50,7 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
         }
 
         // Distance threshold 0.55 for good accuracy
-        const faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.55);
+        const faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.45); // Stricter for Kiosk to prevent false positives
 
         // 3. Start Camera
         setStatus('starting_camera');
@@ -81,7 +81,7 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
              const displaySize = { width: videoRef.current.videoWidth, height: videoRef.current.videoHeight };
              faceapi.matchDimensions(canvasRef.current, displaySize);
 
-             const detections = await faceapi.detectAllFaces(videoRef.current, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptors();
+             const detections = await faceapi.detectAllFaces(videoRef.current, new faceapi.TinyFaceDetectorOptions({ scoreThreshold: 0.6 })).withFaceLandmarks().withFaceDescriptors();
              const resizedDetections = faceapi.resizeResults(detections, displaySize);
              
              const ctx = canvasRef.current.getContext('2d');
@@ -98,8 +98,15 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
                    
                    let boxColor = '#ef4444'; // Red for unknown or not marked
                    let labelText = 'Unknown';
+                   const box = det.detection.box;
 
-                   if (!isUnknown) {
+                   // Enforce minimum face size for accuracy (prevent background noise matching)
+                   const isTooFar = box.width < 90 || box.height < 90;
+
+                   if (isTooFar) {
+                      boxColor = '#eab308'; // Yellow
+                      labelText = 'Come Closer!';
+                   } else if (!isUnknown) {
                       const s = students.find(x => x.id === studentId);
                       if (s) {
                          const nameParts = s.name.trim().split(' ');
@@ -119,7 +126,6 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
                    }
 
                    // Draw bounding box
-                   const box = det.detection.box;
                    const drawBox = new faceapi.draw.DrawBox(box, {
                       label: labelText,
                       boxColor: boxColor,
