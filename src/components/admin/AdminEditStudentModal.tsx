@@ -1,6 +1,14 @@
 import { useState, useRef, useEffect } from 'react';
 import * as faceapi from 'face-api.js';
 
+const ANGLES = [
+  { id: 'center', label: 'Look Straight', emoji: '😐' },
+  { id: 'left', label: 'Turn Head Slowly to Left', emoji: '⬅️' },
+  { id: 'right', label: 'Turn Head Slowly to Right', emoji: '➡️' },
+  { id: 'up', label: 'Tilt Head Upwards', emoji: '⬆️' },
+  { id: 'down', label: 'Tilt Head Downwards', emoji: '⬇️' }
+];
+
 export function AdminEditStudentModal({ student, onClose, onSaved }: { student: any, onClose: () => void, onSaved: () => void }) {
   const [name, setName] = useState(student.name || '');
   const [rollNo, setRollNo] = useState(student.roll_no || '');
@@ -17,7 +25,9 @@ export function AdminEditStudentModal({ student, onClose, onSaved }: { student: 
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
-  const [descriptor, setDescriptor] = useState<Float32Array | null>(null);
+  
+  const [step, setStep] = useState(0);
+  const [descriptors, setDescriptors] = useState<Float32Array[]>([]);
 
   useEffect(() => {
     if (mode === 'enrollments') {
@@ -38,6 +48,7 @@ export function AdminEditStudentModal({ student, onClose, onSaved }: { student: 
     setSaving(false);
     if (res.ok) {
       onSaved();
+      onClose();
     } else alert('Failed to save details');
   };
   
@@ -65,31 +76,45 @@ export function AdminEditStudentModal({ student, onClose, onSaved }: { student: 
     }
   };
   
-  const captureFace = async () => {
+  const captureAngle = async () => {
     if (!videoRef.current) return;
-    setFaceMsg('Detecting Face...');
+    setFaceMsg('Scanning...');
     const detection = await faceapi.detectSingleFace(videoRef.current, new faceapi.TinyFaceDetectorOptions())
       .withFaceLandmarks().withFaceDescriptor();
     if (!detection) {
-      setFaceMsg(''); alert('No face detected!'); return;
+      setFaceMsg(''); alert('No face detected! Please ensure good lighting.'); return;
     }
-    setDescriptor(detection.descriptor);
+    setDescriptors(prev => [...prev, detection.descriptor]);
+    setStep(s => s + 1);
     setFaceMsg('');
   };
   
   const saveFace = async () => {
     setSaving(true);
+    const arr2D = descriptors.map(d => Array.from(d));
     const res = await fetch('/api/teacher/students/face', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ student_id: student.id, descriptor: Array.from(descriptor!) })
+      body: JSON.stringify({ student_id: student.id, descriptor: arr2D })
     });
     setSaving(false);
     if (res.ok) {
-      alert('Face ID updated successfully!');
+      alert('3D Face ID mapped successfully!');
       stopCamera();
+      onSaved();
       onClose();
     } else alert('Failed to save face ID');
+  };
+
+  const resetFace = async () => {
+    if(!confirm('Are you sure you want to delete this Face ID? The student will be forced to re-register on their own phone.')) return;
+    setSaving(true);
+    await fetch(`/api/teacher/students/face?student_id=${student.id}`, { method: 'DELETE' });
+    setSaving(false);
+    alert('Face ID deleted successfully! Student must re-register.');
+    stopCamera();
+    onSaved();
+    onClose();
   };
   
   const stopCamera = () => {
@@ -145,29 +170,34 @@ export function AdminEditStudentModal({ student, onClose, onSaved }: { student: 
             </div>
           ) : mode === 'face' ? (
             <div className="text-center">
-              <div className="relative w-full max-w-sm mx-auto aspect-square bg-gray-200 rounded-2xl overflow-hidden mb-6 flex items-center justify-center">
-                {faceMsg && <div className="absolute inset-0 bg-black/60 text-white flex items-center justify-center p-4 z-10">{faceMsg}</div>}
-                <video ref={videoRef} className="w-full h-full object-cover" muted playsInline />
+              <div className="flex justify-between mb-4">
+                <h3 className="font-bold text-gray-800">3D Face Mapping</h3>
+                <button onClick={resetFace} disabled={saving} className="text-sm font-bold text-red-600 hover:text-red-800">Reset & Delete</button>
               </div>
               
-              {!descriptor ? (
-                <div className="flex flex-col gap-3 max-w-sm mx-auto">
-                  <button onClick={captureFace} disabled={!!faceMsg} className="w-full py-3 bg-blue-600 text-white rounded-xl font-medium">Capture Face (Webcam)</button>
-                  <button onClick={async () => {
-                    if(!confirm('This will allow the student to update their own Face ID from their phone. Continue?')) return;
-                    setSaving(true);
-                    await fetch(`/api/teacher/students/face?student_id=${student.id}`, { method: 'DELETE' });
-                    setSaving(false);
-                    alert('Limit reset successfully! Student can now update their Face ID.');
-                  }} disabled={saving} className="w-full py-3 bg-gray-100 text-gray-800 hover:bg-gray-200 rounded-xl font-medium">Reset Face ID Limit</button>
+              <div className="relative w-full max-w-sm mx-auto aspect-square bg-gray-200 rounded-2xl overflow-hidden mb-4 flex items-center justify-center border-4 border-blue-100">
+                {faceMsg && <div className="absolute inset-0 bg-black/60 text-white flex items-center justify-center p-4 z-10">{faceMsg}</div>}
+                <video ref={videoRef} className="w-full h-full object-cover transform scale-x-[-1]" muted playsInline />
+                
+                {/* 3D Target Overlay Guide */}
+                <div className="absolute inset-0 z-0 pointer-events-none flex items-center justify-center">
+                  <div className="w-48 h-64 border-2 border-dashed border-white/50 rounded-full"></div>
+                </div>
+              </div>
+              
+              {step < 5 ? (
+                <div>
+                  <h3 className="text-lg font-bold text-gray-800">{ANGLES[step].emoji} {ANGLES[step].label}</h3>
+                  <p className="text-sm text-gray-600 mb-4">Angle {step + 1} of 5</p>
+                  <button onClick={captureAngle} disabled={!!faceMsg} className="w-full py-3 bg-blue-600 text-white rounded-xl font-medium">Capture Angle</button>
                 </div>
               ) : (
-                <div className="flex gap-2 max-w-sm mx-auto">
-                  <button onClick={() => setDescriptor(null)} disabled={saving} className="flex-1 py-3 bg-gray-200 rounded-xl font-medium">Retake</button>
-                  <button onClick={saveFace} disabled={saving} className="flex-1 py-3 bg-green-600 text-white rounded-xl font-medium">{saving?'Saving...':'Confirm & Save'}</button>
+                <div>
+                  <h3 className="text-lg font-bold text-green-600 mb-4">✅ All 5 Angles Captured</h3>
+                  <button onClick={saveFace} disabled={saving} className="w-full py-3 bg-green-600 text-white rounded-xl font-medium">{saving?'Saving...':'Save 3D Face ID'}</button>
+                  <button onClick={() => { setStep(0); setDescriptors([]); }} className="w-full py-3 mt-2 bg-gray-100 text-gray-800 rounded-xl font-medium">Retake</button>
                 </div>
               )}
-              <p className="text-xs text-gray-700 mt-4">This will immediately overwrite the student's Face ID and bypass the 30-day limit.</p>
             </div>
           ) : (
             <div className="space-y-3">
