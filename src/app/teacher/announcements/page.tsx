@@ -10,6 +10,8 @@ interface Announcement {
   id: string; title: string; content?: string; type: AnnType;
   created_at: string; expires_at?: string; link_url?: string;
   teacher?: { name: string; profile_photo_url?: string; role?: string; };
+  teacher_id?: string;
+  subject_id?: string;
   subject?: { name: string; code: string };
 }
 
@@ -28,6 +30,8 @@ export default function TeacherAnnouncementsPage() {
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [showForm, setShowForm] = useState(false);
+  const [userId, setUserId] = useState('');
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [posting, setPosting] = useState(false);
   const [enrolledStudents, setEnrolledStudents] = useState<any[]>([]);
   const [targetStudentIds, setTargetStudentIds] = useState<Set<string>>(new Set());
@@ -44,7 +48,7 @@ export default function TeacherAnnouncementsPage() {
   const totalHours = () => expiryDays * 24 + expiryHours || 48;
 
   const fetchAll = () => {
-    fetch('/api/announcements').then(r => r.json()).then(d => setAnnouncements(d.announcements || []));
+    fetch('/api/announcements').then(r => r.json()).then(d => { setAnnouncements(d.announcements || []); setUserId(d.userId || ''); });
   };
 
   useEffect(() => {
@@ -67,18 +71,26 @@ export default function TeacherAnnouncementsPage() {
   const post = async () => {
     if (!form.title.trim()) return;
     setPosting(true);
-    await fetch('/api/announcements', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
+    const bodyObj = { 
         ...form, 
         subject_id: form.subject_id || null, 
         expiry_hours: totalHours(),
         target_student_ids: targetStudentIds.size > 0 ? Array.from(targetStudentIds) : null
-      }),
-    });
+    };
+    if (editingId) {
+      await fetch('/api/announcements', {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...bodyObj, id: editingId })
+      });
+    } else {
+      await fetch('/api/announcements', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(bodyObj)
+      });
+    }
     setPosting(false);
     setShowForm(false);
+    setEditingId(null);
     setForm({ subject_id: '', type: 'text', title: '', content: '', link_url: '' });
     setExpiryDays(2); setExpiryHours(0); setTargetStudentIds(new Set());
     fetchAll();
@@ -347,10 +359,19 @@ export default function TeacherAnnouncementsPage() {
     
                       </div>
                     </div>
-                    <button onClick={() => deleteAnn(ann.id)}
-                      className="text-gray-300 hover:text-red-500 transition text-xl flex-shrink-0 mt-0.5">
-                      ×
-                    </button>
+                    {(ann.teacher_id === userId || ann.teacher?.role === 'student' || ann.teacher?.role === 'superadmin' && false /* we shouldn't edit superadmin as teacher */) && (
+                      <div className="flex gap-2">
+                        <button onClick={() => {
+                          setForm({ subject_id: ann.subject_id || '', type: ann.type, title: ann.title, content: ann.content || '', link_url: ann.link_url || '' });
+                          setEditingId(ann.id);
+                          setShowForm(true);
+                        }} className="text-gray-400 hover:text-blue-500 transition text-xl flex-shrink-0 mt-0.5">✏️</button>
+                        <button onClick={() => deleteAnn(ann.id)} className="text-gray-300 hover:text-red-500 transition text-xl flex-shrink-0 mt-0.5">×</button>
+                      </div>
+                    )}
+                    {!(ann.teacher_id === userId || ann.teacher?.role === 'student') && (
+                        <button onClick={() => deleteAnn(ann.id)} className="text-gray-300 hover:text-red-500 transition text-xl flex-shrink-0 mt-0.5">×</button>
+                    )}
                   </div>
                 </div>
               );

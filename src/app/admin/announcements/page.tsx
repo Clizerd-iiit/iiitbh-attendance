@@ -21,16 +21,23 @@ export default function AdminAnnouncementsPage() {
   const [isCR, setIsCR] = useState(false);
   const [userId, setUserId] = useState('');
   const [showModal, setShowModal] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({ title: '', content: '', type: 'text', target_branch: '', target_group: '' });
   
   const postAnnouncement = async () => {
     if (!form.title) return alert('Title required');
-    await fetch('/api/announcements', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(form)
-    });
-    setShowModal(false); setForm({ title: '', content: '', type: 'text', target_branch: '', target_group: '' });
-    // fetch will happen via interval or we can call fetchData here, but we can't easily reference it inside this scope unless we rearrange.
+    if (editingId) {
+      await fetch('/api/announcements', {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...form, id: editingId })
+      });
+    } else {
+      await fetch('/api/announcements', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form)
+      });
+    }
+    setShowModal(false); setEditingId(null); setForm({ title: '', content: '', type: 'text', target_branch: '', target_group: '' });
   };
   
   const deleteAnnouncement = async (id: string) => {
@@ -118,7 +125,14 @@ export default function AdminAnnouncementsPage() {
                       </p>
                     </div>
                     {(true) && (
-                      <button onClick={() => deleteAnnouncement(a.id)} className="text-xs text-red-500 hover:bg-red-50 px-2 py-1 rounded transition">Delete</button>
+                      <div className="flex gap-2">
+                        <button onClick={() => {
+                          setForm({ title: a.title, content: a.content || '', type: a.type, target_branch: a.target_branch || '', target_group: a.target_group || '' });
+                          setEditingId(a.id);
+                          setShowModal(true);
+                        }} className="text-xs text-blue-600 hover:bg-blue-50 px-2 py-1 rounded transition">Edit</button>
+                        <button onClick={() => deleteAnnouncement(a.id)} className="text-xs text-red-500 hover:bg-red-50 px-2 py-1 rounded transition">Delete</button>
+                      </div>
                     )}
                   </div>
     
@@ -132,7 +146,7 @@ export default function AdminAnnouncementsPage() {
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="bg-white rounded-2xl p-6 w-full max-w-md">
-            <h2 className="text-xl font-bold mb-4">Post Global Announcement</h2>
+            <h2 className="text-xl font-bold mb-4">{editingId ? 'Edit Announcement' : 'Post Global Announcement'}</h2>
             <div className="space-y-3">
               <input placeholder="Title" value={form.title} onChange={e=>setForm({...form, title: e.target.value})} className="w-full border p-2 rounded"/>
               <textarea placeholder="Message..." value={form.content} onChange={e=>setForm({...form, content: e.target.value})} className="w-full border p-2 rounded h-24"/>
@@ -150,7 +164,7 @@ export default function AdminAnnouncementsPage() {
               </div>
             </div>
             <div className="flex gap-3 mt-5">
-              <button onClick={() => setShowModal(false)} className="flex-1 py-2 bg-gray-100 rounded-lg">Cancel</button>
+              <button onClick={() => { setShowModal(false); setEditingId(null); setForm({ title: '', content: '', type: 'text', target_branch: '', target_group: '' }); }} className="flex-1 py-2 bg-gray-100 rounded-lg">Cancel</button>
               <button onClick={postAnnouncement} className="flex-1 py-2 bg-purple-600 text-white rounded-lg">Post</button>
             </div>
           </div>

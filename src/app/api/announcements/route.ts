@@ -128,3 +128,47 @@ export async function DELETE(req: NextRequest) {
   return NextResponse.json({ success: true });
 }
 
+
+
+export async function PATCH(req: NextRequest) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+
+  const body = await req.json();
+  const { id, title, content, type, subject_id, link_url, file_url, target_student_ids, target_branch, target_group } = body;
+  if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 });
+
+  const role = session.user.role as string;
+  let canEdit = false;
+
+  if (role === 'superadmin') {
+    canEdit = true;
+  } else if (role === 'teacher') {
+    const { data: ann } = await supabaseAdmin.from('announcements').select('teacher_id').eq('id', id).single();
+    if (!ann) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    if (ann.teacher_id === session.user.userId) {
+      canEdit = true;
+    } else {
+      const { data: author } = await supabaseAdmin.from('users').select('is_cr, role').eq('id', ann.teacher_id).single();
+      if (author?.is_cr || author?.role === 'student') canEdit = true;
+    }
+  } else {
+    // CRs only edit their own
+    const { data: ann } = await supabaseAdmin.from('announcements').select('teacher_id').eq('id', id).single();
+    if (ann && ann.teacher_id === session.user.userId) canEdit = true;
+  }
+
+  if (!canEdit) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+
+  const updateData: any = { title, content, type };
+  if (subject_id !== undefined) updateData.subject_id = subject_id || null;
+  if (link_url !== undefined) updateData.link_url = link_url || null;
+  if (file_url !== undefined) updateData.file_url = file_url || null;
+  if (target_student_ids !== undefined) updateData.target_student_ids = target_student_ids || null;
+  if (target_branch !== undefined) updateData.target_branch = target_branch || null;
+  if (target_group !== undefined) updateData.target_group = target_group || null;
+
+  const { data, error } = await supabaseAdmin.from('announcements').update(updateData).eq('id', id).select().single();
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json({ announcement: data });
+}

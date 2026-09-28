@@ -19,6 +19,9 @@ export interface User {
   is_active: boolean;
   created_at: string;
   signup_info?: any;
+  expires_at?: string;
+  target_branch?: string;
+  target_group?: string;
 }
 
 export interface Subject {
@@ -72,6 +75,9 @@ export interface Announcement {
   link_url?: string;
   created_at: string;
   signup_info?: any;
+  expires_at?: string;
+  target_branch?: string;
+  target_group?: string;
 }
 
 
@@ -97,4 +103,7 @@ export interface AuditLog {
   ip_address?: string;
   created_at: string;
   signup_info?: any;
+  expires_at?: string;
+  target_branch?: string;
+  target_group?: string;
 }
