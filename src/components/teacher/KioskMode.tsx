@@ -50,7 +50,7 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
           return;
         }
 
-        const faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.35); // MAXIMUM STRICTNESS
+        const faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.38); // OPTIMAL STRICTNESS
 
         setStatus('starting_camera');
         // Request higher resolution for M1 Mac performance
@@ -99,10 +99,10 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
                    
                    // CRITICAL FIX: Ignore background faces (too small). 
                    // This prevents blurry background people from causing random false positives.
-                   if (box.width < 160 || box.height < 160) return; // STRICTER BACKGROUND FILTER
+                   if (box.width < 120 || box.height < 120) return; // BALANCED BACKGROUND FILTER
 
                    const bestMatch = faceMatcher.findBestMatch(det.descriptor);
-                   const isUnknown = bestMatch.label === 'unknown' || bestMatch.distance > 0.35;
+                   const isUnknown = bestMatch.label === 'unknown' || bestMatch.distance > 0.38;
                    const studentId = bestMatch.label;
                    
                    // YOLOv7 style confidence mapping (lower distance = higher confidence)
