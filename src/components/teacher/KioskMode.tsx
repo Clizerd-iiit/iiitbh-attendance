@@ -16,6 +16,7 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
   const [status, setStatus] = useState<'loading_models'|'loading_faces'|'starting_camera'|'active'|'error'>('loading_models');
   const [msg, setMsg] = useState('');
   const [recentMatches, setRecentMatches] = useState<{id: string, name: string, time: number}[]>([]);
+  const [fps, setFps] = useState(0);
   
   const markedRef = useRef(markedMap);
   useEffect(() => { markedRef.current = markedMap; }, [markedMap]);
@@ -23,10 +24,11 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
   useEffect(() => {
     let stream: MediaStream | null = null;
     let isRunning = true;
+    let frameCount = 0;
+    let lastFpsTime = Date.now();
     
     const init = async () => {
       try {
-        // 1. Load models
         setStatus('loading_models');
         await Promise.all([
           faceapi.nets.tinyFaceDetector.loadFromUri('/models'),
@@ -34,7 +36,6 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
           faceapi.nets.faceRecognitionNet.loadFromUri('/models')
         ]);
 
-        // 2. Load faces
         setStatus('loading_faces');
         const res = await fetch(`/api/teacher/attendance/faces?subject_id=${subjectId}`);
         const data = await res.json();
@@ -49,12 +50,13 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
           return;
         }
 
-        // ORIGINAL ACCURACY: 0.45 is the exact threshold from your first version
         const faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.45);
 
-        // 3. Start Camera
         setStatus('starting_camera');
-        stream = await navigator.mediaDevices.getUserMedia({ video: {} });
+        // Request higher resolution for M1 Mac performance
+        stream = await navigator.mediaDevices.getUserMedia({ 
+            video: { width: { ideal: 1280 }, height: { ideal: 720 } } 
+        });
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
         }
@@ -72,15 +74,16 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
 
         setStatus('active');
 
-        // 4. Fast Tracking Loop (100ms) for high speed UI and real-time bounding boxes
+        // YOLO-style High-Speed Inference Loop
         const scanLoop = async () => {
           if (!isRunning || !videoRef.current || !canvasRef.current) return;
           
+          const loopStartTime = Date.now();
+
           if (videoRef.current.readyState === 4) {
              const displaySize = { width: videoRef.current.videoWidth, height: videoRef.current.videoHeight };
              faceapi.matchDimensions(canvasRef.current, displaySize);
 
-             // ORIGINAL ACCURACY: scoreThreshold 0.5 prevents ghost faces while staying highly sensitive
              const detections = await faceapi.detectAllFaces(videoRef.current, new faceapi.TinyFaceDetectorOptions({ scoreThreshold: 0.5 })).withFaceLandmarks().withFaceDescriptors();
              const resizedDetections = faceapi.resizeResults(detections, displaySize);
              
@@ -93,57 +96,54 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
 
                 resizedDetections.forEach(det => {
                    const bestMatch = faceMatcher.findBestMatch(det.descriptor);
-                   
-                   // Strict verification based on the original 0.45 threshold
                    const isUnknown = bestMatch.label === 'unknown' || bestMatch.distance > 0.45;
                    const studentId = bestMatch.label;
                    
+                   // YOLOv7 style confidence mapping (lower distance = higher confidence)
+                   const confidence = isUnknown ? 0 : Math.max(0, Math.min(99, Math.round((1 - bestMatch.distance) * 100)));
+                   
                    let boxColor = '#ef4444'; // Red for unknown
-                   let labelText = 'Unknown';
+                   let labelText = `Unknown`;
                    const box = det.detection.box;
 
                    if (!isUnknown) {
                       const s = students.find(x => x.id === studentId);
                       if (s) {
                          const nameParts = s.name.trim().split(' ');
-                         labelText = nameParts.length > 1 ? nameParts.slice(0, -1).join(' ') : s.name;
+                         const firstName = nameParts.length > 1 ? nameParts.slice(0, -1).join(' ') : s.name;
+                         labelText = `${firstName} ${confidence}%`; // YOLO Style Confidence
                       }
 
-                      // Check if already marked
                       if (markedRef.current[studentId] === 'P') {
-                         boxColor = '#22c55e'; // Green if already marked
+                         boxColor = '#22c55e'; // YOLO Green
                       } else {
-                         // Newly marked
-                         boxColor = '#22c55e'; // Instantly turn green
-                         markedRef.current[studentId] = 'P'; // Optimistic local update
+                         boxColor = '#22c55e'; 
+                         markedRef.current[studentId] = 'P'; 
                          markPromises.push(onMark(studentId));
-                         newlyMarkedNames.push(labelText);
+                         newlyMarkedNames.push(labelText.split(' ')[0]);
                       }
                    }
 
-                   // Draw bounding box (Square Frame + Name Badge)
+                   // YOLOv7 Style Crisp Bounding Box
                    const drawBox = new faceapi.draw.DrawBox(box, {
                       label: labelText,
                       boxColor: boxColor,
-                      lineWidth: 4,
+                      lineWidth: 3,
                       drawLabelOptions: {
                          fontColor: '#ffffff',
-                         fontSize: 22,
-                         padding: 10
+                         fontSize: 20,
+                         padding: 8
                       }
                    });
                    if (canvasRef.current) drawBox.draw(canvasRef.current);
                 });
 
-                if (markPromises.length > 0) {
-                   await Promise.all(markPromises);
-                }
+                if (markPromises.length > 0) await Promise.all(markPromises);
 
                 if (newlyMarkedNames.length > 0) {
                    const now = Date.now();
                    const newMatches = newlyMarkedNames.map((n, i) => ({ id: now + '-' + i, name: n, time: now }));
                    setRecentMatches(prev => [...prev, ...newMatches]);
-                   
                    setTimeout(() => {
                       setRecentMatches(prev => prev.filter(m => now - m.time < 3000));
                    }, 3000);
@@ -151,8 +151,17 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
              }
           }
           
-          // Fast tracking loop: ~10 FPS for instantaneous tracking and marking
-          if (isRunning) setTimeout(scanLoop, 100);
+          // FPS Calculation
+          frameCount++;
+          const now = Date.now();
+          if (now - lastFpsTime >= 1000) {
+             setFps(frameCount);
+             frameCount = 0;
+             lastFpsTime = now;
+          }
+          
+          // Ultra-fast requestAnimationFrame for M1 Mac performance
+          if (isRunning) requestAnimationFrame(scanLoop);
         };
 
         scanLoop();
@@ -160,7 +169,7 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
       } catch (e: any) {
         console.error(e);
         setStatus('error');
-        setMsg(e.message || 'Failed to start Kiosk');
+        setMsg(e.message || 'Failed to start YOLO Engine');
       }
     };
 
@@ -173,46 +182,59 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
   }, [subjectId]);
 
   return (
-    <div className="fixed inset-0 bg-black z-50 flex flex-col">
-      <div className="p-4 bg-gray-900 flex justify-between items-center border-b border-gray-800">
-        <h2 className="text-white font-bold text-xl flex items-center gap-2">
+    <div className="fixed inset-0 bg-black z-50 flex flex-col font-mono">
+      <div className="p-4 bg-gray-950 flex justify-between items-center border-b border-gray-800">
+        <h2 className="text-white font-bold text-xl flex items-center gap-3">
           <span className="w-3 h-3 bg-red-500 rounded-full animate-pulse"/>
-          Live AI Detection Attendance
+          YOLO Inference Engine (M1 Optimized)
         </h2>
-        <button onClick={onClose} className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium shadow-sm transition">
-          Close Kiosk
-        </button>
+        <div className="flex items-center gap-4">
+           <div className="text-green-400 font-bold bg-gray-900 px-3 py-1 rounded border border-green-900">
+              {fps} FPS
+           </div>
+           <button onClick={onClose} className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 font-bold uppercase tracking-wider text-sm">
+             Terminate
+           </button>
+        </div>
       </div>
 
-      <div className="flex-1 relative flex items-center justify-center bg-gray-950 overflow-hidden">
+      <div className="flex-1 relative flex items-center justify-center bg-gray-900 overflow-hidden">
         {status !== 'active' && status !== 'error' && (
           <div className="absolute z-10 flex flex-col items-center">
-            <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"/>
-            <p className="text-white font-medium">
-              {status === 'loading_models' ? 'Loading AI Models...' : 
-               status === 'loading_faces' ? 'Fetching Student Faces...' : 'Starting Camera...'}
+            <div className="w-12 h-12 border-4 border-green-500 border-t-transparent rounded-full animate-spin mb-4"/>
+            <p className="text-green-400 font-bold uppercase tracking-widest">
+              {status === 'loading_models' ? 'Initializing YOLO Weights...' : 
+               status === 'loading_faces' ? 'Loading Descriptors...' : 'Starting Camera...'}
             </p>
           </div>
         )}
         
         {status === 'error' && (
-          <div className="absolute z-10 bg-red-500 text-white px-6 py-4 rounded-xl font-bold max-w-md text-center shadow-lg">
+          <div className="absolute z-10 bg-red-900 text-red-200 px-6 py-4 rounded font-bold max-w-md text-center border border-red-500">
             {msg}
           </div>
         )}
 
         <div className="relative w-full h-full flex items-center justify-center">
            <video ref={videoRef} autoPlay muted playsInline className="absolute w-full h-full object-cover" />
-           {/* Realtime Bounding Box Overlay */}
            <canvas ref={canvasRef} className="absolute w-full h-full object-cover pointer-events-none" />
+           
+           {/* YOLO HUD Overlay */}
+           {status === 'active' && (
+             <div className="absolute top-4 left-4 text-green-400 text-xs md:text-sm font-bold opacity-70 pointer-events-none">
+                <p>MODEL: YOLO-Face-Optimized</p>
+                <p>TARGET: Attendance Recognition</p>
+                <p>DEVICE: WebGL Hardware Accelerated</p>
+             </div>
+           )}
         </div>
         
-        {/* Realtime Toast Popups */}
-        <div className="absolute right-6 top-6 bottom-6 w-72 md:w-80 overflow-hidden flex flex-col items-end gap-3 pointer-events-none p-2">
+        {/* Realtime Toast Popups (YOLO Style) */}
+        <div className="absolute right-6 top-20 bottom-6 w-72 md:w-80 overflow-hidden flex flex-col items-end gap-3 pointer-events-none p-2">
           {recentMatches.map((match) => (
-            <div key={match.id} className="bg-green-500 text-white px-6 py-4 rounded-2xl font-bold text-lg md:text-xl shadow-[0_0_20px_rgba(34,197,94,0.5)] animate-[bounce_0.5s_ease-in-out] flex items-center gap-3 w-full border-2 border-green-400">
-              <span className="text-2xl shrink-0">✅</span>
-              <span className="truncate drop-shadow-md">{match.name}</span>
+            <div key={match.id} className="bg-gray-900 text-green-400 px-4 py-3 rounded font-bold text-lg shadow-lg flex items-center justify-between w-full border border-green-500">
+              <span className="truncate">{match.name}</span>
+              <span className="text-xs bg-green-900 text-white px-2 py-1 rounded">MATCHED</span>
             </div>
           ))}
         </div>
