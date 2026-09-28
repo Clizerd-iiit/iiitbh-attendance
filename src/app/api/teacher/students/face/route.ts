@@ -40,6 +40,7 @@ export async function DELETE(req: NextRequest) {
   const signupInfo = user?.signup_info || {};
   
   delete signupInfo.last_face_update; // Remove the limit lock
+  delete signupInfo.face_descriptor;  // ACTUALLY delete the face data to trigger Setup banner
 
   const { error } = await supabaseAdmin.from('users').update({ signup_info: signupInfo }).eq('id', student_id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
