@@ -56,8 +56,17 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
                      finalDescriptor[j] += s.descriptor[i][j];
                  }
              }
+             // L2 Normalization (CRITICAL for FaceNet embeddings on hyperspheres)
+             let sumSq = 0;
              for (let j = 0; j < 128; j++) {
                  finalDescriptor[j] /= numAngles;
+                 sumSq += finalDescriptor[j] * finalDescriptor[j];
+             }
+             const magnitude = Math.sqrt(sumSq);
+             if (magnitude > 0) {
+                 for (let j = 0; j < 128; j++) {
+                     finalDescriptor[j] /= magnitude;
+                 }
              }
           }
           
@@ -70,7 +79,7 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
           return;
         }
 
-        const faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.45); // RELAXED FOR 5-ANGLES
+        const faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.40); // STRICT (L2 NORMALIZED)
 
         setStatus('starting_camera');
         // Request higher resolution for M1 Mac performance
@@ -124,7 +133,7 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
                    // Removed size filter to ensure all faces are processed
 
                    const bestMatch = faceMatcher.findBestMatch(det.descriptor);
-                   const isUnknown = bestMatch.label === 'unknown' || bestMatch.distance > 0.45;
+                   const isUnknown = bestMatch.label === 'unknown' || bestMatch.distance > 0.40;
                    const studentId = bestMatch.label;
                    
                    // YOLOv7 style confidence mapping (lower distance = higher confidence)

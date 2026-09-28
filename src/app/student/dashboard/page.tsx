@@ -190,8 +190,16 @@ export default function StudentDashboard() {
                  finalDescriptor[j] += faceDescriptor[i][j];
              }
          }
+         let sumSq = 0;
          for (let j = 0; j < 128; j++) {
              finalDescriptor[j] /= numAngles;
+             sumSq += finalDescriptor[j] * finalDescriptor[j];
+         }
+         const magnitude = Math.sqrt(sumSq);
+         if (magnitude > 0) {
+             for (let j = 0; j < 128; j++) {
+                 finalDescriptor[j] /= magnitude;
+             }
          }
       }
       
