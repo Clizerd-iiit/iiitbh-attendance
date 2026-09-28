@@ -17,6 +17,7 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
   const [msg, setMsg] = useState('');
   const [recentMatches, setRecentMatches] = useState<{id: string, name: string, time: number}[]>([]);
   const [fps, setFps] = useState(0);
+  const [facesCount, setFacesCount] = useState(0);
   
   const markedRef = useRef(markedMap);
   useEffect(() => { markedRef.current = markedMap; }, [markedMap]);
@@ -95,6 +96,7 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
 
              const detections = await faceapi.detectAllFaces(videoRef.current, new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.3 })).withFaceLandmarks().withFaceDescriptors();
              const resizedDetections = faceapi.resizeResults(detections, displaySize);
+             setFacesCount(resizedDetections ? resizedDetections.length : 0);
              
              const ctx = canvasRef.current.getContext('2d');
              if (ctx) ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
