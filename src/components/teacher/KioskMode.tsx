@@ -108,7 +108,7 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
                    
                    // CRITICAL FIX: Ignore background faces (too small). 
                    // This prevents blurry background people from causing random false positives.
-                   if (box.width < 120 || box.height < 120) return; // BALANCED BACKGROUND FILTER
+                   if (box.width < 70 || box.height < 70) return; // LOWERED FILTER FOR ALL CAMS
 
                    const bestMatch = faceMatcher.findBestMatch(det.descriptor);
                    const isUnknown = bestMatch.label === 'unknown' || bestMatch.distance > 0.38;
