@@ -93,7 +93,7 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
              const displaySize = { width: videoRef.current.videoWidth, height: videoRef.current.videoHeight };
              faceapi.matchDimensions(canvasRef.current, displaySize);
 
-             const detections = await faceapi.detectAllFaces(videoRef.current, new faceapi.TinyFaceDetectorOptions({ scoreThreshold: 0.4 })).withFaceLandmarks().withFaceDescriptors();
+             const detections = await faceapi.detectAllFaces(videoRef.current, new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.3 })).withFaceLandmarks().withFaceDescriptors();
              const resizedDetections = faceapi.resizeResults(detections, displaySize);
              
              const ctx = canvasRef.current.getContext('2d');
@@ -108,7 +108,7 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
                    
                    // CRITICAL FIX: Ignore background faces (too small). 
                    // This prevents blurry background people from causing random false positives.
-                   if (box.width < 70 || box.height < 70) return; // LOWERED FILTER FOR ALL CAMS
+                   // Removed size filter to ensure all faces are processed
 
                    const bestMatch = faceMatcher.findBestMatch(det.descriptor);
                    const isUnknown = bestMatch.label === 'unknown' || bestMatch.distance > 0.45;
