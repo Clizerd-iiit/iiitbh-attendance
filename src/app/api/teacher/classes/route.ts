@@ -48,14 +48,19 @@ export async function POST(req: NextRequest) {
   }
 
   const now = new Date();
+  
+  // Enforce IST (Indian Standard Time) for database date/start_time
+  const istString = now.toLocaleString('sv-SE', { timeZone: 'Asia/Kolkata' });
+  const [istDate, istTime] = istString.split(' ');
+
   // If method is kiosk, make tokens unguessable so students can't self-mark
   const qrCode = method === 'kiosk' ? uuidv4() + '-kiosk' : uuidv4();
   const otp = method === 'kiosk' ? 'KIOSK-' + Math.floor(Math.random()*10000) : Math.floor(1000 + Math.random() * 9000).toString();
 
   const { data: newClass, error } = await supabaseAdmin.from('classes').insert({
     subject_id: subjectId,
-    date: now.toISOString().split('T')[0],
-    start_time: now.toTimeString().split(' ')[0],
+    date: istDate,
+    start_time: istTime,
     qr_code: qrCode,
     qr_expires_at: new Date(now.getTime() + qrInterval * 1000).toISOString(),
     otp,
