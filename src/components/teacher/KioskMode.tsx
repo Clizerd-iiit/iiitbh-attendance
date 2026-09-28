@@ -59,7 +59,7 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
           return;
         }
 
-        const faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.38); // OPTIMAL STRICTNESS
+        const faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.45); // RELAXED FOR 5-ANGLES
 
         setStatus('starting_camera');
         // Request higher resolution for M1 Mac performance
@@ -93,7 +93,7 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
              const displaySize = { width: videoRef.current.videoWidth, height: videoRef.current.videoHeight };
              faceapi.matchDimensions(canvasRef.current, displaySize);
 
-             const detections = await faceapi.detectAllFaces(videoRef.current, new faceapi.TinyFaceDetectorOptions({ scoreThreshold: 0.5 })).withFaceLandmarks().withFaceDescriptors();
+             const detections = await faceapi.detectAllFaces(videoRef.current, new faceapi.TinyFaceDetectorOptions({ scoreThreshold: 0.4 })).withFaceLandmarks().withFaceDescriptors();
              const resizedDetections = faceapi.resizeResults(detections, displaySize);
              
              const ctx = canvasRef.current.getContext('2d');
@@ -111,7 +111,7 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
                    if (box.width < 70 || box.height < 70) return; // LOWERED FILTER FOR ALL CAMS
 
                    const bestMatch = faceMatcher.findBestMatch(det.descriptor);
-                   const isUnknown = bestMatch.label === 'unknown' || bestMatch.distance > 0.38;
+                   const isUnknown = bestMatch.label === 'unknown' || bestMatch.distance > 0.45;
                    const studentId = bestMatch.label;
                    
                    // YOLOv7 style confidence mapping (lower distance = higher confidence)
