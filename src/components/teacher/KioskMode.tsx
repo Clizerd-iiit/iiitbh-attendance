@@ -50,7 +50,7 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
           return;
         }
 
-        const faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.40);
+        const faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.35); // MAXIMUM STRICTNESS
 
         setStatus('starting_camera');
         // Request higher resolution for M1 Mac performance
@@ -84,7 +84,7 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
              const displaySize = { width: videoRef.current.videoWidth, height: videoRef.current.videoHeight };
              faceapi.matchDimensions(canvasRef.current, displaySize);
 
-             const detections = await faceapi.detectAllFaces(videoRef.current, new faceapi.TinyFaceDetectorOptions({ scoreThreshold: 0.7 })).withFaceLandmarks().withFaceDescriptors();
+             const detections = await faceapi.detectAllFaces(videoRef.current, new faceapi.TinyFaceDetectorOptions({ scoreThreshold: 0.75 })).withFaceLandmarks().withFaceDescriptors();
              const resizedDetections = faceapi.resizeResults(detections, displaySize);
              
              const ctx = canvasRef.current.getContext('2d');
@@ -99,10 +99,10 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
                    
                    // CRITICAL FIX: Ignore background faces (too small). 
                    // This prevents blurry background people from causing random false positives.
-                   if (box.width < 90 || box.height < 90) return;
+                   if (box.width < 160 || box.height < 160) return; // STRICTER BACKGROUND FILTER
 
                    const bestMatch = faceMatcher.findBestMatch(det.descriptor);
-                   const isUnknown = bestMatch.label === 'unknown' || bestMatch.distance > 0.40;
+                   const isUnknown = bestMatch.label === 'unknown' || bestMatch.distance > 0.35;
                    const studentId = bestMatch.label;
                    
                    // YOLOv7 style confidence mapping (lower distance = higher confidence)
