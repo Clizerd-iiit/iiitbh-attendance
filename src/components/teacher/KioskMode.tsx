@@ -50,7 +50,7 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
           return;
         }
 
-        const faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.45);
+        const faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.40);
 
         setStatus('starting_camera');
         // Request higher resolution for M1 Mac performance
@@ -84,7 +84,7 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
              const displaySize = { width: videoRef.current.videoWidth, height: videoRef.current.videoHeight };
              faceapi.matchDimensions(canvasRef.current, displaySize);
 
-             const detections = await faceapi.detectAllFaces(videoRef.current, new faceapi.TinyFaceDetectorOptions({ scoreThreshold: 0.5 })).withFaceLandmarks().withFaceDescriptors();
+             const detections = await faceapi.detectAllFaces(videoRef.current, new faceapi.TinyFaceDetectorOptions({ scoreThreshold: 0.7 })).withFaceLandmarks().withFaceDescriptors();
              const resizedDetections = faceapi.resizeResults(detections, displaySize);
              
              const ctx = canvasRef.current.getContext('2d');
@@ -95,8 +95,14 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
                 const markPromises: Promise<void>[] = [];
 
                 resizedDetections.forEach(det => {
+                   const box = det.detection.box;
+                   
+                   // CRITICAL FIX: Ignore background faces (too small). 
+                   // This prevents blurry background people from causing random false positives.
+                   if (box.width < 90 || box.height < 90) return;
+
                    const bestMatch = faceMatcher.findBestMatch(det.descriptor);
-                   const isUnknown = bestMatch.label === 'unknown' || bestMatch.distance > 0.45;
+                   const isUnknown = bestMatch.label === 'unknown' || bestMatch.distance > 0.40;
                    const studentId = bestMatch.label;
                    
                    // YOLOv7 style confidence mapping (lower distance = higher confidence)
@@ -104,13 +110,12 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
                    
                    let boxColor = '#ef4444'; // Red for unknown
                    let labelText = `Unknown`;
-                   const box = det.detection.box;
-
                    if (!isUnknown) {
                       const s = students.find(x => x.id === studentId);
+                      let firstName = 'Unknown';
                       if (s) {
                          const nameParts = s.name.trim().split(' ');
-                         const firstName = nameParts.length > 1 ? nameParts.slice(0, -1).join(' ') : s.name;
+                         firstName = nameParts.length > 1 ? nameParts.slice(0, -1).join(' ') : s.name;
                          labelText = `${firstName} ${confidence}%`; // YOLO Style Confidence
                       }
 
@@ -120,7 +125,7 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
                          boxColor = '#22c55e'; 
                          markedRef.current[studentId] = 'P'; 
                          markPromises.push(onMark(studentId));
-                         newlyMarkedNames.push(labelText.split(' ')[0]);
+                         newlyMarkedNames.push(firstName);
                       }
                    }
 
