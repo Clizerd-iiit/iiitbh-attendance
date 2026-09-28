@@ -41,7 +41,16 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
         const data = await res.json();
         
         const labeledDescriptors = (data.students || []).map((s: any) => {
-          return new faceapi.LabeledFaceDescriptors(s.id, [new Float32Array(s.descriptor)]);
+          // Check if the descriptor is multi-angle (array of arrays) or legacy (single array)
+          const isMulti = Array.isArray(s.descriptor[0]);
+          let floatArrays = [];
+          
+          if (isMulti) {
+             floatArrays = s.descriptor.map((d: any) => new Float32Array(d));
+          } else {
+             floatArrays = [new Float32Array(s.descriptor)];
+          }
+          return new faceapi.LabeledFaceDescriptors(s.id, floatArrays);
         });
 
         if (labeledDescriptors.length === 0) {

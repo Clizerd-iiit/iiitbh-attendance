@@ -63,7 +63,7 @@ export default function StudentDashboard() {
   const [markForm, setMarkForm] = useState({ code: '' });
   const [marking, setMarking] = useState(false);
   const [faceCheckState, setFaceCheckState] = useState<'idle'|'loading_models'|'scanning'|'success'|'failed'>('idle');
-  const [faceDescriptor, setFaceDescriptor] = useState<Float32Array | null>(null);
+  const [faceDescriptor, setFaceDescriptor] = useState<any>(null);
   const [batchInfo, setBatchInfo] = useState('');
   const [isCr, setIsCr] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -101,7 +101,7 @@ export default function StudentDashboard() {
     // Only once, get face ID status
     fetch('/api/student/face').then(r => r.json()).then(d => {
       setHasFaceId(d.hasFaceId);
-      if (d.descriptor) setFaceDescriptor(new Float32Array(d.descriptor));
+      if (d.descriptor) setFaceDescriptor(d.descriptor);
       if (d.is_cr) setIsCr(true);
       if (d.info?.branch) {
         let txt = d.info.branch;
@@ -180,7 +180,16 @@ export default function StudentDashboard() {
         return alert("No face detected! Please look clearly at the camera.");
       }
       
-      const dist = faceapi.euclideanDistance(detection.descriptor, faceDescriptor);
+      // Handle Multi-Angle vs Legacy Single-Angle
+      let dist = 1.0;
+      if (Array.isArray(faceDescriptor[0])) {
+         // Multi-angle: Find the minimum distance across all 5 angles
+         dist = Math.min(...faceDescriptor.map((d: any) => faceapi.euclideanDistance(detection.descriptor, new Float32Array(d))));
+      } else {
+         // Legacy single-angle
+         dist = faceapi.euclideanDistance(detection.descriptor, new Float32Array(faceDescriptor));
+      }
+
       if (dist > 0.55) {
         setFaceCheckState('failed'); setMarking(false);
         return alert(`Face mismatch! Distance: ${dist.toFixed(2)}. This doesn't look like you.`);
