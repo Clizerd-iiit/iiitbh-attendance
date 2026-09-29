@@ -180,32 +180,18 @@ export default function StudentDashboard() {
         return alert("No face detected! Please look clearly at the camera.");
       }
       
-      // Handle Multi-Angle vs Legacy Single-Angle using Centroid (Average) Embedding
-      let finalDescriptor = faceDescriptor;
+      // Handle Multi-Angle vs Legacy Single-Angle mapping (K-NN min distance)
+      let dist = 1.0;
       if (Array.isArray(faceDescriptor[0])) {
-         const numAngles = faceDescriptor.length;
-         finalDescriptor = new Array(128).fill(0);
-         for (let i = 0; i < numAngles; i++) {
-             for (let j = 0; j < 128; j++) {
-                 finalDescriptor[j] += faceDescriptor[i][j];
-             }
-         }
-         let sumSq = 0;
-         for (let j = 0; j < 128; j++) {
-             finalDescriptor[j] /= numAngles;
-             sumSq += finalDescriptor[j] * finalDescriptor[j];
-         }
-         const magnitude = Math.sqrt(sumSq);
-         if (magnitude > 0) {
-             for (let j = 0; j < 128; j++) {
-                 finalDescriptor[j] /= magnitude;
-             }
-         }
+          for (let i = 0; i < faceDescriptor.length; i++) {
+              const currentDist = faceapi.euclideanDistance(detection.descriptor, new Float32Array(faceDescriptor[i]));
+              if (currentDist < dist) dist = currentDist;
+          }
+      } else {
+          dist = faceapi.euclideanDistance(detection.descriptor, new Float32Array(faceDescriptor));
       }
-      
-      const dist = faceapi.euclideanDistance(detection.descriptor, new Float32Array(finalDescriptor));
 
-      if (dist > 0.45) { // Strict distance check
+      if (dist > 0.54) { // Flexible distance check for 1-to-1 self-attendance
         setFaceCheckState('failed'); setMarking(false);
         return alert(`Face mismatch! Distance: ${dist.toFixed(2)}. This doesn't look like you.`);
       }
