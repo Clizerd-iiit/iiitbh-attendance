@@ -46,31 +46,12 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
           // Fallback to Centroid (Average) Embedding if 5-angle 2D array is detected
           // This prevents face-api.js from crashing on multi-array inputs while preserving 3D accuracy
           const isMulti = Array.isArray(s.descriptor[0]);
-          let finalDescriptor = s.descriptor;
-          
           if (isMulti) {
-             const numAngles = s.descriptor.length;
-             finalDescriptor = new Array(128).fill(0);
-             for (let i = 0; i < numAngles; i++) {
-                 for (let j = 0; j < 128; j++) {
-                     finalDescriptor[j] += s.descriptor[i][j];
-                 }
-             }
-             // L2 Normalization (CRITICAL for FaceNet embeddings on hyperspheres)
-             let sumSq = 0;
-             for (let j = 0; j < 128; j++) {
-                 finalDescriptor[j] /= numAngles;
-                 sumSq += finalDescriptor[j] * finalDescriptor[j];
-             }
-             const magnitude = Math.sqrt(sumSq);
-             if (magnitude > 0) {
-                 for (let j = 0; j < 128; j++) {
-                     finalDescriptor[j] /= magnitude;
-                 }
-             }
+             const descriptorsArray = s.descriptor.map((arr: any) => new Float32Array(arr));
+             return new faceapi.LabeledFaceDescriptors(s.id, descriptorsArray);
+          } else {
+             return new faceapi.LabeledFaceDescriptors(s.id, [new Float32Array(s.descriptor)]);
           }
-          
-          return new faceapi.LabeledFaceDescriptors(s.id, [new Float32Array(finalDescriptor)]);
         });
 
         if (labeledDescriptors.length === 0) {
@@ -113,7 +94,7 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
              const displaySize = { width: videoRef.current.videoWidth, height: videoRef.current.videoHeight };
              faceapi.matchDimensions(canvasRef.current, displaySize);
 
-             const detections = await faceapi.detectAllFaces(videoRef.current, new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.3 })).withFaceLandmarks().withFaceDescriptors();
+             const detections = await faceapi.detectAllFaces(videoRef.current, new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.5 })).withFaceLandmarks().withFaceDescriptors();
              const resizedDetections = faceapi.resizeResults(detections, displaySize);
              setFacesCount(resizedDetections ? resizedDetections.length : 0);
              
@@ -128,9 +109,8 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
                 resizedDetections.forEach(det => {
                    const box = det.detection.box;
                    
-                   // CRITICAL FIX: Ignore background faces (too small). 
-                   // This prevents blurry background people from causing random false positives.
-                   // Removed size filter to ensure all faces are processed
+                   // CRITICAL FIX: Ignore background faces and ghost detections.
+                   if (box.width < 70 || box.height < 70) return;
 
                    const bestMatch = faceMatcher.findBestMatch(det.descriptor);
                    const isUnknown = bestMatch.label === 'unknown' || bestMatch.distance > 0.50;
