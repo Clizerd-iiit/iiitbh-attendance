@@ -205,7 +205,7 @@ export default function StudentDashboard() {
       
       const dist = faceapi.euclideanDistance(detection.descriptor, new Float32Array(finalDescriptor));
 
-      if (dist > 0.55) {
+      if (dist > 0.45) { // Strict distance check
         setFaceCheckState('failed'); setMarking(false);
         return alert(`Face mismatch! Distance: ${dist.toFixed(2)}. This doesn't look like you.`);
       }
