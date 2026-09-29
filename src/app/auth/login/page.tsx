@@ -27,7 +27,7 @@ export default function LoginPage() {
         {/* College Logo — circular */}
         <div className="flex flex-col items-center mb-6">
           <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-blue-200 shadow-lg mb-4">
-            <Image
+            <Image unoptimized={true}
               src="/iiitbh-logo.jpg"
               alt="IIIT Bhagalpur Logo"
               width={96}

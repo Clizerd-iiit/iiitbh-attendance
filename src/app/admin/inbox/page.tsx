@@ -41,7 +41,7 @@ export default function AdminInbox() {
   useEffect(() => {
     fetchInbox();
     fetchAllUsers();
-    const id = setInterval(fetchInbox, 5000);
+    const id = setInterval(fetchInbox, 15000);
     return () => clearInterval(id);
   }, []);
 
@@ -60,7 +60,7 @@ export default function AdminInbox() {
   useEffect(() => {
     if (!activeUser) return;
     fetchMessages(activeUser.user_id);
-    const id = setInterval(() => fetchMessages(activeUser.user_id), 3000);
+    const id = setInterval(() => fetchMessages(activeUser.user_id), 15000);
     return () => clearInterval(id);
   }, [activeUser]);
 

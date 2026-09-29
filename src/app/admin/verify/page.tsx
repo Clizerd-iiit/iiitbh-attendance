@@ -28,7 +28,7 @@ export default function VerifyUsersPage() {
 
   useEffect(() => {
     fetchUsers();
-    const interval = setInterval(fetchUsers, 5000);
+    const interval = setInterval(fetchUsers, 30000);
     return () => clearInterval(interval);
   }, [filter]);
 
@@ -141,7 +141,7 @@ export default function VerifyUsersPage() {
                   )}
                   <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-gray-200 flex-shrink-0">
                     {user.profile_photo_url ? (
-                      <Image src={user.profile_photo_url} alt={user.name} width={56} height={56}
+                      <Image unoptimized={true} src={user.profile_photo_url} alt={user.name} width={56} height={56}
                         className="object-cover w-full h-full"/>
                     ) : (
                       <div className="w-full h-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-xl">

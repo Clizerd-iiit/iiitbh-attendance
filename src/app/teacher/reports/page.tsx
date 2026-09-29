@@ -71,7 +71,7 @@ export default function TeacherReports() {
     });
     };
     fetchData();
-    const interval = setInterval(fetchData, 5000);
+    const interval = setInterval(fetchData, 60000);
     return () => clearInterval(interval);
   }, []);
 
@@ -83,7 +83,7 @@ export default function TeacherReports() {
     };
     setLoading(true);
     fetchData();
-    const interval = setInterval(fetchData, 5000);
+    const interval = setInterval(fetchData, 60000);
     return () => clearInterval(interval);
   }, [selected]);
 

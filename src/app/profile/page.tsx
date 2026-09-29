@@ -119,7 +119,7 @@ export default function ProfilePage() {
             <div className="relative">
               <div className="w-20 h-20 rounded-full overflow-hidden border-4 border-blue-200">
                 {profile.profile_photo_url ? (
-                  <Image src={profile.profile_photo_url} alt={profile.name}
+                  <Image unoptimized={true} src={profile.profile_photo_url} alt={profile.name}
                     width={80} height={80} className="object-cover w-full h-full"/>
                 ) : (
                   <div className="w-full h-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-2xl">

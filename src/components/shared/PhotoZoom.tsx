@@ -38,7 +38,7 @@ export function PhotoZoom({ src, alt, size = 48, className = '' }: Props) {
         style={{ width: size, height: size }}
         title="Tap to zoom"
       >
-        <Image src={src} alt={alt} width={size} height={size}
+        <Image unoptimized={true} src={src} alt={alt} width={size} height={size}
           className="object-cover w-full h-full rounded-full"/>
       </div>
 
@@ -50,8 +50,8 @@ export function PhotoZoom({ src, alt, size = 48, className = '' }: Props) {
         >
           <div className="relative max-w-sm w-full" onClick={e => e.stopPropagation()}>
             <div className="w-72 h-72 rounded-full overflow-hidden border-4 border-white shadow-2xl mx-auto">
-              <Image src={src} alt={alt} width={288} height={288}
-                className="object-cover w-full h-full" unoptimized/>
+              <Image unoptimized={true} src={src} alt={alt} width={288} height={288}
+                className="object-cover w-full h-full"/>
             </div>
             <p className="text-white text-center mt-4 font-medium text-lg">{alt}</p>
             <button onClick={() => setOpen(false)}

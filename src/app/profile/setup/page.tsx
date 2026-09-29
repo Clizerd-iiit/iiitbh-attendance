@@ -128,7 +128,7 @@ export default function ProfileSetupPage() {
         {/* Header */}
         <div className="text-center mb-8">
           <div className="w-16 h-16 rounded-full overflow-hidden border-4 border-blue-200 mx-auto mb-3">
-            <Image src="/iiitbh-logo.jpg" alt="IIIT Bhagalpur" width={64} height={64} className="object-cover"/>
+            <Image unoptimized={true} src="/iiitbh-logo.jpg" alt="IIIT Bhagalpur" width={64} height={64} className="object-cover"/>
           </div>
           <h1 className="text-2xl font-bold text-gray-800">Complete Your Profile</h1>
           <p className="text-gray-700 text-sm mt-1">Fill in your details to get started</p>
@@ -141,7 +141,7 @@ export default function ProfileSetupPage() {
               onClick={() => fileRef.current?.click()}
               className="w-20 h-20 rounded-full overflow-hidden border-4 border-dashed border-blue-300 bg-blue-50 cursor-pointer hover:border-blue-500 transition flex items-center justify-center">
               {photoPreview ? (
-                <Image src={photoPreview} alt="Preview" width={80} height={80} className="object-cover w-full h-full"/>
+                <Image unoptimized={true} src={photoPreview} alt="Preview" width={80} height={80} className="object-cover w-full h-full"/>
               ) : (
                 <span className="text-blue-400 text-3xl">📷</span>
               )}

@@ -18,7 +18,7 @@ export default function AdminDashboard() {
       fetch('/api/admin/stats').then(r => r.json()).then(d => setStats(d));
     };
     fetchData();
-    const interval = setInterval(fetchData, 5000);
+    const interval = setInterval(fetchData, 60000);
     return () => clearInterval(interval);
   }, []);
 

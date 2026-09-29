@@ -34,7 +34,7 @@ export default function PendingVerificationPage() {
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md w-full text-center">
         <div className="w-20 h-20 rounded-full overflow-hidden border-4 border-blue-200 mx-auto mb-4">
-          <Image src="/iiitbh-logo.jpg" alt="IIIT Bhagalpur" width={80} height={80} className="object-cover"/>
+          <Image unoptimized={true} src="/iiitbh-logo.jpg" alt="IIIT Bhagalpur" width={80} height={80} className="object-cover"/>
         </div>
         <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
           <span className="text-2xl">⏳</span>

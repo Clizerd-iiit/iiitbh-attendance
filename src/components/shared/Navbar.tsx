@@ -111,7 +111,7 @@ export function Navbar() {
       } catch (e) {}
     };
     ping(); // immediate
-    const id = setInterval(ping, 5000); // Check every 5 seconds for faster auto-kick
+    const id = setInterval(ping, 60000); // Check every 5 seconds for faster auto-kick
     return () => clearInterval(id);
   }, [session]);
 
@@ -125,14 +125,14 @@ export function Navbar() {
         {!collapsed && (
           <div className="flex items-center gap-2 min-w-0">
             <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 border border-blue-200 relative">
-              <Image src="/iiitbh-logo.jpg" alt="IIIT Bhagalpur" fill className="object-cover"/>
+              <Image unoptimized={true} src="/iiitbh-logo.jpg" alt="IIIT Bhagalpur" fill className="object-cover"/>
             </div>
             <span className="font-bold text-gray-800 text-sm leading-tight truncate">IIIT Bhagalpur AMS</span>
           </div>
         )}
         {collapsed && (
           <div className="w-8 h-8 rounded-full overflow-hidden border border-blue-200 relative">
-            <Image src="/iiitbh-logo.jpg" alt="IIIT BH" fill className="object-cover"/>
+            <Image unoptimized={true} src="/iiitbh-logo.jpg" alt="IIIT BH" fill className="object-cover"/>
           </div>
         )}
         {/* Collapse button — desktop only */}
@@ -232,7 +232,7 @@ export function Navbar() {
         </button>
         <div className="flex items-center gap-2">
           <div className="w-7 h-7 rounded-full overflow-hidden border border-blue-200 relative">
-            <Image src="/iiitbh-logo.jpg" alt="IIIT BH" fill className="object-cover"/>
+            <Image unoptimized={true} src="/iiitbh-logo.jpg" alt="IIIT BH" fill className="object-cover"/>
           </div>
           <span className="font-bold text-gray-800 text-sm">AMS</span>
         </div>
