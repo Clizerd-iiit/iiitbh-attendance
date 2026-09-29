@@ -79,7 +79,7 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
           return;
         }
 
-        const faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.40); // STRICT (L2 NORMALIZED)
+        const faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.50); // Balanced strictness (L2 NORMALIZED)
 
         setStatus('starting_camera');
         // Request higher resolution for M1 Mac performance
@@ -133,7 +133,7 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
                    // Removed size filter to ensure all faces are processed
 
                    const bestMatch = faceMatcher.findBestMatch(det.descriptor);
-                   const isUnknown = bestMatch.label === 'unknown' || bestMatch.distance > 0.40;
+                   const isUnknown = bestMatch.label === 'unknown' || bestMatch.distance > 0.50;
                    const studentId = bestMatch.label;
                    
                    // YOLOv7 style confidence mapping (lower distance = higher confidence)
