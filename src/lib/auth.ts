@@ -16,7 +16,7 @@ export const authOptions: NextAuthOptions = {
 
   callbacks: {
     async signIn({ user }) {
-      const email = user.email || '';
+      const email = (user.email || '').toLowerCase();
 
       // Superadmin: allow any Gmail
       if (email === SUPERADMIN_EMAIL) return true;
@@ -55,7 +55,7 @@ export const authOptions: NextAuthOptions = {
 
     async jwt({ token, user, trigger }) {
       if (user?.email || trigger === 'update') {
-        const email = user?.email || token.email;
+        const email = (user?.email || token.email || '').toLowerCase();
         if (!email) return token;
 
         if (email === SUPERADMIN_EMAIL) {

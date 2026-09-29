@@ -14,15 +14,14 @@ export async function POST(req: Request) {
     .select('is_active, verification_status')
     .single();
 
-  // If there's an error (e.g. timeout, PGRST116), don't aggressively log out unless we are sure they are deactivated.
-  // We only log out if the user record exists and explicitly says deactivated/rejected.
+  // We ONLY log out if the user record explicitly says deactivated/rejected.
+  // We DO NOT aggressively log out on PGRST116 (0 rows) anymore, because 
+  // concurrent updates to last_seen_at from multiple tabs can occasionally cause 
+  // temporary DB locks or null returns, leading to false-positive logouts.
   if (user) {
     if (user.is_active === false || user.verification_status === 'rejected') {
       return NextResponse.json({ ok: true, deactivated: true });
     }
-  } else if (error && error.code === 'PGRST116') {
-     // User actually deleted from DB
-     return NextResponse.json({ ok: true, deactivated: true });
   }
 
   // --- Fetch Notification Counts ---
