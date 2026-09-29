@@ -60,7 +60,7 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
           return;
         }
 
-        const faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.45); // Very strict to prevent cross-matching
+        const faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.42); // Very strict to prevent cross-matching
 
         setStatus('starting_camera');
         // Request higher resolution for M1 Mac performance
@@ -113,7 +113,7 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
                    if (box.width < 70 || box.height < 70) return;
 
                    const bestMatch = faceMatcher.findBestMatch(det.descriptor);
-                   const isUnknown = bestMatch.label === 'unknown' || bestMatch.distance > 0.45;
+                   const isUnknown = bestMatch.label === 'unknown' || bestMatch.distance > 0.42;
                    const studentId = bestMatch.label;
                    
                    // YOLOv7 style confidence mapping (lower distance = higher confidence)
