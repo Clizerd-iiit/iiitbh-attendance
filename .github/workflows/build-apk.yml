@@ -30,12 +30,21 @@ jobs:
       - name: Install Bubblewrap
         run: npm install -g @bubblewrap/cli
 
-      - name: Initialize Bubblewrap Project
+      - name: Configure Bubblewrap Paths
+        run: |
+          mkdir -p ~/.bubblewrap
+          cat << EOT > ~/.bubblewrap/config.json
+          {
+            "jdkPath": "${JAVA_HOME}",
+            "androidSdkPath": "${ANDROID_HOME}"
+          }
+          EOT
+
+      - name: Initialize and Build Bubblewrap Project
         run: |
           mkdir apk-build
           cd apk-build
           
-          # We provide the config manually to avoid interactive prompts that block CI
           echo '{
             "packageId": "com.iiitbh.attendance",
             "host": "iiitbh-ams.vercel.app",
@@ -73,11 +82,8 @@ jobs:
           # Generate a signing keystore automatically
           keytool -genkey -v -keystore android.keystore -alias android -keyalg RSA -keysize 2048 -validity 10000 -storepass password123 -keypass password123 -dname "CN=IIIT, OU=IT, O=IIIT, L=Bhagalpur, ST=Bihar, C=IN"
           
-          # Accept licenses and build
-          yes | sdkmanager --licenses || true
-          
-          # Run Bubblewrap build with default passwords via echo
-          echo -e "password123\npassword123" | bubblewrap build
+          # Run Bubblewrap build (bubblewrap will read passwords from CLI if supported, or via stdin)
+          yes password123 | bubblewrap build
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
