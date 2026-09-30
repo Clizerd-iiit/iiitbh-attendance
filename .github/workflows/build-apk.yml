@@ -1,0 +1,86 @@
+name: Build Android APK
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Bubblewrap
+        run: npm install -g @bubblewrap/cli
+
+      - name: Initialize Bubblewrap Project
+        run: |
+          mkdir apk-build
+          cd apk-build
+          
+          # We provide the config manually to avoid interactive prompts that block CI
+          echo '{
+            "packageId": "com.iiitbh.attendance",
+            "host": "iiitbh-ams.vercel.app",
+            "name": "IIIT Bhagalpur Attendance",
+            "launcherName": "Attendance",
+            "display": "standalone",
+            "themeColor": "#2563eb",
+            "navigationColor": "#ffffff",
+            "navigationColorDark": "#000000",
+            "navigationDividerColor": "#000000",
+            "navigationDividerColorDark": "#000000",
+            "backgroundColor": "#ffffff",
+            "startUrl": "/",
+            "iconUrl": "https://iiitbh-ams.vercel.app/icon-512x512.png",
+            "maskableIconUrl": "https://iiitbh-ams.vercel.app/icon-512x512.png",
+            "splashScreenFadeOutDuration": 300,
+            "signingKey": {
+              "path": "./android.keystore",
+              "alias": "android"
+            },
+            "appVersionName": "1.0.0",
+            "appVersionCode": 1,
+            "shortcuts": [],
+            "generatorApp": "bubblewrap-cli",
+            "webManifestUrl": "https://iiitbh-ams.vercel.app/manifest.json",
+            "fallbackType": "customtabs",
+            "features": {},
+            "alphaDependencies": {
+              "enabled": false
+            },
+            "enableNotifications": false,
+            "saveAndroidProject": true
+          }' > twa-manifest.json
+          
+          # Generate a signing keystore automatically
+          keytool -genkey -v -keystore android.keystore -alias android -keyalg RSA -keysize 2048 -validity 10000 -storepass password123 -keypass password123 -dname "CN=IIIT, OU=IT, O=IIIT, L=Bhagalpur, ST=Bihar, C=IN"
+          
+          # Accept licenses and build
+          yes | sdkmanager --licenses || true
+          
+          # Run Bubblewrap build with default passwords via echo
+          echo -e "password123\npassword123" | bubblewrap build
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Attendance-App-Signed-APK
+          path: apk-build/app-release-signed.apk
