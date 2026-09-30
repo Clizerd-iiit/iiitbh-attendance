@@ -94,7 +94,7 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
              const displaySize = { width: videoRef.current.videoWidth, height: videoRef.current.videoHeight };
              faceapi.matchDimensions(canvasRef.current, displaySize);
 
-             const detections = await faceapi.detectAllFaces(videoRef.current, new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.5 })).withFaceLandmarks().withFaceDescriptors();
+             const detections = await faceapi.detectAllFaces(videoRef.current, new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.6 })).withFaceLandmarks().withFaceDescriptors();
              const resizedDetections = faceapi.resizeResults(detections, displaySize);
              setFacesCount(resizedDetections ? resizedDetections.length : 0);
              
@@ -110,7 +110,7 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
                    const box = det.detection.box;
                    
                    // CRITICAL FIX: Ignore background faces and ghost detections.
-                   if (box.width < 70 || box.height < 70) return;
+                   if (box.width < 100 || box.height < 100) return;
 
                    const bestMatch = faceMatcher.findBestMatch(det.descriptor);
                    const isUnknown = bestMatch.label === 'unknown' || bestMatch.distance > 0.42;
