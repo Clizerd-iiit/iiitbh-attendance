@@ -27,16 +27,6 @@ jobs:
       - name: Install Bubblewrap
         run: npm install -g @bubblewrap/cli
 
-      - name: Configure Bubblewrap Paths
-        run: |
-          mkdir -p ~/.bubblewrap
-          cat << EOT > ~/.bubblewrap/config.json
-          {
-            "jdkPath": "${JAVA_HOME}",
-            "androidSdkPath": "${ANDROID_HOME}"
-          }
-          EOT
-
       - name: Initialize and Build Bubblewrap Project
         run: |
           mkdir apk-build
@@ -79,8 +69,35 @@ jobs:
           # Generate a signing keystore automatically
           keytool -genkey -v -keystore android.keystore -alias android -keyalg RSA -keysize 2048 -validity 10000 -storepass password123 -keypass password123 -dname "CN=IIIT, OU=IT, O=IIIT, L=Bhagalpur, ST=Bihar, C=IN"
           
-          # Run Bubblewrap build
-          yes password123 | bubblewrap build
+          # Install expect to script the interactive prompts of bubblewrap
+          sudo apt-get update && sudo apt-get install -y expect
+          
+          cat << 'EXPECT_SCRIPT' > build.exp
+          set timeout -1
+          spawn bubblewrap build --skipVersionCheck
+          
+          expect {
+            -nocase "password" {
+              send "password123\r"
+              exp_continue
+            }
+            -nocase "path to the jdk" {
+              send "$env(JAVA_HOME)\r"
+              exp_continue
+            }
+            -nocase "path to the android sdk" {
+              send "$env(ANDROID_HOME)\r"
+              exp_continue
+            }
+            -nocase "update" {
+              send "y\r"
+              exp_continue
+            }
+            eof
+          }
+          EXPECT_SCRIPT
+          
+          expect build.exp
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
