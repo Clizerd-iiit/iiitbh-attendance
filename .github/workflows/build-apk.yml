@@ -18,12 +18,6 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '17'
-
       - name: Install Bubblewrap
         run: npm install -g @bubblewrap/cli
 
@@ -69,7 +63,7 @@ jobs:
           # Generate a signing keystore automatically
           keytool -genkey -v -keystore android.keystore -alias android -keyalg RSA -keysize 2048 -validity 10000 -storepass password123 -keypass password123 -dname "CN=IIIT, OU=IT, O=IIIT, L=Bhagalpur, ST=Bihar, C=IN"
           
-          # Install expect to script the interactive prompts of bubblewrap
+          # Install expect
           sudo apt-get update && sudo apt-get install -y expect
           
           cat << 'EXPECT_SCRIPT' > build.exp
@@ -78,27 +72,23 @@ jobs:
           
           expect {
             -nocase "install the jdk" {
-              send "n\r"
+              send "y\r"
               exp_continue
             }
             -nocase "install the android sdk" {
-              send "n\r"
+              send "y\r"
               exp_continue
             }
-            -nocase "agree to the" {
+            -nocase "terms of the android sdk" {
+              send "y\r"
+              exp_continue
+            }
+            -nocase "agree to the terms" {
               send "y\r"
               exp_continue
             }
             -nocase "password" {
               send "password123\r"
-              exp_continue
-            }
-            -nocase "path to the jdk" {
-              send "$env(JAVA_HOME)\r"
-              exp_continue
-            }
-            -nocase "path to the android sdk" {
-              send "$env(ANDROID_HOME)\r"
               exp_continue
             }
             -nocase "update" {
