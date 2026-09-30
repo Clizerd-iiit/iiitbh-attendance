@@ -77,6 +77,18 @@ jobs:
           spawn bubblewrap build --skipVersionCheck
           
           expect {
+            -nocase "install the jdk" {
+              send "n\r"
+              exp_continue
+            }
+            -nocase "install the android sdk" {
+              send "n\r"
+              exp_continue
+            }
+            -nocase "agree to the" {
+              send "y\r"
+              exp_continue
+            }
             -nocase "password" {
               send "password123\r"
               exp_continue
