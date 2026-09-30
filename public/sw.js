@@ -1,22 +1,24 @@
-const CACHE_NAME = 'attendance-v1';
+const CACHE_NAME = 'attendance-v3';
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(['/']);
-    })
-  );
   self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
-  event.waitUntil(self.clients.claim());
+  event.waitUntil(clients.claim());
 });
 
 self.addEventListener('fetch', (event) => {
+  const url = new URL(event.request.url);
+  
+  // NEVER intercept API calls, Auth endpoints, or non-GET requests (like POST logins)
+  if (event.request.method !== 'GET' || url.pathname.startsWith('/api/')) {
+    return; 
+  }
+
   event.respondWith(
-    caches.match(event.request).then((response) => {
-      return response || fetch(event.request);
+    fetch(event.request).catch(() => {
+      return caches.match(event.request);
     })
   );
 });
