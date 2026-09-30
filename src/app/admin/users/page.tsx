@@ -222,7 +222,7 @@ export default function AdminUsers() {
 
       {/* Modal: Edit / Add User */}
         {showModal && (
-          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm items-center justify-center p-4 backdrop-blur-sm">
             <div className="bg-white rounded-2xl w-full max-w-xl shadow-2xl flex flex-col max-h-[90vh]">
               <div className="p-5 border-b border-gray-100">
                 <h2 className="text-xl font-bold text-gray-800">{isEditing ? 'Edit User Details' : 'Add New User'}</h2>
@@ -300,7 +300,7 @@ export default function AdminUsers() {
 
         {/* Delete Modal */}
         {deleting && (
-          <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm items-center justify-center p-4 backdrop-blur-sm">
             <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl">
               <h2 className="text-xl font-bold text-gray-800 mb-2">Delete User?</h2>
               <p className="text-gray-700 text-sm mb-6">This action will cascade delete everything associated with this user. It cannot be undone.</p>

@@ -110,7 +110,7 @@ export function EditStudentModal({ student, onClose, onSaved }: { student: any, 
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm items-center justify-center p-4 backdrop-blur-sm">
       <div className="bg-white rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl">
         <div className="flex justify-between items-center p-5 border-b bg-gray-50">
           <h2 className="text-xl font-bold text-gray-800">Edit Student</h2>
@@ -155,7 +155,7 @@ export function EditStudentModal({ student, onClose, onSaved }: { student: any, 
               </div>
               
               <div className="relative w-full max-w-sm mx-auto aspect-square bg-gray-200 rounded-2xl overflow-hidden mb-4 flex items-center justify-center border-4 border-blue-100">
-                {faceMsg && <div className="absolute inset-0 bg-black/60 text-white flex items-center justify-center p-4 z-10">{faceMsg}</div>}
+                {faceMsg && <div className="absolute inset-0 bg-black/80 backdrop-blur-sm text-white flex items-center justify-center p-4 z-10">{faceMsg}</div>}
                 <video ref={videoRef} className="w-full h-full object-cover transform scale-x-[-1]" muted playsInline />
                 
                 {/* 3D Target Overlay Guide */}

@@ -134,11 +134,15 @@ export default function TeacherAnnouncementsPage() {
           </button>
         </div>
 
-        {/* New announcement form */}
+        {/* New/Edit announcement modal */}
         {showForm && (
-          <div className="bg-white rounded-2xl shadow-sm p-6 mb-6 border">
-            <h2 className="text-lg font-semibold text-gray-800 mb-4">New Announcement</h2>
-            <div className="space-y-4">
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto">
+            <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-2xl my-auto">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-bold text-gray-800">{editingId ? 'Edit Announcement' : 'New Announcement'}</h2>
+                <button onClick={() => { setShowForm(false); setEditingId(null); }} className="text-gray-500 hover:text-gray-700 text-2xl font-bold leading-none">&times;</button>
+              </div>
+              <div className="space-y-4 max-h-[75vh] overflow-y-auto px-1 pb-4">
 
               {/* Type */}
               <div>
@@ -286,9 +290,10 @@ export default function TeacherAnnouncementsPage() {
 
               <button onClick={post} disabled={posting || !form.title.trim()}
                 className="w-full bg-blue-600 text-white py-3 rounded-xl hover:bg-blue-700 disabled:opacity-70 transition font-medium">
-                {posting ? 'Posting…' : '📢 Post Announcement'}
+                {posting ? 'Posting…' : (editingId ? '💾 Save Changes' : '📢 Post Announcement')}
               </button>
             </div>
+          </div>
           </div>
         )}
 
