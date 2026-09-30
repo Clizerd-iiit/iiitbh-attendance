@@ -1,13 +1,13 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { AuthProvider } from '@/components/shared/AuthProvider';
+import PWARegister from '@/components/shared/PWARegister';
 
 const inter = { className: '' };
 
 export const metadata: Metadata = {
   title: 'IIIT Bhagalpur — Attendance',
   description: 'Smart Attendance Management',
-  manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
@@ -27,7 +27,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body className={inter.className}>
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          {children}
+          <PWARegister />
+        </AuthProvider>
       </body>
     </html>
   );
