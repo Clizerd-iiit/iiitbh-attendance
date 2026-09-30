@@ -18,10 +18,38 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Install Android Command-line Tools
+        run: |
+          mkdir -p $ANDROID_HOME/cmdline-tools
+          cd $ANDROID_HOME/cmdline-tools
+          wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmdline-tools.zip
+          unzip -q cmdline-tools.zip || true
+          if [ -d "cmdline-tools" ]; then
+            mv cmdline-tools latest
+          fi
+          rm cmdline-tools.zip
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses
+
       - name: Install Bubblewrap
         run: npm install -g @bubblewrap/cli
 
-      - name: Initialize and Build Bubblewrap Project
+      - name: Configure Bubblewrap Paths
+        run: |
+          mkdir -p ~/.bubblewrap
+          cat << EOT > ~/.bubblewrap/config.json
+          {
+            "jdkPath": "${JAVA_HOME}",
+            "androidSdkPath": "${ANDROID_HOME}"
+          }
+          EOT
+
+      - name: Build Bubblewrap Project
         run: |
           mkdir apk-build
           cd apk-build
@@ -60,45 +88,21 @@ jobs:
             "saveAndroidProject": true
           }' > twa-manifest.json
           
-          # Generate a signing keystore automatically
           keytool -genkey -v -keystore android.keystore -alias android -keyalg RSA -keysize 2048 -validity 10000 -storepass password123 -keypass password123 -dname "CN=IIIT, OU=IT, O=IIIT, L=Bhagalpur, ST=Bihar, C=IN"
           
-          # Install expect
+          # We supply the keystore passwords directly via expect, but skip all other prompts since config.json is valid
           sudo apt-get update && sudo apt-get install -y expect
-          
           cat << 'EXPECT_SCRIPT' > build.exp
           set timeout -1
           spawn bubblewrap build --skipVersionCheck
-          
           expect {
-            -nocase "install the jdk" {
-              send "y\r"
-              exp_continue
-            }
-            -nocase "install the android sdk" {
-              send "y\r"
-              exp_continue
-            }
-            -nocase "terms of the android sdk" {
-              send "y\r"
-              exp_continue
-            }
-            -nocase "agree to the terms" {
-              send "y\r"
-              exp_continue
-            }
             -nocase "password" {
               send "password123\r"
-              exp_continue
-            }
-            -nocase "update" {
-              send "y\r"
               exp_continue
             }
             eof
           }
           EXPECT_SCRIPT
-          
           expect build.exp
 
       - name: Upload APK
