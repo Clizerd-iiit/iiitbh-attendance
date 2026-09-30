@@ -24,9 +24,6 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-
       - name: Install Bubblewrap
         run: npm install -g @bubblewrap/cli
 
@@ -82,7 +79,7 @@ jobs:
           # Generate a signing keystore automatically
           keytool -genkey -v -keystore android.keystore -alias android -keyalg RSA -keysize 2048 -validity 10000 -storepass password123 -keypass password123 -dname "CN=IIIT, OU=IT, O=IIIT, L=Bhagalpur, ST=Bihar, C=IN"
           
-          # Run Bubblewrap build (bubblewrap will read passwords from CLI if supported, or via stdin)
+          # Run Bubblewrap build
           yes password123 | bubblewrap build
 
       - name: Upload APK
