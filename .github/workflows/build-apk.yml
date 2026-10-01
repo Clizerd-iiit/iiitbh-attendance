@@ -90,20 +90,7 @@ jobs:
           
           keytool -genkey -v -keystore android.keystore -alias android -keyalg RSA -keysize 2048 -validity 10000 -storepass password123 -keypass password123 -dname "CN=IIIT, OU=IT, O=IIIT, L=Bhagalpur, ST=Bihar, C=IN"
           
-          # We supply the keystore passwords directly via expect, but skip all other prompts since config.json is valid
-          sudo apt-get update && sudo apt-get install -y expect
-          cat << 'EXPECT_SCRIPT' > build.exp
-          set timeout -1
-          spawn bubblewrap build --skipVersionCheck
-          expect {
-            -nocase "password" {
-              send "password123\r"
-              exp_continue
-            }
-            eof
-          }
-          EXPECT_SCRIPT
-          expect build.exp
+          yes password123 | bubblewrap build
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
