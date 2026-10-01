@@ -18,100 +18,86 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Install System Dependencies
-        run: sudo apt-get update && sudo apt-get install -y expect
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
 
-      - name: Install Bubblewrap
-        run: npm install -g @bubblewrap/cli
-
-      - name: Build Bubblewrap Project
+      - name: Install and Configure Capacitor
         run: |
-          # Clear any preset paths so Bubblewrap downloads its own perfectly compatible JDK & SDK
-          unset JAVA_HOME
-          unset ANDROID_HOME
-          rm -rf ~/.bubblewrap
+          # We are switching from Bubblewrap to Capacitor to completely eliminate CLI prompt hangs.
+          # Capacitor produces a 100% native Android WebView without any interactive prompts.
+          npm init -y
+          npm install @capacitor/core @capacitor/cli @capacitor/android
+          npx cap init Attendance com.iiitbh.attendance --web-dir out
           
-          mkdir apk-build
-          cd apk-build
+          cat << 'CONF' > capacitor.config.json
+          {
+            "appId": "com.iiitbh.attendance",
+            "appName": "Attendance",
+            "webDir": "out",
+            "bundledWebRuntime": false,
+            "server": {
+              "url": "https://iiitbh-ams.vercel.app",
+              "cleartext": true
+            }
+          }
+          CONF
           
-          echo '{
-            "packageId": "com.iiitbh.attendance",
-            "host": "iiitbh-ams.vercel.app",
-            "name": "IIIT Bhagalpur Attendance",
-            "launcherName": "Attendance",
-            "display": "standalone",
-            "themeColor": "#2563eb",
-            "navigationColor": "#ffffff",
-            "navigationColorDark": "#000000",
-            "navigationDividerColor": "#000000",
-            "navigationDividerColorDark": "#000000",
-            "backgroundColor": "#ffffff",
-            "startUrl": "/",
-            "iconUrl": "https://iiitbh-ams.vercel.app/icon-512x512.png",
-            "maskableIconUrl": "https://iiitbh-ams.vercel.app/icon-512x512.png",
-            "splashScreenFadeOutDuration": 300,
-            "signingKey": {
-              "path": "./android.keystore",
-              "alias": "android"
-            },
-            "appVersionName": "1.0.0",
-            "appVersionCode": 1,
-            "shortcuts": [],
-            "generatorApp": "bubblewrap-cli",
-            "webManifestUrl": "https://iiitbh-ams.vercel.app/manifest.json",
-            "fallbackType": "customtabs",
-            "features": {},
-            "alphaDependencies": {
-              "enabled": false
-            },
-            "enableNotifications": false,
-            "saveAndroidProject": true
-          }' > twa-manifest.json
+          npx cap add android
+
+      - name: Inject Camera Permissions
+        run: |
+          # Inject Camera permissions into AndroidManifest.xml
+          MANIFEST_PATH="android/app/src/main/AndroidManifest.xml"
+          sed -i '/<\/manifest>/i \    <uses-permission android:name="android.permission.CAMERA" />\n    <uses-permission android:name="android.permission.RECORD_AUDIO" />\n    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />\n    <uses-permission android:name="android.permission.VIDEO_CAPTURE" />\n    <uses-permission android:name="android.permission.AUDIO_CAPTURE" />' $MANIFEST_PATH
           
-          # Use a standard PKCS12 keystore compatible with modern Java
+          # Inject WebChromeClient into MainActivity to auto-grant camera prompts inside the WebView for face-api.js
+          cat << 'JAVA' > android/app/src/main/java/com/iiitbh/attendance/MainActivity.java
+          package com.iiitbh.attendance;
+          import android.os.Bundle;
+          import android.webkit.PermissionRequest;
+          import android.webkit.WebChromeClient;
+          import android.webkit.WebView;
+          import com.getcapacitor.BridgeActivity;
+
+          public class MainActivity extends BridgeActivity {
+              @Override
+              public void onCreate(Bundle savedInstanceState) {
+                  super.onCreate(savedInstanceState);
+                  WebView webView = this.bridge.getWebView();
+                  webView.setWebChromeClient(new WebChromeClient() {
+                      @Override
+                      public void onPermissionRequest(final PermissionRequest request) {
+                          request.grant(request.getResources());
+                      }
+                  });
+              }
+          }
+          JAVA
+
+      - name: Build Release APK
+        run: |
+          cd android
+          ./gradlew assembleRelease
+
+      - name: Sign APK
+        run: |
+          # Generate Keystore
           keytool -genkey -v -keystore android.keystore -alias android -keyalg RSA -keysize 2048 -validity 10000 -storepass password123 -keypass password123 -dname "CN=IIIT, OU=IT, O=IIIT, L=Bhagalpur, ST=Bihar, C=IN"
           
-          # Create an Expect script to gracefully handle ALL interactive prompts from Bubblewrap
-          cat << 'EXP' > build.exp
-          set timeout -1
-          spawn bubblewrap build
-          expect {
-            -nocase "install the jdk" {
-              send "y\r"
-              exp_continue
-            }
-            -nocase "install the android sdk tools" {
-              send "y\r"
-              exp_continue
-            }
-            -nocase "terms and conditions" {
-              send "y\r"
-              exp_continue
-            }
-            -nocase "password for the key store" {
-              send "password123\r"
-              exp_continue
-            }
-            -nocase "password for the key" {
-              send "password123\r"
-              exp_continue
-            }
-            eof
-          }
-          EXP
+          BUILD_TOOLS_DIR=$(ls -d $ANDROID_HOME/build-tools/* | tail -1)
           
-          # Run the expect script and capture output for debugging
-          expect build.exp > bubblewrap_build.log 2>&1 || true
+          # Align APK
+          $BUILD_TOOLS_DIR/zipalign -v -p 4 android/app/build/outputs/apk/release/app-release-unsigned.apk app-release-aligned.apk
           
-          if [ ! -f "app-release-signed.apk" ]; then
-            ERROR_LOG=$(cat bubblewrap_build.log | tr '\n' ' ' | sed 's/"/'\''/g')
-            echo "::error::BUBBLEWRAP_ERROR_LOG: $ERROR_LOG"
-            exit 1
-          fi
+          # Sign APK
+          $BUILD_TOOLS_DIR/apksigner sign --ks android.keystore --ks-pass pass:password123 --key-pass pass:password123 --out app-release-signed.apk app-release-aligned.apk
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: Attendance-App-Signed-APK
-          path: apk-build/app-release-signed.apk
+          path: app-release-signed.apk
           
