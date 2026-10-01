@@ -34,6 +34,11 @@ jobs:
           
           npx cap init Attendance com.iiitbh.attendance --web-dir out
           
+          # Delete the default TS config that overrides our custom JSON config
+          rm -f capacitor.config.ts
+          
+          # Configure Capacitor to load the live URL and spoof the User Agent
+          # Spoofing the User-Agent removes the "; wv" (WebView) flag, which tricks Google OAuth into allowing logins
           cat << 'CONF' > capacitor.config.json
           {
             "appId": "com.iiitbh.attendance",
@@ -43,6 +48,9 @@ jobs:
             "server": {
               "url": "https://iiitbh-ams.vercel.app",
               "cleartext": true
+            },
+            "android": {
+              "overrideUserAgent": "Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Mobile Safari/537.36"
             }
           }
           CONF
@@ -80,8 +88,6 @@ jobs:
 
       - name: Resolve Kotlin Duplicate Class Errors
         run: |
-          # This is the industry standard fix for "Duplicate class kotlin.collections.jdk8..."
-          # Since Kotlin 1.8+, jdk7 and jdk8 are merged into stdlib. Older libraries fetching them cause duplicates.
           cat << 'GRADLE_FIX' >> android/build.gradle
 
           allprojects {
