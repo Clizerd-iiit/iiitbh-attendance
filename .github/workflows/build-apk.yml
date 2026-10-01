@@ -34,11 +34,10 @@ jobs:
           
           npx cap init Attendance com.iiitbh.attendance --web-dir out
           
-          # Delete the default TS config that overrides our custom JSON config
           rm -f capacitor.config.ts
           
-          # Configure Capacitor to load the live URL and spoof the User Agent
-          # Spoofing the User-Agent removes the "; wv" (WebView) flag, which tricks Google OAuth into allowing logins
+          # Added allowNavigation so Google OAuth login happens INSIDE the app
+          # instead of kicking the user out to the system Chrome browser.
           cat << 'CONF' > capacitor.config.json
           {
             "appId": "com.iiitbh.attendance",
@@ -47,7 +46,12 @@ jobs:
             "bundledWebRuntime": false,
             "server": {
               "url": "https://iiitbh-ams.vercel.app",
-              "cleartext": true
+              "cleartext": true,
+              "allowNavigation": [
+                "accounts.google.com",
+                "*.google.com",
+                "accounts.youtube.com"
+              ]
             },
             "android": {
               "overrideUserAgent": "Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Mobile Safari/537.36"
