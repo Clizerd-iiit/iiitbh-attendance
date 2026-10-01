@@ -93,24 +93,47 @@ jobs:
           
           keytool -genkey -v -keystore android.keystore -alias android -keyalg RSA -keysize 2048 -validity 10000 -storepass password123 -keypass password123 -dname "CN=IIIT, OU=IT, O=IIIT, L=Bhagalpur, ST=Bihar, C=IN" -deststoretype JKS
           
-          # We must strictly answer three prompts in exact order: 
-          # 1. Regenerate project? (no)
-          # 2. Key Store Password
-          # 3. Key Password
+          # We use a state-machine expect script to handle optional prompts, 
+          # prevent infinite repaint loops, and avoid hanging indefinitely.
           cat << 'EXP' > build.exp
-          set timeout -1
+          set timeout 300
           spawn bubblewrap build
           
-          expect "regenerate your project"
-          send "no\r"
+          set regen_done 0
+          set keystore_done 0
+          set key_done 0
           
-          expect "Key Store:"
-          send "password123\r"
-          
-          expect "the Key:"
-          send "password123\r"
-          
-          expect eof
+          expect {
+              -nocase "regenerate your project" {
+                  if {$regen_done == 0} {
+                      set regen_done 1
+                      send "no\r"
+                  }
+                  exp_continue
+              }
+              -nocase "password for the key store" {
+                  if {$keystore_done == 0} {
+                      set keystore_done 1
+                      send "password123\r"
+                  }
+                  exp_continue
+              }
+              -nocase "password for the key" {
+                  if {$key_done == 0} {
+                      set key_done 1
+                      send "password123\r"
+                  }
+                  exp_continue
+              }
+              timeout {
+                  puts "\n[EXPECT TIMEOUT]: Build hung for 5 minutes without expected prompt."
+                  exit 1
+              }
+              eof {
+                  puts "\n[EXPECT SUCCESS]: Build finished."
+                  exit 0
+              }
+          }
           EXP
           
           expect build.exp > build.log 2>&1 || true
