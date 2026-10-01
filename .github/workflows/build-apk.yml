@@ -22,7 +22,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: '17'
+          java-version: '21'
 
       - name: Install and Configure Capacitor
         run: |
@@ -57,7 +57,7 @@ jobs:
           # Safely inject permissions before </manifest>
           sed -i 's|</manifest>|    <uses-permission android:name="android.permission.CAMERA" />\n    <uses-permission android:name="android.permission.RECORD_AUDIO" />\n    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />\n    <uses-permission android:name="android.permission.VIDEO_CAPTURE" />\n    <uses-permission android:name="android.permission.AUDIO_CAPTURE" />\n</manifest>|g' $MANIFEST_PATH
           
-          cat << 'JAVA' > android/app/src/main/java/com/iiitbh/attendance/MainActivity.java
+          cat << 'JAVA' > android/app/src/main/java/com/iiitbh.attendance/MainActivity.java
           package com.iiitbh.attendance;
           import android.os.Bundle;
           import android.webkit.PermissionRequest;
@@ -67,8 +67,8 @@ jobs:
 
           public class MainActivity extends BridgeActivity {
               @Override
-              public void onStart() {
-                  super.onStart();
+              public void onCreate(Bundle savedInstanceState) {
+                  super.onCreate(savedInstanceState);
                   WebView webView = this.bridge.getWebView();
                   webView.setWebChromeClient(new WebChromeClient() {
                       @Override
