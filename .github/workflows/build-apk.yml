@@ -55,7 +55,6 @@ jobs:
           MANIFEST_PATH="android/app/src/main/AndroidManifest.xml"
           sed -i 's|</manifest>|    <uses-permission android:name="android.permission.CAMERA" />\n    <uses-permission android:name="android.permission.RECORD_AUDIO" />\n    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />\n    <uses-permission android:name="android.permission.VIDEO_CAPTURE" />\n    <uses-permission android:name="android.permission.AUDIO_CAPTURE" />\n</manifest>|g' $MANIFEST_PATH
           
-          # Fix typo: com/iiitbh/attendance instead of com/iiitbh.attendance
           cat << 'JAVA' > android/app/src/main/java/com/iiitbh/attendance/MainActivity.java
           package com.iiitbh.attendance;
           import android.os.Bundle;
@@ -79,6 +78,20 @@ jobs:
           }
           JAVA
 
+      - name: Resolve Kotlin Duplicate Class Errors
+        run: |
+          # This is the industry standard fix for "Duplicate class kotlin.collections.jdk8..."
+          # Since Kotlin 1.8+, jdk7 and jdk8 are merged into stdlib. Older libraries fetching them cause duplicates.
+          cat << 'GRADLE_FIX' >> android/build.gradle
+
+          allprojects {
+              configurations.all {
+                  exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk7'
+                  exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk8'
+              }
+          }
+          GRADLE_FIX
+
       - name: Build Release APK
         run: |
           cd android
@@ -89,8 +102,6 @@ jobs:
           keytool -genkey -v -keystore android.keystore -alias android -keyalg RSA -keysize 2048 -validity 10000 -storepass password123 -keypass password123 -dname "CN=IIIT, OU=IT, O=IIIT, L=Bhagalpur, ST=Bihar, C=IN"
           
           BUILD_TOOLS_DIR=$(ls -d $ANDROID_HOME/build-tools/* | sort -V | tail -1)
-          
-          # Safely find the generated APK regardless of whether it's named app-release-unsigned.apk or app-release.apk
           APK_PATH=$(find android/app/build/outputs/apk/release -name "*.apk" | head -n 1)
           
           $BUILD_TOOLS_DIR/zipalign -v -p 4 $APK_PATH app-release-aligned.apk
