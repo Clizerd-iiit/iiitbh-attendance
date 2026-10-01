@@ -24,17 +24,19 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Install Android Command-line Tools
+      - name: Install Independent Android SDK for Bubblewrap
         run: |
-          mkdir -p $ANDROID_HOME/cmdline-tools
-          cd $ANDROID_HOME/cmdline-tools
+          export BW_SDK=$HOME/.bubblewrap/android_sdk
+          mkdir -p $BW_SDK/cmdline-tools
+          cd $BW_SDK/cmdline-tools
           wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmdline-tools.zip
-          unzip -q cmdline-tools.zip || true
-          if [ -d "cmdline-tools" ]; then
-            mv cmdline-tools latest
-          fi
+          unzip -q cmdline-tools.zip
+          mv cmdline-tools latest
           rm cmdline-tools.zip
-          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses
+          
+          # Accept licenses and install exact tools Bubblewrap expects
+          yes | $BW_SDK/cmdline-tools/latest/bin/sdkmanager --licenses
+          $BW_SDK/cmdline-tools/latest/bin/sdkmanager "build-tools;34.0.0" "platforms;android-34" "platform-tools"
 
       - name: Install Bubblewrap
         run: npm install -g @bubblewrap/cli
@@ -45,7 +47,7 @@ jobs:
           cat << EOT > ~/.bubblewrap/config.json
           {
             "jdkPath": "${JAVA_HOME}",
-            "androidSdkPath": "${ANDROID_HOME}"
+            "androidSdkPath": "${HOME}/.bubblewrap/android_sdk"
           }
           EOT
 
@@ -93,7 +95,6 @@ jobs:
           printf "password123\npassword123\n" | bubblewrap build > bubblewrap_build.log 2>&1 || true
           
           if [ ! -f "app-release-signed.apk" ]; then
-            # Format the output so GitHub Actions surfaces the exact error in the UI annotations
             ERROR_LOG=$(cat bubblewrap_build.log | tr '\n' ' ' | sed 's/"/'\''/g')
             echo "::error::BUBBLEWRAP_ERROR_LOG: $ERROR_LOG"
             exit 1
