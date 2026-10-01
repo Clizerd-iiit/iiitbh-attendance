@@ -91,51 +91,38 @@ jobs:
           }
           MANIFEST
           
-          # Create checksum to bypass Bubblewrap's regenerate prompt natively!
-          sha256sum twa-manifest.json | awk '{printf "%s", $1}' > twa-manifest.json.checksum
-          
           keytool -genkey -v -keystore android.keystore -alias android -keyalg RSA -keysize 2048 -validity 10000 -storepass password123 -keypass password123 -dname "CN=IIIT, OU=IT, O=IIIT, L=Bhagalpur, ST=Bihar, C=IN" -deststoretype JKS
           
-          # Fix Tcl syntax errors and word-wrap matching failures
+          # Fix the substring race condition by splitting expect blocks and matching colons exactly!
           cat << 'EXP' > build.exp
           set timeout 120
           spawn bubblewrap build
           
-          set regen_done 0
-          set keystore_done 0
-          set key_done 0
-          
           expect {
-              -nocase "regenerate" {
-                  if {$regen_done == 0} {
-                      set regen_done 1
-                      send "no\r"
-                  }
+              "regenerate" {
+                  send "no\r"
                   exp_continue
               }
-              -nocase "Key Store" {
-                  if {$keystore_done == 0} {
-                      set keystore_done 1
-                      send "password123\r"
-                  }
-                  exp_continue
-              }
-              -nocase "the Key" {
-                  if {$key_done == 0} {
-                      set key_done 1
-                      send "password123\r"
-                  }
-                  exp_continue
+              "Key Store:" {
+                  send "password123\r"
               }
               timeout {
-                  puts "EXPECT TIMEOUT: Build hung for 2 minutes."
+                  puts "TIMEOUT waiting for Key Store"
                   exit 1
               }
-              eof {
-                  puts "EXPECT SUCCESS: Build finished."
-                  exit 0
+          }
+          
+          expect {
+              "the Key:" {
+                  send "password123\r"
+              }
+              timeout {
+                  puts "TIMEOUT waiting for Key password"
+                  exit 1
               }
           }
+          
+          expect eof
           EXP
           
           expect build.exp > build.log 2>&1 || true
