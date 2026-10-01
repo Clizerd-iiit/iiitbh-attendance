@@ -32,8 +32,6 @@ jobs:
 
       - name: Fix Android SDK for Bubblewrap (Ultimate Bypass)
         run: |
-          # Use 'sudo' because /usr/local/lib/android/sdk is owned by root on the GitHub runner!
-          # We create a dummy script that successfully exits, completely tricking Bubblewrap's validation.
           sudo mkdir -p $ANDROID_HOME/cmdline-tools/latest/bin
           echo '#!/bin/bash' | sudo tee $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager
           echo 'exit 0' | sudo tee -a $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager
@@ -44,7 +42,6 @@ jobs:
           echo 'exit 0' | sudo tee -a $ANDROID_HOME/tools/bin/sdkmanager
           sudo chmod +x $ANDROID_HOME/tools/bin/sdkmanager
           
-          # Configure Bubblewrap to use the bypassed SDK and standard JDK
           mkdir -p ~/.bubblewrap
           cat << CONF > ~/.bubblewrap/config.json
           {
@@ -94,24 +91,20 @@ jobs:
           }
           MANIFEST
           
-          # Create a modern JKS keystore
           keytool -genkey -v -keystore android.keystore -alias android -keyalg RSA -keysize 2048 -validity 10000 -storepass password123 -keypass password123 -dname "CN=IIIT, OU=IT, O=IIIT, L=Bhagalpur, ST=Bihar, C=IN" -deststoretype JKS
           
-          # Use expect just for the keystore passwords
+          # Fix infinite hang caused by exp_continue matching repainted screen output
           cat << 'EXP' > build.exp
-          set timeout -1
+          set timeout 60
           spawn bubblewrap build
-          expect {
-            -nocase "password for the key store" {
-              send "password123\r"
-              exp_continue
-            }
-            -nocase "password for the key" {
-              send "password123\r"
-              exp_continue
-            }
-            eof
-          }
+          
+          expect "Key Store:"
+          send "password123\r"
+          
+          expect "the Key:"
+          send "password123\r"
+          
+          expect eof
           EXP
           
           expect build.exp > build.log 2>&1 || true
