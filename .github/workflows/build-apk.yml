@@ -93,10 +93,16 @@ jobs:
           
           keytool -genkey -v -keystore android.keystore -alias android -keyalg RSA -keysize 2048 -validity 10000 -storepass password123 -keypass password123 -dname "CN=IIIT, OU=IT, O=IIIT, L=Bhagalpur, ST=Bihar, C=IN" -deststoretype JKS
           
-          # Fix infinite hang caused by exp_continue matching repainted screen output
+          # We must strictly answer three prompts in exact order: 
+          # 1. Regenerate project? (no)
+          # 2. Key Store Password
+          # 3. Key Password
           cat << 'EXP' > build.exp
-          set timeout 60
+          set timeout -1
           spawn bubblewrap build
+          
+          expect "regenerate your project"
+          send "no\r"
           
           expect "Key Store:"
           send "password123\r"
