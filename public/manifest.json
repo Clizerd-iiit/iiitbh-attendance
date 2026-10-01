@@ -1,23 +1,21 @@
 {
-  "name": "IIIT Bhagalpur Attendance",
-  "short_name": "Attendance",
-  "description": "Face Recognition Attendance System for IIIT Bhagalpur",
+  "name": "IIIT AMS",
+  "short_name": "IIIT AMS",
+  "description": "IIIT Bhagalpur Attendance Management System",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#2563eb",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
   "icons": [
     {
       "src": "/icon-192x192.png",
       "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "type": "image/png"
     },
     {
       "src": "/icon-512x512.png",
       "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "type": "image/png"
     }
   ]
 }
