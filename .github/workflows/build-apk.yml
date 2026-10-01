@@ -93,14 +93,14 @@ jobs:
           
           keytool -genkey -v -keystore android.keystore -alias android -keyalg RSA -keysize 2048 -validity 10000 -storepass password123 -keypass password123 -dname "CN=IIIT, OU=IT, O=IIIT, L=Bhagalpur, ST=Bihar, C=IN" -deststoretype JKS
           
-          # Fix the substring race condition by splitting expect blocks and matching colons exactly!
+          # We MUST answer 'yes' to the regenerate prompt so Bubblewrap creates the gradlew wrapper!
           cat << 'EXP' > build.exp
           set timeout 120
           spawn bubblewrap build
           
           expect {
               "regenerate" {
-                  send "no\r"
+                  send "yes\r"
                   exp_continue
               }
               "Key Store:" {
