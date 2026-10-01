@@ -91,12 +91,14 @@ jobs:
           }
           MANIFEST
           
+          # Create checksum to bypass Bubblewrap's regenerate prompt natively!
+          sha256sum twa-manifest.json | awk '{printf "%s", $1}' > twa-manifest.json.checksum
+          
           keytool -genkey -v -keystore android.keystore -alias android -keyalg RSA -keysize 2048 -validity 10000 -storepass password123 -keypass password123 -dname "CN=IIIT, OU=IT, O=IIIT, L=Bhagalpur, ST=Bihar, C=IN" -deststoretype JKS
           
-          # We use a state-machine expect script to handle optional prompts, 
-          # prevent infinite repaint loops, and avoid hanging indefinitely.
+          # Fix Tcl syntax errors and word-wrap matching failures
           cat << 'EXP' > build.exp
-          set timeout 300
+          set timeout 120
           spawn bubblewrap build
           
           set regen_done 0
@@ -104,21 +106,21 @@ jobs:
           set key_done 0
           
           expect {
-              -nocase "regenerate your project" {
+              -nocase "regenerate" {
                   if {$regen_done == 0} {
                       set regen_done 1
                       send "no\r"
                   }
                   exp_continue
               }
-              -nocase "password for the key store" {
+              -nocase "Key Store" {
                   if {$keystore_done == 0} {
                       set keystore_done 1
                       send "password123\r"
                   }
                   exp_continue
               }
-              -nocase "password for the key" {
+              -nocase "the Key" {
                   if {$key_done == 0} {
                       set key_done 1
                       send "password123\r"
@@ -126,11 +128,11 @@ jobs:
                   exp_continue
               }
               timeout {
-                  puts "\n[EXPECT TIMEOUT]: Build hung for 5 minutes without expected prompt."
+                  puts "EXPECT TIMEOUT: Build hung for 2 minutes."
                   exit 1
               }
               eof {
-                  puts "\n[EXPECT SUCCESS]: Build finished."
+                  puts "EXPECT SUCCESS: Build finished."
                   exit 0
               }
           }
