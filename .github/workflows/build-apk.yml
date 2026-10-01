@@ -25,24 +25,34 @@ jobs:
           java-version: '17'
           
       - name: Install System Dependencies
-        run: sudo apt-get update && sudo apt-get install -y expect
+        run: sudo apt-get update && sudo apt-get install -y expect wget unzip
 
       - name: Install Bubblewrap
         run: npm install -g @bubblewrap/cli
 
-      - name: Fix Android SDK for Bubblewrap
+      - name: Download & Setup Perfect Android SDK
         run: |
-          # Bubblewrap strictly looks for 'cmdline-tools/latest' which is missing on GitHub Actions default SDK.
-          # We use the existing sdkmanager to install the 'latest' package properly so Bubblewrap accepts it.
-          SDK_MANAGER=$(find $ANDROID_HOME/cmdline-tools -name "sdkmanager" | head -n 1)
-          yes | $SDK_MANAGER --sdk_root=$ANDROID_HOME "cmdline-tools;latest"
+          # Bubblewrap requires a very specific Android SDK structure (cmdline-tools/latest/bin/sdkmanager)
+          # Instead of fighting the pre-installed one, we download a fresh, perfectly formatted one.
+          mkdir -p /tmp/android-sdk/cmdline-tools
+          cd /tmp/android-sdk/cmdline-tools
+          wget -q https://dl.google.com/android/repository/commandlinetools-linux-10406996_latest.zip
+          unzip -q commandlinetools-linux-*
+          rm commandlinetools-linux-*.zip
+          mv cmdline-tools latest
           
-          # Configure Bubblewrap to use the perfectly fixed SDK and standard JDK using env vars
+          # Accept all Android licenses automatically
+          yes | /tmp/android-sdk/cmdline-tools/latest/bin/sdkmanager --sdk_root=/tmp/android-sdk --licenses
+          
+          # Pre-install what Bubblewrap needs so it doesn't try to download them and hang
+          /tmp/android-sdk/cmdline-tools/latest/bin/sdkmanager --sdk_root=/tmp/android-sdk "build-tools;33.0.2" "platforms;android-33" "platform-tools"
+          
+          # Configure Bubblewrap to use our fresh, perfect SDK
           mkdir -p ~/.bubblewrap
           cat << CONF > ~/.bubblewrap/config.json
           {
             "jdkPath": "$JAVA_HOME",
-            "androidSdkPath": "$ANDROID_HOME"
+            "androidSdkPath": "/tmp/android-sdk"
           }
           CONF
 
@@ -87,10 +97,10 @@ jobs:
           }
           MANIFEST
           
-          # Create a modern JKS keystore (Bubblewrap compatibility)
+          # Create keystore
           keytool -genkey -v -keystore android.keystore -alias android -keyalg RSA -keysize 2048 -validity 10000 -storepass password123 -keypass password123 -dname "CN=IIIT, OU=IT, O=IIIT, L=Bhagalpur, ST=Bihar, C=IN" -deststoretype JKS
           
-          # Use expect just for the keystore passwords to avoid CLI hangs
+          # Run bubblewrap with expect to handle keystore passwords
           cat << 'EXP' > build.exp
           set timeout -1
           spawn bubblewrap build
