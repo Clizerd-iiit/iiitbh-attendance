@@ -24,19 +24,16 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Install Independent Android SDK for Bubblewrap
+      - name: Fix Android SDK for Bubblewrap
         run: |
-          export BW_SDK=$HOME/.bubblewrap/android_sdk
-          mkdir -p $BW_SDK/cmdline-tools
-          cd $BW_SDK/cmdline-tools
-          wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmdline-tools.zip
-          unzip -q cmdline-tools.zip
-          mv cmdline-tools latest
-          rm cmdline-tools.zip
-          
-          # Accept licenses and install exact tools Bubblewrap expects
-          yes | $BW_SDK/cmdline-tools/latest/bin/sdkmanager --licenses
-          $BW_SDK/cmdline-tools/latest/bin/sdkmanager "build-tools;34.0.0" "platforms;android-34" "platform-tools"
+          # Bubblewrap specifically looks for cmdline-tools/latest/bin/sdkmanager
+          # ubuntu-latest has cmdline-tools but under a version number (e.g. 11.0 or 12.0)
+          cd $ANDROID_HOME/cmdline-tools
+          if [ ! -d "latest" ]; then
+            # Find the first directory (e.g. 11.0) and symlink it to 'latest'
+            TARGET=$(ls -d */ | head -n 1)
+            sudo ln -sfn $TARGET latest
+          fi
 
       - name: Install Bubblewrap
         run: npm install -g @bubblewrap/cli
@@ -47,7 +44,7 @@ jobs:
           cat << EOT > ~/.bubblewrap/config.json
           {
             "jdkPath": "${JAVA_HOME}",
-            "androidSdkPath": "${HOME}/.bubblewrap/android_sdk"
+            "androidSdkPath": "${ANDROID_HOME}"
           }
           EOT
 
