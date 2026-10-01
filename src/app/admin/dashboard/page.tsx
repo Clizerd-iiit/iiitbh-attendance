@@ -3,6 +3,8 @@ import { useEffect, useState } from 'react';
 import { Navbar } from '@/components/shared/Navbar';
 import Link from 'next/link';
 
+import { AttendanceHeatmap } from '@/components/attendance-heatmap';
+
 interface Stats {
   totalStudents: number;
   totalTeachers: number;
@@ -57,7 +59,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Quick Links */}
-        <div className="grid md:grid-cols-3 gap-4">
+        <div className="grid md:grid-cols-3 gap-4 mb-8">
           {quickLinks.map(link => (
             <Link key={link.href} href={link.href}
               className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition border hover:border-blue-300">
@@ -66,6 +68,11 @@ export default function AdminDashboard() {
               <p className="text-gray-700 text-sm mt-1">{link.desc}</p>
             </Link>
           ))}
+        </div>
+
+        {/* Phase 2: Heatmap */}
+        <div className="mt-8">
+          <AttendanceHeatmap />
         </div>
       </div>
     </div>

@@ -6,6 +6,8 @@ import { WelcomeCard } from '@/components/shared/WelcomeCard';
 import Link from 'next/link';
 import { Subject } from '@/types';
 
+import { MakeupClassSuggester } from '@/components/makeup-class-suggester';
+
 export default function TeacherDashboard() {
   const { data: session } = useSession();
   const [subjects, setSubjects] = useState<Subject[]>([]);
@@ -32,7 +34,7 @@ export default function TeacherDashboard() {
         <div className="mb-6"><WelcomeCard subtitle="Teacher Dashboard" /></div>
 
         <h2 className="text-lg font-semibold text-gray-800 mb-4">Your Subjects</h2>
-        <div className="grid md:grid-cols-2 gap-6">
+        <div className="grid md:grid-cols-2 gap-6 mb-8">
           {loading ? (
             [1,2,3].map(i => <div key={i} className="h-40 bg-gray-200 rounded-xl animate-pulse"/>)
           ) : subjects.length === 0 ? (
@@ -61,6 +63,11 @@ export default function TeacherDashboard() {
               </div>
             </div>
           ))}
+        </div>
+
+        {/* Phase 2: Makeup Class Suggester */}
+        <div className="mt-8">
+          <MakeupClassSuggester />
         </div>
       </div>
     </div>
