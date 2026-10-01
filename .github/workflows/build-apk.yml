@@ -18,38 +18,16 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '17'
-
-      - name: Fix Android SDK for Bubblewrap
-        run: |
-          # Bubblewrap specifically looks for cmdline-tools/latest/bin/sdkmanager
-          # ubuntu-latest has cmdline-tools but under a version number (e.g. 11.0 or 12.0)
-          cd $ANDROID_HOME/cmdline-tools
-          if [ ! -d "latest" ]; then
-            # Find the first directory (e.g. 11.0) and symlink it to 'latest'
-            TARGET=$(ls -d */ | head -n 1)
-            sudo ln -sfn $TARGET latest
-          fi
-
       - name: Install Bubblewrap
         run: npm install -g @bubblewrap/cli
 
-      - name: Configure Bubblewrap Paths
-        run: |
-          mkdir -p ~/.bubblewrap
-          cat << EOT > ~/.bubblewrap/config.json
-          {
-            "jdkPath": "${JAVA_HOME}",
-            "androidSdkPath": "${ANDROID_HOME}"
-          }
-          EOT
-
       - name: Build Bubblewrap Project
         run: |
+          # Clear any preset paths so Bubblewrap downloads its own perfectly compatible JDK & SDK
+          unset JAVA_HOME
+          unset ANDROID_HOME
+          rm -rf ~/.bubblewrap
+          
           mkdir apk-build
           cd apk-build
           
@@ -87,9 +65,40 @@ jobs:
             "saveAndroidProject": true
           }' > twa-manifest.json
           
-          keytool -genkey -v -keystore android.keystore -alias android -keyalg RSA -keysize 2048 -validity 10000 -storepass password123 -keypass password123 -dname "CN=IIIT, OU=IT, O=IIIT, L=Bhagalpur, ST=Bihar, C=IN" -storetype JKS
+          # Use a standard PKCS12 keystore compatible with modern Java
+          keytool -genkey -v -keystore android.keystore -alias android -keyalg RSA -keysize 2048 -validity 10000 -storepass password123 -keypass password123 -dname "CN=IIIT, OU=IT, O=IIIT, L=Bhagalpur, ST=Bihar, C=IN"
           
-          printf "password123\npassword123\n" | bubblewrap build > bubblewrap_build.log 2>&1 || true
+          # Create an Expect script to gracefully handle ALL interactive prompts from Bubblewrap
+          cat << 'EXP' > build.exp
+          set timeout -1
+          spawn bubblewrap build
+          expect {
+            -nocase "install the jdk" {
+              send "y\r"
+              exp_continue
+            }
+            -nocase "install the android sdk tools" {
+              send "y\r"
+              exp_continue
+            }
+            -nocase "terms and conditions" {
+              send "y\r"
+              exp_continue
+            }
+            -nocase "password for the key store" {
+              send "password123\r"
+              exp_continue
+            }
+            -nocase "password for the key" {
+              send "password123\r"
+              exp_continue
+            }
+            eof
+          }
+          EXP
+          
+          # Run the expect script and capture output for debugging
+          expect build.exp > bubblewrap_build.log 2>&1 || true
           
           if [ ! -f "app-release-signed.apk" ]; then
             ERROR_LOG=$(cat bubblewrap_build.log | tr '\n' ' ' | sed 's/"/'\''/g')
