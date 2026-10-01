@@ -22,104 +22,101 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: '21'
+          java-version: '17'
+          
+      - name: Install System Dependencies
+        run: sudo apt-get update && sudo apt-get install -y expect
 
-      - name: Install and Configure Capacitor
+      - name: Install Bubblewrap
+        run: npm install -g @bubblewrap/cli
+
+      - name: Fix Android SDK for Bubblewrap
         run: |
-          npm init -y
-          npm install @capacitor/core @capacitor/cli @capacitor/android
+          # Bubblewrap strictly looks for 'cmdline-tools/latest' which is missing on GitHub Actions default SDK.
+          # We use the existing sdkmanager to install the 'latest' package properly so Bubblewrap accepts it.
+          SDK_MANAGER=$(find $ANDROID_HOME/cmdline-tools -name "sdkmanager" | head -n 1)
+          yes | $SDK_MANAGER --sdk_root=$ANDROID_HOME "cmdline-tools;latest"
           
-          mkdir -p out
-          echo "<html><body>Loading...</body></html>" > out/index.html
-          
-          npx cap init Attendance com.iiitbh.attendance --web-dir out
-          
-          rm -f capacitor.config.ts
-          
-          # Added allowNavigation so Google OAuth login happens INSIDE the app
-          # instead of kicking the user out to the system Chrome browser.
-          cat << 'CONF' > capacitor.config.json
+          # Configure Bubblewrap to use the perfectly fixed SDK and standard JDK using env vars
+          mkdir -p ~/.bubblewrap
+          cat << CONF > ~/.bubblewrap/config.json
           {
-            "appId": "com.iiitbh.attendance",
-            "appName": "Attendance",
-            "webDir": "out",
-            "bundledWebRuntime": false,
-            "server": {
-              "url": "https://iiitbh-ams.vercel.app",
-              "cleartext": true,
-              "allowNavigation": [
-                "accounts.google.com",
-                "*.google.com",
-                "accounts.youtube.com"
-              ]
-            },
-            "android": {
-              "overrideUserAgent": "Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Mobile Safari/537.36"
-            }
+            "jdkPath": "$JAVA_HOME",
+            "androidSdkPath": "$ANDROID_HOME"
           }
           CONF
-          
-          npx cap add android
-          npx cap sync android
 
-      - name: Inject Camera Permissions
+      - name: Build TWA Project
         run: |
-          MANIFEST_PATH="android/app/src/main/AndroidManifest.xml"
-          sed -i 's|</manifest>|    <uses-permission android:name="android.permission.CAMERA" />\n    <uses-permission android:name="android.permission.RECORD_AUDIO" />\n    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />\n    <uses-permission android:name="android.permission.VIDEO_CAPTURE" />\n    <uses-permission android:name="android.permission.AUDIO_CAPTURE" />\n</manifest>|g' $MANIFEST_PATH
+          mkdir apk-build
+          cd apk-build
           
-          cat << 'JAVA' > android/app/src/main/java/com/iiitbh/attendance/MainActivity.java
-          package com.iiitbh.attendance;
-          import android.os.Bundle;
-          import android.webkit.PermissionRequest;
-          import android.webkit.WebChromeClient;
-          import android.webkit.WebView;
-          import com.getcapacitor.BridgeActivity;
-
-          public class MainActivity extends BridgeActivity {
-              @Override
-              public void onCreate(Bundle savedInstanceState) {
-                  super.onCreate(savedInstanceState);
-                  WebView webView = this.bridge.getWebView();
-                  webView.setWebChromeClient(new WebChromeClient() {
-                      @Override
-                      public void onPermissionRequest(final PermissionRequest request) {
-                          request.grant(request.getResources());
-                      }
-                  });
-              }
+          cat << 'MANIFEST' > twa-manifest.json
+          {
+            "packageId": "com.iiitbh.attendance",
+            "host": "iiitbh-ams.vercel.app",
+            "name": "IIIT Bhagalpur Attendance",
+            "launcherName": "Attendance",
+            "display": "standalone",
+            "themeColor": "#2563eb",
+            "navigationColor": "#ffffff",
+            "navigationColorDark": "#000000",
+            "navigationDividerColor": "#000000",
+            "navigationDividerColorDark": "#000000",
+            "backgroundColor": "#ffffff",
+            "startUrl": "/",
+            "iconUrl": "https://iiitbh-ams.vercel.app/icon-512x512.png",
+            "maskableIconUrl": "https://iiitbh-ams.vercel.app/icon-512x512.png",
+            "splashScreenFadeOutDuration": 300,
+            "signingKey": {
+              "path": "./android.keystore",
+              "alias": "android"
+            },
+            "appVersionName": "1.0.0",
+            "appVersionCode": 1,
+            "shortcuts": [],
+            "generatorApp": "bubblewrap-cli",
+            "webManifestUrl": "https://iiitbh-ams.vercel.app/manifest.json",
+            "fallbackType": "customtabs",
+            "features": {},
+            "alphaDependencies": {
+              "enabled": false
+            },
+            "enableNotifications": false,
+            "saveAndroidProject": true
           }
-          JAVA
-
-      - name: Resolve Kotlin Duplicate Class Errors
-        run: |
-          cat << 'GRADLE_FIX' >> android/build.gradle
-
-          allprojects {
-              configurations.all {
-                  exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk7'
-                  exclude group: 'org.jetbrains.kotlin', module: 'kotlin-stdlib-jdk8'
-              }
+          MANIFEST
+          
+          # Create a modern JKS keystore (Bubblewrap compatibility)
+          keytool -genkey -v -keystore android.keystore -alias android -keyalg RSA -keysize 2048 -validity 10000 -storepass password123 -keypass password123 -dname "CN=IIIT, OU=IT, O=IIIT, L=Bhagalpur, ST=Bihar, C=IN" -deststoretype JKS
+          
+          # Use expect just for the keystore passwords to avoid CLI hangs
+          cat << 'EXP' > build.exp
+          set timeout -1
+          spawn bubblewrap build
+          expect {
+            -nocase "password for the key store" {
+              send "password123\r"
+              exp_continue
+            }
+            -nocase "password for the key" {
+              send "password123\r"
+              exp_continue
+            }
+            eof
           }
-          GRADLE_FIX
-
-      - name: Build Release APK
-        run: |
-          cd android
-          ./gradlew assembleRelease
-
-      - name: Sign APK
-        run: |
-          keytool -genkey -v -keystore android.keystore -alias android -keyalg RSA -keysize 2048 -validity 10000 -storepass password123 -keypass password123 -dname "CN=IIIT, OU=IT, O=IIIT, L=Bhagalpur, ST=Bihar, C=IN"
+          EXP
           
-          BUILD_TOOLS_DIR=$(ls -d $ANDROID_HOME/build-tools/* | sort -V | tail -1)
-          APK_PATH=$(find android/app/build/outputs/apk/release -name "*.apk" | head -n 1)
+          expect build.exp > build.log 2>&1 || true
           
-          $BUILD_TOOLS_DIR/zipalign -v -p 4 $APK_PATH app-release-aligned.apk
-          $BUILD_TOOLS_DIR/apksigner sign --ks android.keystore --ks-pass pass:password123 --key-pass pass:password123 --out app-release-signed.apk app-release-aligned.apk
+          if [ ! -f "app-release-signed.apk" ]; then
+            echo "::error::BUBBLEWRAP_ERROR_LOG: $(cat build.log | tr '\n' ' ')"
+            exit 1
+          fi
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: Attendance-App-Signed-APK
-          path: app-release-signed.apk
+          path: apk-build/app-release-signed.apk
           
