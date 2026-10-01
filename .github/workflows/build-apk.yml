@@ -88,12 +88,20 @@ jobs:
             "saveAndroidProject": true
           }' > twa-manifest.json
           
-          keytool -genkey -v -keystore android.keystore -alias android -keyalg RSA -keysize 2048 -validity 10000 -storepass password123 -keypass password123 -dname "CN=IIIT, OU=IT, O=IIIT, L=Bhagalpur, ST=Bihar, C=IN"
+          keytool -genkey -v -keystore android.keystore -alias android -keyalg RSA -keysize 2048 -validity 10000 -storepass password123 -keypass password123 -dname "CN=IIIT, OU=IT, O=IIIT, L=Bhagalpur, ST=Bihar, C=IN" -storetype JKS
           
-          yes password123 | bubblewrap build
+          printf "password123\npassword123\n" | bubblewrap build > bubblewrap_build.log 2>&1
+          cat bubblewrap_build.log
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: Attendance-App-Signed-APK
           path: apk-build/app-release-signed.apk
+          
+      - name: Upload Debug Logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Debug-Logs
+          path: apk-build/bubblewrap_build.log
