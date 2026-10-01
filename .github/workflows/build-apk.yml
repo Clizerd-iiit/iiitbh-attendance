@@ -26,10 +26,13 @@ jobs:
 
       - name: Install and Configure Capacitor
         run: |
-          # We are switching from Bubblewrap to Capacitor to completely eliminate CLI prompt hangs.
-          # Capacitor produces a 100% native Android WebView without any interactive prompts.
           npm init -y
           npm install @capacitor/core @capacitor/cli @capacitor/android
+          
+          # Create the webDir so Capacitor doesn't crash during 'add android'
+          mkdir -p out
+          echo "<html><body>Loading...</body></html>" > out/index.html
+          
           npx cap init Attendance com.iiitbh.attendance --web-dir out
           
           cat << 'CONF' > capacitor.config.json
@@ -46,14 +49,14 @@ jobs:
           CONF
           
           npx cap add android
+          npx cap sync android
 
       - name: Inject Camera Permissions
         run: |
-          # Inject Camera permissions into AndroidManifest.xml
           MANIFEST_PATH="android/app/src/main/AndroidManifest.xml"
-          sed -i '/<\/manifest>/i \    <uses-permission android:name="android.permission.CAMERA" />\n    <uses-permission android:name="android.permission.RECORD_AUDIO" />\n    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />\n    <uses-permission android:name="android.permission.VIDEO_CAPTURE" />\n    <uses-permission android:name="android.permission.AUDIO_CAPTURE" />' $MANIFEST_PATH
+          # Safely inject permissions before </manifest>
+          sed -i 's|</manifest>|    <uses-permission android:name="android.permission.CAMERA" />\n    <uses-permission android:name="android.permission.RECORD_AUDIO" />\n    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />\n    <uses-permission android:name="android.permission.VIDEO_CAPTURE" />\n    <uses-permission android:name="android.permission.AUDIO_CAPTURE" />\n</manifest>|g' $MANIFEST_PATH
           
-          # Inject WebChromeClient into MainActivity to auto-grant camera prompts inside the WebView for face-api.js
           cat << 'JAVA' > android/app/src/main/java/com/iiitbh/attendance/MainActivity.java
           package com.iiitbh.attendance;
           import android.os.Bundle;
@@ -64,8 +67,8 @@ jobs:
 
           public class MainActivity extends BridgeActivity {
               @Override
-              public void onCreate(Bundle savedInstanceState) {
-                  super.onCreate(savedInstanceState);
+              public void onStart() {
+                  super.onStart();
                   WebView webView = this.bridge.getWebView();
                   webView.setWebChromeClient(new WebChromeClient() {
                       @Override
@@ -87,7 +90,7 @@ jobs:
           # Generate Keystore
           keytool -genkey -v -keystore android.keystore -alias android -keyalg RSA -keysize 2048 -validity 10000 -storepass password123 -keypass password123 -dname "CN=IIIT, OU=IT, O=IIIT, L=Bhagalpur, ST=Bihar, C=IN"
           
-          BUILD_TOOLS_DIR=$(ls -d $ANDROID_HOME/build-tools/* | tail -1)
+          BUILD_TOOLS_DIR=$(ls -d $ANDROID_HOME/build-tools/* | sort -V | tail -1)
           
           # Align APK
           $BUILD_TOOLS_DIR/zipalign -v -p 4 android/app/build/outputs/apk/release/app-release-unsigned.apk app-release-aligned.apk
