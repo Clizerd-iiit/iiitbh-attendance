@@ -1,12 +1,16 @@
 'use client';
 import { signIn, useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Image from 'next/image';
 
 export default function LoginPage() {
   const { data: session } = useSession();
   const router = useRouter();
+  const [showIssueModal, setShowIssueModal] = useState(false);
+  const [issueName, setIssueName] = useState('');
+  const [issueDetails, setIssueDetails] = useState('');
+  const [issueStatus, setIssueStatus] = useState('');
 
   useEffect(() => {
     if (session?.user?.role) {
@@ -20,8 +24,29 @@ export default function LoginPage() {
     }
   }, [session, router]);
 
+  const submitIssue = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIssueStatus('submitting');
+    try {
+      await fetch('/api/public-issue', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: issueName, details: issueDetails })
+      });
+      setIssueStatus('success');
+      setTimeout(() => {
+        setShowIssueModal(false);
+        setIssueStatus('');
+        setIssueName('');
+        setIssueDetails('');
+      }, 3000);
+    } catch {
+      setIssueStatus('error');
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-indigo-900 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-indigo-900 flex items-center justify-center p-4 relative">
       <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md text-center">
 
         {/* College Logo — circular */}
@@ -58,10 +83,43 @@ export default function LoginPage() {
           Sign in with Google
         </button>
 
-        <p className="text-xs text-gray-700 mt-6">
-          Having trouble? Contact the system administrator.
+        <p className="text-sm text-gray-600 mt-6">
+          Having trouble?{' '}
+          <button onClick={() => setShowIssueModal(true)} className="text-blue-600 hover:underline font-medium">
+            Contact the system administrator
+          </button>
         </p>
       </div>
+
+      {showIssueModal && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-sm relative">
+            <button onClick={() => setShowIssueModal(false)} className="absolute top-4 right-4 text-gray-500 hover:text-gray-800">
+              ✕
+            </button>
+            <h2 className="text-xl font-bold text-gray-800 mb-4">Report an Issue</h2>
+            {issueStatus === 'success' ? (
+              <div className="bg-green-50 text-green-700 p-4 rounded-lg text-sm mb-2 text-center">
+                ✅ Issue sent to Administrator successfully!
+              </div>
+            ) : (
+              <form onSubmit={submitIssue} className="flex flex-col gap-4 text-left">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Your Name / Roll No</label>
+                  <input required value={issueName} onChange={e => setIssueName(e.target.value)} type="text" className="w-full border rounded-lg p-2 focus:ring focus:ring-blue-200 outline-none" placeholder="E.g. Rahul (2101001)" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Problem Details</label>
+                  <textarea required value={issueDetails} onChange={e => setIssueDetails(e.target.value)} className="w-full border rounded-lg p-2 focus:ring focus:ring-blue-200 outline-none" rows={4} placeholder="Describe your issue here..." />
+                </div>
+                <button disabled={issueStatus === 'submitting'} type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 rounded-lg transition disabled:opacity-50">
+                  {issueStatus === 'submitting' ? 'Sending...' : 'Submit Issue'}
+                </button>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -28,6 +28,7 @@ export default function AdminDashboard() {
     { href: '/admin/users', icon: '👥', label: 'Manage Users', desc: 'Add, edit, disable students & teachers' },
     { href: '/admin/subjects', icon: '📚', label: 'Subjects', desc: 'Create subjects & assign teachers' },
     { href: '/admin/logs', icon: '🔍', label: 'Audit Logs', desc: 'Full history of all changes' },
+    { href: '/admin/issues', icon: '⚠️', label: 'Reported Issues', desc: 'View problems from login page' },
     { href: '/admin/settings', icon: '⚙️', label: 'Settings', desc: 'Configure thresholds, domain, expiry' },
   ];
 

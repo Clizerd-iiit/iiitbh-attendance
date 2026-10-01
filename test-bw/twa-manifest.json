@@ -1,0 +1,33 @@
+{
+  "packageId": "com.iiitbh.attendance",
+  "host": "iiitbh-ams.vercel.app",
+  "name": "IIIT Bhagalpur Attendance",
+  "launcherName": "Attendance",
+  "display": "standalone",
+  "themeColor": "#2563eb",
+  "navigationColor": "#ffffff",
+  "navigationColorDark": "#000000",
+  "navigationDividerColor": "#000000",
+  "navigationDividerColorDark": "#000000",
+  "backgroundColor": "#ffffff",
+  "startUrl": "/",
+  "iconUrl": "https://iiitbh-ams.vercel.app/icon-512x512.png",
+  "maskableIconUrl": "https://iiitbh-ams.vercel.app/icon-512x512.png",
+  "splashScreenFadeOutDuration": 300,
+  "signingKey": {
+    "path": "./android.keystore",
+    "alias": "android"
+  },
+  "appVersionName": "1.0.0",
+  "appVersionCode": 1,
+  "shortcuts": [],
+  "generatorApp": "bubblewrap-cli",
+  "webManifestUrl": "https://iiitbh-ams.vercel.app/manifest.json",
+  "fallbackType": "customtabs",
+  "features": {},
+  "alphaDependencies": {
+    "enabled": false
+  },
+  "enableNotifications": false,
+  "saveAndroidProject": true
+}

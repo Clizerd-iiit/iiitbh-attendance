@@ -20,6 +20,7 @@ const SIDEBAR_ITEMS: Record<string, {href: string, icon: string, label: string}[
     { href: '/directory/students',icon: '🧑‍🎓', label: 'Students' },
     { href: '/profile',          icon: '👤', label: 'My Profile' },
     { href: '/admin/inbox',      icon: '💬', label: 'Inbox' },
+    { href: '/admin/issues',     icon: '⚠️', label: 'Reported Issues' },
     { href: '/admin/settings',   icon: '⚙️', label: 'Settings' },
   ],
   teacher: [
@@ -217,6 +218,26 @@ export function Navbar() {
           title="Logout">
           <span className="text-base">🚪</span>
           {!collapsed && <span>Logout</span>}
+        </button>
+
+        <button onClick={async () => { 
+          if(window.confirm('This will log you out and clear all local cache. Your data on the server will remain safe. Proceed?')) {
+            localStorage.clear();
+            sessionStorage.clear();
+            if ('caches' in window) {
+              const keys = await caches.keys();
+              for (const key of keys) {
+                await caches.delete(key);
+              }
+            }
+            signOut({ callbackUrl: '/auth/login' });
+          }
+        }}
+          className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-orange-500 hover:bg-orange-50 transition text-sm
+            ${collapsed ? 'justify-center' : ''}`}
+          title="Clear All Data">
+          <span className="text-base">🧹</span>
+          {!collapsed && <span>Clear All Data</span>}
         </button>
       </div>
     </div>

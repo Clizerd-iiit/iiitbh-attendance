@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { AuthProvider } from '@/components/shared/AuthProvider';
 import PWARegister from '@/components/shared/PWARegister';
+import { OfflineNotifier } from '@/components/shared/OfflineNotifier';
 
 const inter = { className: '' };
 
@@ -33,6 +34,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <AuthProvider>
           {children}
           <PWARegister />
+          <OfflineNotifier />
         </AuthProvider>
       </body>
     </html>

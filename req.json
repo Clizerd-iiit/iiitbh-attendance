@@ -1,0 +1,21 @@
+{
+  "siteUrl": "https://iiitbh-ams.vercel.app",
+  "manifestUrl": "https://iiitbh-ams.vercel.app/manifest.json",
+  "manifest": {
+    "name": "IIIT Bhagalpur Attendance",
+    "short_name": "Attendance",
+    "description": "Face Recognition Attendance System for IIIT Bhagalpur",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#2563eb",
+    "icons": [
+      {
+        "src": "/icon-512x512.png",
+        "sizes": "512x512",
+        "type": "image/png",
+        "purpose": "any maskable"
+      }
+    ]
+  }
+}
