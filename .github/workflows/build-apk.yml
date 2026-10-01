@@ -90,8 +90,14 @@ jobs:
           
           keytool -genkey -v -keystore android.keystore -alias android -keyalg RSA -keysize 2048 -validity 10000 -storepass password123 -keypass password123 -dname "CN=IIIT, OU=IT, O=IIIT, L=Bhagalpur, ST=Bihar, C=IN" -storetype JKS
           
-          printf "password123\npassword123\n" | bubblewrap build > bubblewrap_build.log 2>&1
-          cat bubblewrap_build.log
+          printf "password123\npassword123\n" | bubblewrap build > bubblewrap_build.log 2>&1 || true
+          
+          if [ ! -f "app-release-signed.apk" ]; then
+            # Format the output so GitHub Actions surfaces the exact error in the UI annotations
+            ERROR_LOG=$(cat bubblewrap_build.log | tr '\n' ' ' | sed 's/"/'\''/g')
+            echo "::error::BUBBLEWRAP_ERROR_LOG: $ERROR_LOG"
+            exit 1
+          fi
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
@@ -99,9 +105,3 @@ jobs:
           name: Attendance-App-Signed-APK
           path: apk-build/app-release-signed.apk
           
-      - name: Upload Debug Logs
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: Debug-Logs
-          path: apk-build/bubblewrap_build.log
