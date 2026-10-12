@@ -314,29 +314,29 @@ function AttendancePage() {
         {!activeClass ? (
           <div className="space-y-6">
             {/* Subject and Target Filters */}
-            <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100">
+            <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-200">
               <div className="mb-4">
-                <label className="block text-sm font-semibold text-gray-800 mb-2">1. Select Subject</label>
+                <label className="block text-sm font-bold text-gray-900 mb-2">1. Select Subject</label>
                 <select value={subjectId} onChange={e => setSubjectId(e.target.value)}
-                  className="w-full border rounded-xl px-4 py-3 bg-gray-50 focus:outline-none focus:border-blue-500 font-medium text-lg">
+                  className="w-full border border-gray-300 rounded-xl px-4 py-3 bg-white text-gray-900 font-bold text-base md:text-lg focus:outline-none focus:border-blue-500 shadow-sm">
                   <option value="" disabled>-- Select a Subject --</option>
-                  {subjects.map(s => <option key={s.id} value={s.id}>{s.code} - {s.name} {s.branch ? `(${s.branch} ${s.section||""})` : ""}</option>)}
+                  {subjects.map(s => <option key={s.id} value={s.id} className="text-gray-900 font-semibold">{s.code} - {s.name} {s.branch ? `(${s.branch} ${s.section||""})` : ""}</option>)}
                 </select>
               </div>
               
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">Target Branch (Optional)</label>
+                  <label className="block text-xs font-bold text-gray-900 mb-1">Target Branch (Optional)</label>
                   <select value={branchFilter} onChange={e => setBranchFilter(e.target.value)}
-                    className="w-full border rounded-xl px-3 py-2.5 bg-gray-50 focus:outline-none focus:border-blue-500 text-sm">
+                    className="w-full border border-gray-300 rounded-xl px-3 py-2.5 bg-white text-gray-900 font-semibold focus:outline-none focus:border-blue-500 text-sm shadow-sm">
                     <option value="">All Branches</option>
                     <option value="CSE">CSE</option><option value="ECE">ECE</option><option value="MNC">MNC</option><option value="MEA">MEA</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">Target Group (Optional)</label>
+                  <label className="block text-xs font-bold text-gray-900 mb-1">Target Group (Optional)</label>
                   <select value={groupFilter} onChange={e => setGroupFilter(e.target.value)}
-                    className="w-full border rounded-xl px-3 py-2.5 bg-gray-50 focus:outline-none focus:border-blue-500 text-sm">
+                    className="w-full border border-gray-300 rounded-xl px-3 py-2.5 bg-white text-gray-900 font-semibold focus:outline-none focus:border-blue-500 text-sm shadow-sm">
                     <option value="">All Groups</option>
                     <option value="G1">G1</option><option value="G2">G2</option><option value="G3">G3</option>
                   </select>
@@ -344,7 +344,7 @@ function AttendancePage() {
               </div>
             </div>
 
-            <h2 className="text-lg font-bold text-gray-800 px-1 mt-8 mb-4">Choose Attendance Method</h2>
+            <h2 className="text-lg font-bold text-gray-900 px-1 mt-8 mb-4">Choose Attendance Method</h2>
 
             <div className="grid md:grid-cols-2 gap-4">
               {/* Method 1: Kiosk */}
@@ -352,7 +352,7 @@ function AttendancePage() {
                 className="text-left bg-white p-6 rounded-2xl border-2 border-transparent hover:border-blue-400 hover:shadow-md transition group disabled:opacity-70">
                 <div className="text-4xl mb-4">📸</div>
                 <h3 className="text-xl font-bold text-gray-900 mb-2">Start Live AI Detection Attendance</h3>
-                <p className="text-sm text-gray-700">Teacher scans faces using this device. Students cannot mark via their portal. Unmarked are marked absent.</p>
+                <p className="text-sm font-medium text-gray-800">Teacher scans faces using this device. Students cannot mark via their portal. Unmarked are marked absent.</p>
               </button>
 
               {/* Method 2: OTP */}
@@ -360,15 +360,15 @@ function AttendancePage() {
                 <div>
                   <div className="text-4xl mb-4">🔢</div>
                   <h3 className="text-xl font-bold text-gray-900 mb-2">OTP + Geofence + Face ID</h3>
-                  <p className="text-sm text-gray-700 mb-4">Students mark via portal. Big OTP is displayed here. High volume concurrent scanning.</p>
+                  <p className="text-sm font-medium text-gray-800 mb-4">Students mark via portal. Big OTP is displayed here. High volume concurrent scanning.</p>
                 </div>
                 <div>
                   <div className="flex items-center gap-3 mb-4">
-                    <span className="text-xs font-semibold text-gray-700 shrink-0">Radius:</span>
+                    <span className="text-xs font-bold text-gray-900 shrink-0">Radius:</span>
                     <input type="range" min="3" max="500" value={radius} onChange={e=>setRadius(Number(e.target.value))} className="flex-1 accent-green-500" />
-                    <div className="flex items-center gap-1 bg-gray-50 border rounded-lg px-2 py-1">
-                      <input type="number" min="3" max="500" value={radius} onChange={e=>{const v=Number(e.target.value); if(v>=3 && v<=5000) setRadius(v); else if (e.target.value==='') setRadius(0);}} className="w-12 text-sm font-bold text-gray-800 bg-transparent focus:outline-none text-right" />
-                      <span className="text-xs text-gray-700 font-medium">m</span>
+                    <div className="flex items-center gap-1 bg-white border border-gray-300 rounded-lg px-2 py-1 shadow-sm">
+                      <input type="number" min="3" max="500" value={radius} onChange={e=>{const v=Number(e.target.value); if(v>=3 && v<=5000) setRadius(v); else if (e.target.value==='') setRadius(0);}} className="w-12 text-sm font-extrabold text-gray-900 bg-transparent focus:outline-none text-right" />
+                      <span className="text-xs text-gray-900 font-bold">m</span>
                     </div>
                   </div>
                   <button onClick={() => startClass('otp')} disabled={!subjectId || loading}
@@ -383,15 +383,15 @@ function AttendancePage() {
                 <div>
                   <div className="text-4xl mb-4">📱</div>
                   <h3 className="text-xl font-bold text-gray-900 mb-2">Scanner + Geofence + Face ID</h3>
-                  <p className="text-sm text-gray-700 mb-4">Students scan a big QR code via portal. High volume concurrent scanning.</p>
+                  <p className="text-sm font-medium text-gray-800 mb-4">Students scan a big QR code via portal. High volume concurrent scanning.</p>
                 </div>
                 <div>
                   <div className="flex items-center gap-3 mb-4">
-                    <span className="text-xs font-semibold text-gray-700 shrink-0">Radius:</span>
+                    <span className="text-xs font-bold text-gray-900 shrink-0">Radius:</span>
                     <input type="range" min="3" max="500" value={radius} onChange={e=>setRadius(Number(e.target.value))} className="flex-1 accent-purple-500" />
-                    <div className="flex items-center gap-1 bg-gray-50 border rounded-lg px-2 py-1">
-                      <input type="number" min="3" max="500" value={radius} onChange={e=>{const v=Number(e.target.value); if(v>=3 && v<=5000) setRadius(v); else if (e.target.value==='') setRadius(0);}} className="w-12 text-sm font-bold text-gray-800 bg-transparent focus:outline-none text-right" />
-                      <span className="text-xs text-gray-700 font-medium">m</span>
+                    <div className="flex items-center gap-1 bg-white border border-gray-300 rounded-lg px-2 py-1 shadow-sm">
+                      <input type="number" min="3" max="500" value={radius} onChange={e=>{const v=Number(e.target.value); if(v>=3 && v<=5000) setRadius(v); else if (e.target.value==='') setRadius(0);}} className="w-12 text-sm font-extrabold text-gray-900 bg-transparent focus:outline-none text-right" />
+                      <span className="text-xs text-gray-900 font-bold">m</span>
                     </div>
                   </div>
                   <button onClick={() => startClass('qr')} disabled={!subjectId || loading}
@@ -406,31 +406,31 @@ function AttendancePage() {
                 className="text-left bg-white p-6 rounded-2xl border-2 border-transparent hover:border-orange-400 hover:shadow-md transition group">
                 <div className="text-4xl mb-4">📝</div>
                 <h3 className="text-xl font-bold text-gray-900 mb-2">Bulk Manual Entry</h3>
-                <p className="text-sm text-gray-700">Add past attendance or feed offline records manually. (Mark Absentees / Mark Presentees Mode).</p>
+                <p className="text-sm font-medium text-gray-800">Add past attendance or feed offline records manually. (Mark Absentees / Mark Presentees Mode).</p>
               </Link>
             </div>
             {/* Today's Closed Classes */}
             {closedClasses.length > 0 && (
-              <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-100 mt-6">
-                <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+              <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-200 mt-6">
+                <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
                   <span>✅</span> Past Completed Classes
                 </h3>
                 
-                <div className="flex flex-col sm:flex-row gap-3 mb-4 bg-gray-50 p-3 rounded-lg border border-gray-100">
+                <div className="flex flex-col sm:flex-row gap-3 mb-4 bg-gray-50 p-3 rounded-lg border border-gray-200">
                   <div className="flex-1">
-                     <label className="block text-xs font-semibold text-gray-700 mb-1">Filter by Month</label>
-                     <input type="month" value={pastSearchMonth} onChange={e=>setPastSearchMonth(e.target.value)} className="w-full px-3 py-2 border rounded-lg text-sm outline-none focus:border-blue-500" />
+                     <label className="block text-xs font-bold text-gray-900 mb-1">Filter by Month</label>
+                     <input type="month" value={pastSearchMonth} onChange={e=>setPastSearchMonth(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-semibold text-gray-900 outline-none focus:border-blue-500 bg-white" />
                   </div>
                   <div className="flex-1">
-                     <label className="block text-xs font-semibold text-gray-700 mb-1">Filter by Date</label>
-                     <input type="date" value={pastSearchDate} onChange={e=>setPastSearchDate(e.target.value)} className="w-full px-3 py-2 border rounded-lg text-sm outline-none focus:border-blue-500" />
+                     <label className="block text-xs font-bold text-gray-900 mb-1">Filter by Date</label>
+                     <input type="date" value={pastSearchDate} onChange={e=>setPastSearchDate(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-semibold text-gray-900 outline-none focus:border-blue-500 bg-white" />
                   </div>
                   <div className="flex-1">
-                     <label className="block text-xs font-semibold text-gray-700 mb-1">Filter by Class No.</label>
-                     <input type="number" placeholder="e.g. 5" value={pastSearchClassNo} onChange={e=>setPastSearchClassNo(e.target.value)} className="w-full px-3 py-2 border rounded-lg text-sm outline-none focus:border-blue-500" />
+                     <label className="block text-xs font-bold text-gray-900 mb-1">Filter by Class No.</label>
+                     <input type="number" placeholder="e.g. 5" value={pastSearchClassNo} onChange={e=>setPastSearchClassNo(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-semibold text-gray-900 outline-none focus:border-blue-500 bg-white placeholder:text-gray-500" />
                   </div>
                   <div className="flex items-end pb-1 shrink-0">
-                     <button onClick={()=>{setPastSearchMonth(''); setPastSearchDate(''); setPastSearchClassNo('');}} className="px-3 py-2 text-sm text-red-500 hover:underline font-medium">Clear All</button>
+                     <button onClick={()=>{setPastSearchMonth(''); setPastSearchDate(''); setPastSearchClassNo('');}} className="px-3 py-2 text-sm text-red-600 hover:underline font-bold">Clear All</button>
                   </div>
                 </div>
 
@@ -505,15 +505,15 @@ function AttendancePage() {
                   <div className="w-full flex flex-col md:flex-row items-center gap-4 justify-between border-t border-gray-200 pt-4 mt-2">
                     <div className="flex-1 w-full text-left">
                       <div className="flex justify-between items-center mb-1">
-                        <label className="text-xs font-semibold text-gray-700">Refresh Interval</label>
-                        <div className="flex items-center gap-1 bg-white border rounded px-2 py-0.5">
-                          <input type="number" min="2" max="180" value={qrRefreshInterval} onChange={(e) => { const v=Number(e.target.value); if(v>=2 && v<=180) { setQrRefreshInterval(v); setQrExpiry(v); } else if (e.target.value==='') setQrRefreshInterval(0); }} className="w-10 text-xs font-bold text-gray-800 text-right focus:outline-none" />
-                          <span className="text-xs text-gray-700">sec</span>
+                        <label className="text-xs font-bold text-gray-900">Refresh Interval</label>
+                        <div className="flex items-center gap-1 bg-white border border-gray-300 rounded px-2 py-0.5 shadow-sm">
+                          <input type="number" min="2" max="180" value={qrRefreshInterval} onChange={(e) => { const v=Number(e.target.value); if(v>=2 && v<=180) { setQrRefreshInterval(v); setQrExpiry(v); } else if (e.target.value==='') setQrRefreshInterval(0); }} className="w-10 text-xs font-extrabold text-gray-900 text-right focus:outline-none" />
+                          <span className="text-xs text-gray-900 font-bold">sec</span>
                         </div>
                       </div>
                       <input type="range" min="2" max="180" step="1" value={qrRefreshInterval} onChange={(e) => { setQrRefreshInterval(Number(e.target.value)); setQrExpiry(Number(e.target.value)); }} className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer" />
                     </div>
-                    <button onClick={regenerateQr} className="bg-blue-100 text-blue-700 hover:bg-blue-200 px-4 py-2 rounded-lg font-medium text-sm shrink-0 transition">
+                    <button onClick={regenerateQr} className="bg-blue-100 text-blue-800 hover:bg-blue-200 px-4 py-2 rounded-lg font-bold text-sm shrink-0 transition">
                       🔄 Force Refresh
                     </button>
                   </div>
@@ -544,15 +544,15 @@ function AttendancePage() {
                   <div className="w-full flex flex-col md:flex-row items-center gap-4 justify-between border-t border-gray-200 pt-4 mt-2">
                     <div className="flex-1 w-full text-left">
                       <div className="flex justify-between items-center mb-1">
-                        <label className="text-xs font-semibold text-gray-700">Refresh Interval</label>
-                        <div className="flex items-center gap-1 bg-white border rounded px-2 py-0.5">
-                          <input type="number" min="2" max="180" value={otpRefreshInterval} onChange={(e) => { const v=Number(e.target.value); if(v>=2 && v<=180) { setOtpRefreshInterval(v); setOtpExpiry(v); } else if (e.target.value==='') setOtpRefreshInterval(0); }} className="w-10 text-xs font-bold text-gray-800 text-right focus:outline-none" />
-                          <span className="text-xs text-gray-700">sec</span>
+                        <label className="text-xs font-bold text-gray-900">Refresh Interval</label>
+                        <div className="flex items-center gap-1 bg-white border border-gray-300 rounded px-2 py-0.5 shadow-sm">
+                          <input type="number" min="2" max="180" value={otpRefreshInterval} onChange={(e) => { const v=Number(e.target.value); if(v>=2 && v<=180) { setOtpRefreshInterval(v); setOtpExpiry(v); } else if (e.target.value==='') setOtpRefreshInterval(0); }} className="w-10 text-xs font-extrabold text-gray-900 text-right focus:outline-none" />
+                          <span className="text-xs text-gray-900 font-bold">sec</span>
                         </div>
                       </div>
                       <input type="range" min="2" max="180" step="1" value={otpRefreshInterval} onChange={(e) => { setOtpRefreshInterval(Number(e.target.value)); setOtpExpiry(Number(e.target.value)); }} className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer" />
                     </div>
-                    <button onClick={regenerateQr} className="bg-green-100 text-green-800 hover:bg-green-200 px-4 py-2 rounded-lg font-medium text-sm shrink-0 transition">
+                    <button onClick={regenerateQr} className="bg-green-100 text-green-800 hover:bg-green-200 px-4 py-2 rounded-lg font-bold text-sm shrink-0 transition">
                       🔄 Force Refresh
                     </button>
                   </div>
@@ -583,14 +583,14 @@ function AttendancePage() {
                 {[...students].sort((a,b) => (marked[a.id] ? 1 : 0) - (marked[b.id] ? 1 : 0)).map(student => (
                   <div key={student.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100 transition hover:shadow-sm">
                     <div>
-                      <p className="font-bold text-gray-800">{student.name}</p>
-                      <p className="text-xs text-gray-700 font-mono mt-0.5">{student.roll_no}</p>
+                      <p className="font-bold text-gray-900">{student.name}</p>
+                      <p className="text-xs text-gray-900 font-mono font-bold mt-0.5">{student.roll_no}</p>
                     </div>
                     <div className="flex gap-1.5">
                       {(['P','A','Late'] as AttendanceStatus[]).map(s => (
                         <button key={s} onClick={() => markManual(student.id, s)}
                           className={`px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-sm ${
-                            marked[student.id] === s ? statusColors[s] : 'bg-white text-gray-700 border hover:bg-gray-100'
+                            marked[student.id] === s ? statusColors[s] : 'bg-white text-gray-800 font-semibold border border-gray-300 hover:bg-gray-100'
                           }`}>
                           {s}
                         </button>

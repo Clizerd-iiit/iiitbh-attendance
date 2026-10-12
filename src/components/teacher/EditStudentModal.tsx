@@ -112,50 +112,50 @@ export function EditStudentModal({ student, onClose, onSaved }: { student: any, 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto">
       <div className="bg-white rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl mx-auto my-auto max-h-[90vh]">
-        <div className="flex justify-between items-center p-5 border-b bg-gray-50">
-          <h2 className="text-xl font-bold text-gray-800">Edit Student</h2>
+        <div className="flex justify-between items-center p-5 border-b bg-gray-50 border-gray-200">
+          <h2 className="text-xl font-bold text-gray-900">Edit Student</h2>
           <button onClick={() => { stopCamera(); onClose(); }} className="text-gray-700 hover:text-gray-900 text-2xl font-bold">&times;</button>
         </div>
         
-        <div className="flex border-b bg-gray-50">
-          <button onClick={() => { setMode('details'); stopCamera(); }} className={`flex-1 py-3 font-semibold text-sm ${mode==='details'?'border-b-2 border-blue-600 text-blue-600':'text-gray-800 hover:bg-gray-100'}`}>Basic Details</button>
-          <button onClick={() => { setMode('face'); startCamera(); }} className={`flex-1 py-3 font-semibold text-sm ${mode==='face'?'border-b-2 border-blue-600 text-blue-600':'text-gray-800 hover:bg-gray-100'}`}>Update Face ID</button>
+        <div className="flex border-b bg-gray-50 border-gray-200">
+          <button onClick={() => { setMode('details'); stopCamera(); }} className={`flex-1 py-3 font-bold text-sm ${mode==='details'?'border-b-2 border-blue-600 text-blue-700 bg-white':'text-gray-800 hover:bg-gray-100'}`}>Basic Details</button>
+          <button onClick={() => { setMode('face'); startCamera(); }} className={`flex-1 py-3 font-bold text-sm ${mode==='face'?'border-b-2 border-blue-600 text-blue-700 bg-white':'text-gray-800 hover:bg-gray-100'}`}>Update Face ID</button>
         </div>
 
         <div className="p-6 overflow-y-auto">
           {mode === 'details' ? (
             <div className="space-y-4">
-              <div><label className="block text-sm font-semibold text-gray-800 mb-1">Name</label>
-                <input value={name} onChange={e=>setName(e.target.value)} className="w-full border border-gray-300 rounded-xl px-3 py-2 text-gray-900 bg-white focus:outline-none focus:border-blue-500"/></div>
-              <div><label className="block text-sm font-semibold text-gray-800 mb-1">Roll No</label>
-                <input value={rollNo} onChange={e=>setRollNo(e.target.value)} className="w-full border border-gray-300 rounded-xl px-3 py-2 text-gray-900 bg-white focus:outline-none focus:border-blue-500"/></div>
+              <div><label className="block text-sm font-bold text-gray-900 mb-1">Name</label>
+                <input value={name} onChange={e=>setName(e.target.value)} className="w-full border border-gray-300 rounded-xl px-3 py-2 text-gray-900 font-semibold bg-white focus:outline-none focus:border-blue-500 shadow-sm"/></div>
+              <div><label className="block text-sm font-bold text-gray-900 mb-1">Roll No</label>
+                <input value={rollNo} onChange={e=>setRollNo(e.target.value)} className="w-full border border-gray-300 rounded-xl px-3 py-2 text-gray-900 font-semibold bg-white focus:outline-none focus:border-blue-500 shadow-sm"/></div>
               <div className="grid grid-cols-3 gap-2">
-                <div><label className="block text-sm font-semibold text-gray-800 mb-1">Branch</label>
-                  <select value={branch} onChange={e=>{setBranch(e.target.value); setGroup(''); setSubGroup('');}} className="w-full border border-gray-300 rounded-xl px-3 py-2 bg-white text-gray-900 focus:outline-none focus:border-blue-500">
-                    <option value="">Select</option><option value="CSE">CSE</option><option value="ECE">ECE</option><option value="MEA">MEA</option><option value="MNC">MNC</option>
+                <div><label className="block text-sm font-bold text-gray-900 mb-1">Branch</label>
+                  <select value={branch} onChange={e=>{setBranch(e.target.value); setGroup(''); setSubGroup('');}} className="w-full border border-gray-300 rounded-xl px-2.5 py-2 bg-white text-gray-900 font-bold focus:outline-none focus:border-blue-500 shadow-sm">
+                    <option value="" className="text-gray-900 font-bold">Select</option><option value="CSE" className="text-gray-900 font-bold">CSE</option><option value="ECE" className="text-gray-900 font-bold">ECE</option><option value="MEA" className="text-gray-900 font-bold">MEA</option><option value="MNC" className="text-gray-900 font-bold">MNC</option>
                   </select></div>
-                <div><label className="block text-sm font-semibold text-gray-800 mb-1">Group</label>
-                  <select value={group} onChange={e=>{setGroup(e.target.value); setSubGroup('');}} className="w-full border border-gray-300 rounded-xl px-3 py-2 bg-white text-gray-900 focus:outline-none focus:border-blue-500">
-                    <option value="">Select</option><option value="G1">G1</option><option value="G2">G2</option>
+                <div><label className="block text-sm font-bold text-gray-900 mb-1">Group</label>
+                  <select value={group} onChange={e=>{setGroup(e.target.value); setSubGroup('');}} className="w-full border border-gray-300 rounded-xl px-2.5 py-2 bg-white text-gray-900 font-bold focus:outline-none focus:border-blue-500 shadow-sm">
+                    <option value="" className="text-gray-900 font-bold">Select</option><option value="G1" className="text-gray-900 font-bold">G1</option><option value="G2" className="text-gray-900 font-bold">G2</option>
                   </select></div>
-                <div><label className="block text-sm font-semibold text-gray-800 mb-1">Sub Group</label>
-                  <select value={subGroup} onChange={e=>setSubGroup(e.target.value)} className="w-full border border-gray-300 rounded-xl px-3 py-2 bg-white text-gray-900 focus:outline-none focus:border-blue-500">
-                    <option value="">Select</option><option value={`${group}A`}>{group}A</option><option value={`${group}B`}>{group}B</option>
+                <div><label className="block text-sm font-bold text-gray-900 mb-1">Sub Group</label>
+                  <select value={subGroup} onChange={e=>setSubGroup(e.target.value)} className="w-full border border-gray-300 rounded-xl px-2.5 py-2 bg-white text-gray-900 font-bold focus:outline-none focus:border-blue-500 shadow-sm">
+                    <option value="" className="text-gray-900 font-bold">Select</option><option value={`${group}A`} className="text-gray-900 font-bold">{group}A</option><option value={`${group}B`} className="text-gray-900 font-bold">{group}B</option>
                   </select></div>
               </div>
               <div className="pt-4">
-                <button onClick={saveDetails} disabled={saving} className="w-full py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition disabled:opacity-70">{saving?'Saving...':'Save Details'}</button>
+                <button onClick={saveDetails} disabled={saving} className="w-full py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition disabled:opacity-70 shadow-sm">{saving?'Saving...':'Save Details'}</button>
               </div>
             </div>
           ) : (
             <div className="text-center">
               <div className="flex justify-between mb-4">
-                <h3 className="font-bold text-gray-800">3D Face Mapping</h3>
+                <h3 className="font-bold text-gray-900">3D Face Mapping</h3>
                 <button onClick={resetFace} disabled={saving} className="text-sm font-bold text-red-600 hover:text-red-800">Reset & Delete</button>
               </div>
               
               <div className="relative w-full max-w-sm mx-auto aspect-square bg-gray-200 rounded-2xl overflow-hidden mb-4 flex items-center justify-center border-4 border-blue-100">
-                {faceMsg && <div className="absolute inset-0 bg-black/80 backdrop-blur-sm text-white flex items-center justify-center p-4 z-10">{faceMsg}</div>}
+                {faceMsg && <div className="absolute inset-0 bg-black/80 backdrop-blur-sm text-white flex items-center justify-center p-4 z-10 font-bold">{faceMsg}</div>}
                 <video ref={videoRef} className="w-full h-full object-cover transform scale-x-[-1]" muted playsInline />
                 
                 {/* 3D Target Overlay Guide */}
@@ -166,8 +166,8 @@ export function EditStudentModal({ student, onClose, onSaved }: { student: any, 
               
               {step < 5 ? (
                 <div>
-                  <h3 className="text-lg font-bold text-gray-800">{ANGLES[step].emoji} {ANGLES[step].label}</h3>
-                  <p className="text-sm text-gray-600 mb-4">Angle {step + 1} of 5</p>
+                  <h3 className="text-lg font-bold text-gray-900">{ANGLES[step].emoji} {ANGLES[step].label}</h3>
+                  <p className="text-sm font-bold text-gray-800 mb-4">Angle {step + 1} of 5</p>
                   <button onClick={captureAngle} disabled={!!faceMsg} className="w-full py-3 bg-blue-600 text-white rounded-xl font-medium">Capture Angle</button>
                 </div>
               ) : (

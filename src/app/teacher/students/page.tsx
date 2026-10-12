@@ -151,44 +151,44 @@ useEffect(() => {
         </div>
 
         <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b flex flex-col sm:flex-row justify-between items-center gap-4">
+          <div className="px-6 py-4 border-b border-gray-200 flex flex-col sm:flex-row justify-between items-center gap-4">
             <div className="flex flex-col sm:flex-row items-center gap-3 w-full lg:w-auto">
-              <span className="font-medium text-gray-800 whitespace-nowrap">{students.length} enrolled</span>
-              <select value={branchFilter} onChange={e=>setBranchFilter(e.target.value)} className="w-full sm:w-auto border rounded-xl px-3 py-1.5 text-sm focus:outline-none focus:border-blue-500 bg-white">
-                <option value="">All Branches</option>
-                <option value="CSE">CSE</option>
-                <option value="ECE">ECE</option>
-                <option value="MEA">MEA</option>
-                <option value="MNC">MNC</option>
+              <span className="font-bold text-gray-900 whitespace-nowrap">{students.length} enrolled</span>
+              <select value={branchFilter} onChange={e=>setBranchFilter(e.target.value)} className="w-full sm:w-auto border border-gray-300 rounded-xl px-3 py-2 text-sm font-bold text-gray-900 focus:outline-none focus:border-blue-500 bg-white shadow-sm">
+                <option value="" className="text-gray-900 font-bold">All Branches</option>
+                <option value="CSE" className="text-gray-900 font-bold">CSE</option>
+                <option value="ECE" className="text-gray-900 font-bold">ECE</option>
+                <option value="MEA" className="text-gray-900 font-bold">MEA</option>
+                <option value="MNC" className="text-gray-900 font-bold">MNC</option>
               </select>
-              <select value={groupFilter} onChange={e=>setGroupFilter(e.target.value)} className="w-full sm:w-auto border rounded-xl px-3 py-1.5 text-sm focus:outline-none focus:border-blue-500 bg-white">
-                <option value="">All Groups</option>
-                <option value="G1">G1</option>
-                <option value="G2">G2</option>
-                <option value="G3">G3</option>
+              <select value={groupFilter} onChange={e=>setGroupFilter(e.target.value)} className="w-full sm:w-auto border border-gray-300 rounded-xl px-3 py-2 text-sm font-bold text-gray-900 focus:outline-none focus:border-blue-500 bg-white shadow-sm">
+                <option value="" className="text-gray-900 font-bold">All Groups</option>
+                <option value="G1" className="text-gray-900 font-bold">G1</option>
+                <option value="G2" className="text-gray-900 font-bold">G2</option>
+                <option value="G3" className="text-gray-900 font-bold">G3</option>
               </select>
               <input type="text" placeholder="Search by name or roll no..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
-                className="w-full sm:w-48 border rounded-xl px-3 py-1.5 text-sm focus:outline-none focus:border-blue-500" />
+                className="w-full sm:w-56 border border-gray-300 rounded-xl px-3 py-2 text-sm font-semibold text-gray-900 focus:outline-none focus:border-blue-500 bg-white shadow-sm placeholder:text-gray-500" />
             </div>
-            <span className="text-sm text-red-500">
+            <span className="text-sm font-bold text-red-600">
               ⚠️ Low (&lt;75%): {students.filter(s => (summary[s.id]||0) < 75).length}
             </span>
           </div>
           <table className="w-full">
-            <thead className="bg-gray-50 border-b">
+            <thead className="bg-gray-100 border-b border-gray-200">
               <tr>
-                <th className="text-left p-4 text-sm font-medium text-gray-700">Roll No</th>
-                <th className="text-left p-4 text-sm font-medium text-gray-700">Name</th>
-                <th className="text-left p-4 text-sm font-medium text-gray-700">Face ID</th>
-                <th className="text-left p-4 text-sm font-medium text-gray-700">Section</th>
-                <th className="text-left p-4 text-sm font-medium text-gray-700">Attendance</th>
-                <th className="text-left p-4 text-sm font-medium text-gray-700">Status</th>
-                <th className="text-right p-4 text-sm font-medium text-gray-700">Actions</th>
+                <th className="text-left p-4 text-sm font-bold text-gray-900">Roll No</th>
+                <th className="text-left p-4 text-sm font-bold text-gray-900">Name</th>
+                <th className="text-left p-4 text-sm font-bold text-gray-900">Face ID</th>
+                <th className="text-left p-4 text-sm font-bold text-gray-900">Section</th>
+                <th className="text-left p-4 text-sm font-bold text-gray-900">Attendance</th>
+                <th className="text-left p-4 text-sm font-bold text-gray-900">Status</th>
+                <th className="text-right p-4 text-sm font-bold text-gray-900">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {loading ? (
-                <tr><td colSpan={6} className="p-8 text-center text-gray-700">Loading...</td></tr>
+                <tr><td colSpan={7} className="p-8 text-center text-gray-900 font-medium">Loading...</td></tr>
               ) : students.filter(s => {
                   const br = s.signup_info?.branch || s.branch || '';
                   const gr = s.signup_info?.group || s.section || '';
@@ -259,19 +259,19 @@ useEffect(() => {
 
   return (
                   <tr key={s.id} className={`hover:bg-gray-50 ${pct !== null && pct < 75 ? 'bg-red-50' : ''}`}>
-                    <td className="p-4 text-sm font-mono text-gray-700">{s.roll_no || '—'}</td>
-                    <td className="p-4 font-medium text-gray-800 flex items-center gap-2">
+                    <td className="p-4 text-sm font-mono font-bold text-gray-900">{s.roll_no || '—'}</td>
+                    <td className="p-4 font-bold text-gray-900 flex items-center gap-2">
                       {s.name}
-                      {s.is_cr && <span className="bg-purple-100 text-purple-700 text-xs px-1.5 py-0.5 rounded font-bold border border-purple-200">CR</span>}
+                      {s.is_cr && <span className="bg-purple-100 text-purple-800 text-xs px-1.5 py-0.5 rounded font-extrabold border border-purple-200">CR</span>}
                     </td>
                     <td className="p-4 text-sm">
                       {s.signup_info?.last_face_update || s.signup_info?.face_descriptor ? (
-                        <span className="text-green-600 font-medium flex items-center gap-1"><span className="text-xs">📸</span> Done</span>
+                        <span className="text-green-700 font-bold flex items-center gap-1"><span className="text-xs">📸</span> Done</span>
                       ) : (
-                        <span className="text-red-500 font-medium flex items-center gap-1"><span className="text-xs">❌</span> Missing</span>
+                        <span className="text-red-600 font-bold flex items-center gap-1"><span className="text-xs">❌</span> Missing</span>
                       )}
                     </td>
-                    <td className="p-4 text-sm font-medium text-blue-600">
+                    <td className="p-4 text-sm font-bold text-blue-700">
                       {s.signup_info?.branch || s.branch || '—'}
                       {s.signup_info?.group ? ` - ${s.signup_info.group}` : ''}
                       {s.signup_info?.sub_group ? ` (${s.signup_info.sub_group})` : ''}
@@ -279,15 +279,15 @@ useEffect(() => {
                     <td className={`p-4 font-bold ${color}`}>{pct !== null ? `${pct}%` : '—'}</td>
                     <td className="p-4">
                       {pct !== null && pct < 75 && (
-                        <span className="text-xs bg-red-100 text-red-600 px-2 py-1 rounded">⚠️ Low</span>
+                        <span className="text-xs bg-red-100 text-red-700 font-bold px-2 py-1 rounded">⚠️ Low</span>
                       )}
                       {pct !== null && pct >= 75 && (
-                        <span className="text-xs bg-green-100 text-green-600 px-2 py-1 rounded">✅ Safe</span>
+                        <span className="text-xs bg-green-100 text-green-700 font-bold px-2 py-1 rounded">✅ Safe</span>
                       )}
                     </td>
                     <td className="p-4 text-right">
-                      <button onClick={() => setEditingStudent(s)} className="text-blue-600 hover:text-blue-800 text-sm font-medium mr-3">Edit</button>
-                      <button onClick={() => unenroll(s.id)} className="text-red-500 hover:text-red-700 text-sm font-medium">Remove</button>
+                      <button onClick={() => setEditingStudent(s)} className="text-blue-700 hover:text-blue-900 text-sm font-bold mr-3">Edit</button>
+                      <button onClick={() => unenroll(s.id)} className="text-red-600 hover:text-red-800 text-sm font-bold">Remove</button>
                     </td>
                   </tr>
                 );
@@ -312,31 +312,31 @@ useEffect(() => {
         {showAddModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto">
             <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden shadow-2xl mx-auto my-auto">
-              <div className="p-5 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-                <h2 className="text-xl font-bold text-gray-800">Add Students to Subject</h2>
+              <div className="p-5 border-b border-gray-200 flex justify-between items-center bg-gray-50">
+                <h2 className="text-xl font-bold text-gray-900">Add Students to Subject</h2>
                 <button onClick={() => setShowAddModal(false)} className="text-gray-700 hover:text-gray-900 text-2xl font-bold leading-none">&times;</button>
               </div>
               
               <div className="p-4 flex-1 overflow-y-auto">
                 <div className="flex flex-col sm:flex-row justify-between items-center gap-2 mb-4">
                   <div className="flex gap-2 flex-1 w-full sm:w-auto">
-                    <select value={modalBranchFilter} onChange={e=>setModalBranchFilter(e.target.value)} className="w-1/3 sm:w-auto border border-gray-300 rounded-xl px-2 py-1.5 text-sm text-gray-900 focus:outline-none focus:border-blue-500 bg-white">
-                      <option value="">Branch</option>
-                      <option value="CSE">CSE</option>
-                      <option value="ECE">ECE</option>
-                      <option value="MEA">MEA</option>
-                      <option value="MNC">MNC</option>
+                    <select value={modalBranchFilter} onChange={e=>setModalBranchFilter(e.target.value)} className="w-1/3 sm:w-auto border border-gray-300 rounded-xl px-2.5 py-1.5 text-sm font-bold text-gray-900 focus:outline-none focus:border-blue-500 bg-white shadow-sm">
+                      <option value="" className="text-gray-900 font-bold">Branch</option>
+                      <option value="CSE" className="text-gray-900 font-bold">CSE</option>
+                      <option value="ECE" className="text-gray-900 font-bold">ECE</option>
+                      <option value="MEA" className="text-gray-900 font-bold">MEA</option>
+                      <option value="MNC" className="text-gray-900 font-bold">MNC</option>
                     </select>
-                    <select value={modalGroupFilter} onChange={e=>setModalGroupFilter(e.target.value)} className="w-1/3 sm:w-auto border rounded-xl px-2 py-1.5 text-sm focus:outline-none focus:border-blue-500 bg-white">
-                      <option value="">Group</option>
-                      <option value="G1">G1</option>
-                      <option value="G2">G2</option>
-                      <option value="G3">G3</option>
+                    <select value={modalGroupFilter} onChange={e=>setModalGroupFilter(e.target.value)} className="w-1/3 sm:w-auto border border-gray-300 rounded-xl px-2.5 py-1.5 text-sm font-bold text-gray-900 focus:outline-none focus:border-blue-500 bg-white shadow-sm">
+                      <option value="" className="text-gray-900 font-bold">Group</option>
+                      <option value="G1" className="text-gray-900 font-bold">G1</option>
+                      <option value="G2" className="text-gray-900 font-bold">G2</option>
+                      <option value="G3" className="text-gray-900 font-bold">G3</option>
                     </select>
                     <input type="text" placeholder="Search..." value={modalSearch} onChange={e => setModalSearch(e.target.value)}
-                      className="flex-1 border rounded-xl px-3 py-1.5 text-sm focus:outline-none focus:border-blue-500" />
+                      className="flex-1 border border-gray-300 rounded-xl px-3 py-1.5 text-sm font-semibold text-gray-900 focus:outline-none focus:border-blue-500 bg-white shadow-sm placeholder:text-gray-500" />
                   </div>
-                  <button onClick={handleSelectAll} className="text-sm text-blue-600 hover:underline font-medium whitespace-nowrap px-2">
+                  <button onClick={handleSelectAll} className="text-sm text-blue-700 hover:text-blue-900 font-bold whitespace-nowrap px-2">
                     {(() => {
                       const available = allStudents.filter(s => {
                         if (students.find(e => e.id === s.id)) return false;
@@ -371,18 +371,18 @@ useEffect(() => {
                     const isEnrolled = students.some(e => e.id === s.id);
                     if (isEnrolled) return null;
                     return (
-                      <label key={s.id} className="flex items-center gap-3 p-3 border rounded-xl hover:bg-gray-50 cursor-pointer">
+                      <label key={s.id} className="flex items-center gap-3 p-3 border border-gray-200 rounded-xl hover:bg-gray-50 cursor-pointer bg-white shadow-sm">
                         <input type="checkbox" className="w-4 h-4 text-blue-600 rounded" 
                           checked={selectedStudents.has(s.id)} onChange={() => toggleStudentSelection(s.id)} />
                         <div className="min-w-0">
-                          <p className="font-semibold text-gray-800 text-sm truncate">{s.name}</p>
-                          <p className="text-xs text-gray-700 font-mono">{s.roll_no}</p>
+                          <p className="font-bold text-gray-900 text-sm truncate">{s.name}</p>
+                          <p className="text-xs text-gray-900 font-mono font-bold">{s.roll_no}</p>
                         </div>
                       </label>
                     );
                   })}
                   {allStudents.filter(s => !students.some(e => e.id === s.id)).length === 0 && (
-                    <div className="col-span-2 text-center text-gray-700 py-8">All students are already enrolled!</div>
+                    <div className="col-span-2 text-center text-gray-900 font-semibold py-8">All students are already enrolled!</div>
                   )}
                 </div>
               </div>

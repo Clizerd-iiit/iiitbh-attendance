@@ -73,84 +73,84 @@ export default function AppointPositionPage() {
     <div className="min-h-screen bg-gray-50 md:pl-64 pt-14 md:pt-0">
       <Navbar />
       <div className="max-w-4xl mx-auto px-4 py-8">
-        <h1 className="text-2xl font-bold text-gray-800 mb-6">🎖️ Appoint Position</h1>
+        <h1 className="text-2xl font-bold text-gray-900 mb-6">🎖️ Appoint Position</h1>
 
         <div className="grid md:grid-cols-2 gap-6">
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 h-fit">
-            <h2 className="text-lg font-bold mb-4">Assign New Position</h2>
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 h-fit">
+            <h2 className="text-lg font-bold text-gray-900 mb-4">Assign New Position</h2>
             
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium mb-1">Select Student</label>
+                <label className="block text-sm font-bold text-gray-900 mb-1">Select Student</label>
                 <select value={selectedStudentId} onChange={e => handleStudentSelect(e.target.value)}
-                  className="w-full border p-2.5 rounded-xl bg-gray-50 focus:bg-white focus:border-blue-500 outline-none">
-                  <option value="">-- Choose Student --</option>
+                  className="w-full border border-gray-300 p-2.5 rounded-xl bg-white text-gray-900 font-semibold focus:border-blue-500 outline-none shadow-sm">
+                  <option value="" className="text-gray-900 font-medium">-- Choose Student --</option>
                   {students.map(s => (
-                    <option key={s.id} value={s.id}>{s.name} ({s.roll_no || s.email})</option>
+                    <option key={s.id} value={s.id} className="text-gray-900 font-medium">{s.name} ({s.roll_no || s.email})</option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Position</label>
+                <label className="block text-sm font-bold text-gray-900 mb-1">Position</label>
                 <select value={position} onChange={e => setPosition(e.target.value)}
-                  className="w-full border p-2.5 rounded-xl bg-gray-50 focus:bg-white focus:border-blue-500 outline-none">
-                  <option value="CR">Class Representative (CR)</option>
+                  className="w-full border border-gray-300 p-2.5 rounded-xl bg-white text-gray-900 font-semibold focus:border-blue-500 outline-none shadow-sm">
+                  <option value="CR" className="text-gray-900 font-medium">Class Representative (CR)</option>
                 </select>
               </div>
 
               {position === 'CR' && (
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-sm font-medium mb-1">Branch</label>
-                    <select value={branch} onChange={e => setBranch(e.target.value)} className="w-full border p-2.5 rounded-xl bg-gray-50 focus:bg-white focus:border-blue-500 outline-none">
-                      <option value="">Select Branch</option>
-                      <option value="CSE">CSE</option><option value="ECE">ECE</option><option value="MNC">MNC</option><option value="MAE">MAE</option>
+                    <label className="block text-sm font-bold text-gray-900 mb-1">Branch</label>
+                    <select value={branch} onChange={e => setBranch(e.target.value)} className="w-full border border-gray-300 p-2.5 rounded-xl bg-white text-gray-900 font-semibold focus:border-blue-500 outline-none shadow-sm">
+                      <option value="" className="text-gray-900 font-medium">Select Branch</option>
+                      <option value="CSE" className="text-gray-900 font-medium">CSE</option><option value="ECE" className="text-gray-900 font-medium">ECE</option><option value="MNC" className="text-gray-900 font-medium">MNC</option><option value="MAE" className="text-gray-900 font-medium">MAE</option>
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-1">Group</label>
-                    <select value={group} onChange={e => setGroup(e.target.value)} className="w-full border p-2.5 rounded-xl bg-gray-50 focus:bg-white focus:border-blue-500 outline-none">
-                      <option value="">Select Group</option>
-                      <option value="G1">G1</option><option value="G2">G2</option><option value="G3">G3</option>
-                      <option value="G1A">G1A</option><option value="G1B">G1B</option><option value="G2A">G2A</option><option value="G2B">G2B</option>
+                    <label className="block text-sm font-bold text-gray-900 mb-1">Group</label>
+                    <select value={group} onChange={e => setGroup(e.target.value)} className="w-full border border-gray-300 p-2.5 rounded-xl bg-white text-gray-900 font-semibold focus:border-blue-500 outline-none shadow-sm">
+                      <option value="" className="text-gray-900 font-medium">Select Group</option>
+                      <option value="G1" className="text-gray-900 font-medium">G1</option><option value="G2" className="text-gray-900 font-medium">G2</option><option value="G3" className="text-gray-900 font-medium">G3</option>
+                      <option value="G1A" className="text-gray-900 font-medium">G1A</option><option value="G1B" className="text-gray-900 font-medium">G1B</option><option value="G2A" className="text-gray-900 font-medium">G2A</option><option value="G2B" className="text-gray-900 font-medium">G2B</option>
                     </select>
                   </div>
                 </div>
               )}
 
-              {message && <div className="text-sm p-3 bg-green-50 text-green-700 rounded-lg">{message}</div>}
+              {message && <div className="text-sm font-bold p-3 bg-green-50 text-green-800 border border-green-200 rounded-lg">{message}</div>}
 
               <button onClick={handleAssign} disabled={submitting}
-                className="w-full py-3 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition">
+                className="w-full py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition shadow-sm">
                 {submitting ? 'Assigning...' : 'Assign Position'}
               </button>
             </div>
           </div>
 
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-            <h2 className="text-lg font-bold mb-4">Current Appointed CRs</h2>
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+            <h2 className="text-lg font-bold text-gray-900 mb-4">Current Appointed CRs</h2>
             {loading ? (
               <div className="animate-pulse flex flex-col gap-3">
                 <div className="h-12 bg-gray-100 rounded-xl"></div>
                 <div className="h-12 bg-gray-100 rounded-xl"></div>
               </div>
             ) : currentCRs.length === 0 ? (
-              <p className="text-gray-700 text-sm text-center py-10">No students are currently holding a position.</p>
+              <p className="text-gray-900 font-semibold text-sm text-center py-10">No students are currently holding a position.</p>
             ) : (
               <div className="space-y-3 max-h-[500px] overflow-y-auto pr-1">
                 {currentCRs.map(s => (
-                  <div key={s.id} className="flex justify-between items-center p-3 bg-gray-50 border border-gray-100 rounded-xl hover:shadow-sm transition">
+                  <div key={s.id} className="flex justify-between items-center p-3.5 bg-gray-50 border border-gray-200 rounded-xl hover:shadow-sm transition">
                     <div>
-                      <div className="font-semibold text-gray-800 text-sm flex items-center gap-2">
+                      <div className="font-bold text-gray-900 text-sm flex items-center gap-2">
                         {s.name}
-                        <span className="bg-purple-100 text-purple-700 text-xs px-1.5 py-0.5 rounded font-bold">CR</span>
+                        <span className="bg-purple-100 text-purple-800 text-xs px-2 py-0.5 rounded font-extrabold border border-purple-200">CR</span>
                       </div>
-                      <div className="text-xs text-gray-700 mt-0.5">
+                      <div className="text-xs font-semibold text-gray-800 mt-1">
                         {s.roll_no} • {(s as any).branch || 'N/A'} • {s.section || 'N/A'}
                       </div>
                     </div>
-                    <button onClick={() => handleRevoke(s.id)} className="text-xs font-medium text-red-500 hover:text-red-700 px-2 py-1 bg-red-50 hover:bg-red-100 rounded transition">
+                    <button onClick={() => handleRevoke(s.id)} className="text-xs font-bold text-red-600 hover:text-red-800 px-3 py-1.5 bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg transition">
                       Revoke
                     </button>
                   </div>

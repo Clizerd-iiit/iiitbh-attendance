@@ -152,26 +152,26 @@ export default function PastAttendancePage() {
         </div>
 
         {/* Top Controls */}
-        <div className="bg-white rounded-2xl shadow-sm p-6 border mb-6">
+        <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-200 mb-6">
           <div className="grid md:grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-semibold text-gray-800 mb-2">1. Select Subject</label>
+              <label className="block text-sm font-bold text-gray-900 mb-2">1. Select Subject</label>
               <select value={selectedSubject} onChange={e => setSelectedSubject(e.target.value)}
-                className="w-full border rounded-xl px-4 py-3 bg-gray-50 focus:outline-none focus:border-blue-500 font-medium">
-                {subjects.map(s => <option key={s.id} value={s.id}>{s.code} - {s.name} {s.branch ? `(${s.branch} ${s.section||""})` : ""}</option>)}
+                className="w-full border border-gray-300 rounded-xl px-4 py-3 bg-white text-gray-900 font-bold focus:outline-none focus:border-blue-500 shadow-sm">
+                {subjects.map(s => <option key={s.id} value={s.id} className="text-gray-900 font-semibold">{s.code} - {s.name} {s.branch ? `(${s.branch} ${s.section||""})` : ""}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-sm font-semibold text-gray-800 mb-2">2. Select Past Date</label>
+              <label className="block text-sm font-bold text-gray-900 mb-2">2. Select Past Date</label>
               <input type="date" value={date} onChange={e => setDate(e.target.value)} max={format(new Date(), 'yyyy-MM-dd')}
-                className="w-full border rounded-xl px-4 py-3 bg-gray-50 focus:outline-none focus:border-blue-500 font-medium"/>
+                className="w-full border border-gray-300 rounded-xl px-4 py-3 bg-white text-gray-900 font-bold focus:outline-none focus:border-blue-500 shadow-sm"/>
             </div>
           </div>
         </div>
 
         {/* Marking Mode */}
-        <div className="bg-white rounded-2xl shadow-sm p-6 border mb-6">
-          <h2 className="text-lg font-bold text-gray-800 mb-4">3. Choose Marking Method</h2>
+        <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-200 mb-6">
+          <h2 className="text-lg font-bold text-gray-900 mb-4">3. Choose Marking Method</h2>
           <div className="grid sm:grid-cols-2 gap-4">
             
             <div onClick={() => { setMode('absentees'); setSelectedIds(new Set()); }}
@@ -182,7 +182,7 @@ export default function PastAttendancePage() {
                   {mode === 'absentees' && <div className="w-2.5 h-2.5 bg-red-500 rounded-full"/>}
                 </div>
               </div>
-              <p className="text-sm text-gray-700">Select only the students who were <b>ABSENT</b>. Everyone else will be marked Present automatically.</p>
+              <p className="text-sm font-medium text-gray-800">Select only the students who were <b>ABSENT</b>. Everyone else will be marked Present automatically.</p>
             </div>
 
             <div onClick={() => { setMode('presentees'); setSelectedIds(new Set()); }}
@@ -193,33 +193,33 @@ export default function PastAttendancePage() {
                   {mode === 'presentees' && <div className="w-2.5 h-2.5 bg-green-500 rounded-full"/>}
                 </div>
               </div>
-              <p className="text-sm text-gray-700">Select only the students who were <b>PRESENT</b>. Everyone else will be marked Absent automatically.</p>
+              <p className="text-sm font-medium text-gray-800">Select only the students who were <b>PRESENT</b>. Everyone else will be marked Absent automatically.</p>
             </div>
 
           </div>
         </div>
 
         {/* Student List */}
-        <div className="bg-white rounded-2xl shadow-sm border overflow-hidden">
-          <div className="p-4 border-b bg-gray-50 flex flex-col sm:flex-row gap-4 justify-between items-center">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="p-4 border-b border-gray-200 bg-gray-50 flex flex-col sm:flex-row gap-4 justify-between items-center">
             <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
               <input type="text" placeholder="Search Roll No or Name..." value={search} onChange={e => setSearch(e.target.value)}
-                className="w-full sm:w-48 px-4 py-2 border rounded-xl text-sm focus:outline-none focus:border-blue-500" />
-              <select value={branchFilter} onChange={e => setBranchFilter(e.target.value)} className="px-3 py-2 border rounded-xl text-sm focus:outline-none focus:border-blue-500 bg-white">
-                <option value="">All Branches</option>
-                <option value="CSE">CSE</option><option value="ECE">ECE</option><option value="MNC">MNC</option><option value="MEA">MEA</option>
+                className="w-full sm:w-56 px-4 py-2 border border-gray-300 rounded-xl text-sm font-semibold text-gray-900 focus:outline-none focus:border-blue-500 bg-white shadow-sm placeholder:text-gray-500" />
+              <select value={branchFilter} onChange={e => setBranchFilter(e.target.value)} className="px-3 py-2 border border-gray-300 rounded-xl text-sm font-bold text-gray-900 focus:outline-none focus:border-blue-500 bg-white shadow-sm">
+                <option value="" className="text-gray-900 font-bold">All Branches</option>
+                <option value="CSE" className="text-gray-900 font-bold">CSE</option><option value="ECE" className="text-gray-900 font-bold">ECE</option><option value="MNC" className="text-gray-900 font-bold">MNC</option><option value="MEA" className="text-gray-900 font-bold">MEA</option>
               </select>
-              <select value={groupFilter} onChange={e => setGroupFilter(e.target.value)} className="px-3 py-2 border rounded-xl text-sm focus:outline-none focus:border-blue-500 bg-white">
-                <option value="">All Groups</option>
-                <option value="G1">G1</option><option value="G2">G2</option><option value="G3">G3</option>
+              <select value={groupFilter} onChange={e => setGroupFilter(e.target.value)} className="px-3 py-2 border border-gray-300 rounded-xl text-sm font-bold text-gray-900 focus:outline-none focus:border-blue-500 bg-white shadow-sm">
+                <option value="" className="text-gray-900 font-bold">All Groups</option>
+                <option value="G1" className="text-gray-900 font-bold">G1</option><option value="G2" className="text-gray-900 font-bold">G2</option><option value="G3" className="text-gray-900 font-bold">G3</option>
               </select>
             </div>
             
             <div className="flex gap-3 shrink-0">
-              <button onClick={() => handleSelectAll(true)} className="text-sm font-medium text-blue-600 hover:underline">
+              <button onClick={() => handleSelectAll(true)} className="text-sm font-bold text-blue-700 hover:text-blue-900 hover:underline">
                 Select Visible ({filteredStudents.length})
               </button>
-              <button onClick={() => handleSelectAll(false)} className="text-sm font-medium text-blue-600 hover:underline">
+              <button onClick={() => handleSelectAll(false)} className="text-sm font-bold text-blue-700 hover:text-blue-900 hover:underline">
                 Select All ({students.length})
               </button>
             </div>
@@ -227,18 +227,18 @@ export default function PastAttendancePage() {
           
           <div className="p-4 max-h-[50vh] overflow-y-auto">
             {loading ? (
-              <p className="text-center py-8 text-gray-700">Loading students...</p>
+              <p className="text-center py-8 text-gray-900 font-semibold">Loading students...</p>
             ) : filteredStudents.length === 0 ? (
-              <p className="text-center py-8 text-gray-700">No students found.</p>
+              <p className="text-center py-8 text-gray-900 font-semibold">No students found.</p>
             ) : (
               <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-3">
                 {filteredStudents.map(s => (
-                  <label key={s.id} className={`flex items-center gap-3 p-3 border rounded-xl cursor-pointer transition ${selectedIds.has(s.id) ? (mode==='absentees' ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200') : 'hover:bg-gray-50'}`}>
+                  <label key={s.id} className={`flex items-center gap-3 p-3 border rounded-xl cursor-pointer transition ${selectedIds.has(s.id) ? (mode==='absentees' ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200') : 'hover:bg-gray-50 border-gray-200 bg-white shadow-sm'}`}>
                     <input type="checkbox" checked={selectedIds.has(s.id)} onChange={() => toggleSelection(s.id)}
                       className={`w-5 h-5 rounded ${mode === 'absentees' ? 'accent-red-500' : 'accent-green-500'}`} />
                     <div className="min-w-0">
-                      <p className="font-semibold text-sm text-gray-800 truncate">{s.name}</p>
-                      <p className="text-xs font-mono text-gray-700">{s.roll_no || '—'}</p>
+                      <p className="font-bold text-sm text-gray-900 truncate">{s.name}</p>
+                      <p className="text-xs font-mono font-bold text-gray-900">{s.roll_no || '—'}</p>
                     </div>
                   </label>
                 ))}
@@ -246,9 +246,9 @@ export default function PastAttendancePage() {
             )}
           </div>
           
-          <div className="p-4 border-t bg-gray-50 flex justify-between items-center">
-            <p className="text-sm font-medium text-gray-700">
-              Selected: <span className="font-bold text-gray-900">{selectedIds.size}</span> students
+          <div className="p-4 border-t border-gray-200 bg-gray-50 flex justify-between items-center">
+            <p className="text-sm font-bold text-gray-900">
+              Selected: <span className="font-extrabold text-blue-700">{selectedIds.size}</span> students
             </p>
             <button onClick={submitAttendance} disabled={saving || students.length === 0}
               className={`px-6 py-3 rounded-xl font-bold text-white transition disabled:opacity-70 shadow-sm ${mode === 'absentees' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'}`}>

@@ -146,12 +146,12 @@ export default function TeacherAnnouncementsPage() {
 
               {/* Type */}
               <div>
-                <label className="block text-sm font-medium text-gray-800 mb-2">Type</label>
+                <label className="block text-sm font-bold text-gray-900 mb-2">Type</label>
                 <div className="flex flex-wrap gap-2">
                   {(Object.keys(typeInfo) as AnnType[]).map(t => (
                     <button key={t} onClick={() => setForm(f => ({...f, type: t}))}
                       className={`text-xs px-3 py-1.5 rounded-full border transition ${
-                        form.type === t ? 'border-blue-500 bg-blue-50 text-blue-700 font-medium' : 'border-gray-200 text-gray-700 hover:border-gray-300'
+                        form.type === t ? 'border-blue-600 bg-blue-50 text-blue-900 font-bold' : 'border-gray-300 text-gray-800 font-semibold hover:border-gray-400'
                       }`}>
                       {typeInfo[t].icon} {typeInfo[t].label}
                     </button>
@@ -161,20 +161,20 @@ export default function TeacherAnnouncementsPage() {
 
               {/* Subject */}
               <div>
-                <label className="block text-sm font-medium text-gray-800 mb-1">Subject (optional)</label>
+                <label className="block text-sm font-bold text-gray-900 mb-1">Subject (optional)</label>
                 <select value={form.subject_id} onChange={e => setForm(f => ({...f, subject_id: e.target.value}))}
-                  className="w-full border rounded-xl px-3 py-2.5 focus:outline-none focus:border-blue-500 text-sm">
-                  <option value="">All my subjects</option>
-                  {subjects.map(s => <option key={s.id} value={s.id}>{s.name} ({s.code}) {s.branch ? `[${s.branch} ${s.section||""}]` : ""}</option>)}
+                  className="w-full border border-gray-300 rounded-xl px-3 py-2.5 focus:outline-none focus:border-blue-500 text-sm font-bold text-gray-900 bg-white shadow-sm">
+                  <option value="" className="text-gray-900 font-bold">All my subjects</option>
+                  {subjects.map(s => <option key={s.id} value={s.id} className="text-gray-900 font-bold">{s.name} ({s.code}) {s.branch ? `[${s.branch} ${s.section||""}]` : ""}</option>)}
                 </select>
               </div>
 
               
               {/* Target Audience (only if subject is selected) */}
               {form.subject_id && enrolledStudents.length > 0 && (
-                <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 mt-2">
-                  <p className="text-sm font-medium text-blue-800 mb-2">🎯 Target Specific Students (Optional)</p>
-                  <p className="text-xs text-blue-600 mb-3">By default, all enrolled students will receive this. Search and select specific students to restrict visibility.</p>
+                <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mt-2">
+                  <p className="text-sm font-bold text-blue-900 mb-1">🎯 Target Specific Students (Optional)</p>
+                  <p className="text-xs text-blue-800 font-medium mb-3">By default, all enrolled students will receive this. Search and select specific students to restrict visibility.</p>
                   
                   {/* Search Bar */}
                   <div className="mb-3">
@@ -183,15 +183,15 @@ export default function TeacherAnnouncementsPage() {
                       placeholder="Search by Name, Roll No, or Email..." 
                       value={searchQuery}
                       onChange={e => setSearchQuery(e.target.value)}
-                      className="w-full border border-blue-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
+                      className="w-full border border-blue-300 rounded-lg px-3 py-2 text-sm font-semibold text-gray-900 bg-white shadow-sm focus:outline-none focus:border-blue-500 placeholder:text-gray-500"
                     />
                   </div>
 
                   {/* Search Results */}
                   {searchQuery.trim() !== '' && (
-                    <div className="max-h-40 overflow-y-auto bg-white p-2 rounded-lg border border-blue-100 mb-3">
+                    <div className="max-h-40 overflow-y-auto bg-white p-2 rounded-lg border border-blue-200 mb-3">
                       {filteredStudents.length > 0 ? filteredStudents.map(s => (
-                        <label key={s.id} className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded cursor-pointer border-b border-gray-50 last:border-0">
+                        <label key={s.id} className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded cursor-pointer border-b border-gray-100 last:border-0">
                           <input type="checkbox" className="w-4 h-4 text-blue-600 rounded"
                             checked={targetStudentIds.has(s.id)} 
                             onChange={(e) => {
@@ -201,37 +201,37 @@ export default function TeacherAnnouncementsPage() {
                               setTargetStudentIds(next);
                             }} />
                           <div className="flex flex-col min-w-0">
-                            <span className="text-sm font-medium text-gray-800 truncate">{s.name} <span className="text-gray-700 font-mono ml-1">{s.roll_no}</span></span>
-                            <span className="text-xs text-gray-700 truncate">{s.email}</span>
+                            <span className="text-sm font-bold text-gray-900 truncate">{s.name} <span className="text-gray-800 font-mono font-bold ml-1">{s.roll_no}</span></span>
+                            <span className="text-xs text-gray-800 font-medium truncate">{s.email}</span>
                           </div>
                         </label>
                       )) : (
-                        <p className="text-xs text-gray-700 text-center py-3">No students found matching "{searchQuery}"</p>
+                        <p className="text-xs text-gray-900 font-semibold text-center py-3">No students found matching "{searchQuery}"</p>
                       )}
                     </div>
                   )}
 
                   {/* Selected Students Chips/List */}
                   {targetStudentIds.size > 0 && (
-                    <div className="mt-2 pt-2 border-t border-blue-100">
-                      <p className="text-xs font-semibold text-blue-800 mb-2">Selected Students ({targetStudentIds.size}):</p>
+                    <div className="mt-2 pt-2 border-t border-blue-200">
+                      <p className="text-xs font-bold text-blue-900 mb-2">Selected Students ({targetStudentIds.size}):</p>
                       <div className="flex flex-wrap gap-2">
                         {Array.from(targetStudentIds).map(id => {
                           const s = enrolledStudents.find(x => x.id === id);
                           if (!s) return null;
                           return (
-                            <span key={id} className="inline-flex items-center gap-1.5 bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-md font-medium">
+                            <span key={id} className="inline-flex items-center gap-1.5 bg-blue-100 text-blue-900 text-xs px-2.5 py-1 rounded-md font-bold border border-blue-200">
                               {s.name} ({s.roll_no})
                               <button onClick={() => {
                                 const next = new Set(targetStudentIds);
                                 next.delete(id);
                                 setTargetStudentIds(next);
-                              }} className="hover:text-red-600 text-blue-400 font-bold ml-0.5">&times;</button>
+                              }} className="hover:text-red-700 text-blue-800 font-black ml-0.5">&times;</button>
                             </span>
                           );
                         })}
                       </div>
-                      <button onClick={() => setTargetStudentIds(new Set())} className="text-xs font-medium text-red-500 hover:text-red-700 hover:underline mt-3">
+                      <button onClick={() => setTargetStudentIds(new Set())} className="text-xs font-bold text-red-600 hover:text-red-800 hover:underline mt-3">
                         Clear All Selections
                       </button>
                     </div>
@@ -241,55 +241,55 @@ export default function TeacherAnnouncementsPage() {
 
               {/* Title */}
               <div>
-                <label className="block text-sm font-medium text-gray-800 mb-1">Title *</label>
+                <label className="block text-sm font-bold text-gray-900 mb-1">Title *</label>
                 <input value={form.title} onChange={e => setForm(f => ({...f, title: e.target.value}))}
                   placeholder="Announcement title..."
-                  className="w-full border rounded-xl px-3 py-2.5 focus:outline-none focus:border-blue-500 text-sm"/>
+                  className="w-full border border-gray-300 rounded-xl px-3 py-2.5 focus:outline-none focus:border-blue-500 text-sm font-bold text-gray-900 bg-white shadow-sm placeholder:text-gray-500"/>
               </div>
 
               {/* Content */}
               <div>
-                <label className="block text-sm font-medium text-gray-800 mb-1">Details (optional)</label>
+                <label className="block text-sm font-bold text-gray-900 mb-1">Details (optional)</label>
                 <textarea value={form.content} onChange={e => setForm(f => ({...f, content: e.target.value}))}
                   placeholder="Additional details..." rows={3}
-                  className="w-full border rounded-xl px-3 py-2.5 focus:outline-none focus:border-blue-500 text-sm resize-none"/>
+                  className="w-full border border-gray-300 rounded-xl px-3 py-2.5 focus:outline-none focus:border-blue-500 text-sm font-semibold text-gray-900 bg-white shadow-sm resize-none placeholder:text-gray-500"/>
               </div>
 
               {/* Link */}
               {(form.type === 'link' || form.type === 'pdf') && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-800 mb-1">URL</label>
+                  <label className="block text-sm font-bold text-gray-900 mb-1">URL</label>
                   <input value={form.link_url} onChange={e => setForm(f => ({...f, link_url: e.target.value}))}
                     placeholder="https://..." type="url"
-                    className="w-full border rounded-xl px-3 py-2.5 focus:outline-none focus:border-blue-500 text-sm"/>
+                    className="w-full border border-gray-300 rounded-xl px-3 py-2.5 focus:outline-none focus:border-blue-500 text-sm font-semibold text-gray-900 bg-white shadow-sm placeholder:text-gray-500"/>
                 </div>
               )}
 
               {/* ⏰ Expiry picker */}
-              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
-                <p className="text-sm font-medium text-amber-800 mb-3">⏰ Auto-delete after</p>
+              <div className="bg-amber-50 border border-amber-300 rounded-xl p-4">
+                <p className="text-sm font-black text-amber-950 mb-3">⏰ Auto-delete after</p>
                 <div className="flex items-center gap-4">
                   <div className="flex items-center gap-2">
                     <input type="number" min={0} max={30} value={expiryDays}
                       onChange={e => setExpiryDays(Number(e.target.value))}
-                      className="w-16 border rounded-lg px-2 py-1.5 text-center text-sm focus:outline-none focus:border-amber-400"/>
-                    <span className="text-sm text-amber-700 font-medium">days</span>
+                      className="w-16 border border-amber-300 rounded-lg px-2 py-1.5 text-center text-sm font-black text-gray-900 bg-white shadow-sm focus:outline-none focus:border-amber-500"/>
+                    <span className="text-sm text-gray-900 font-bold">days</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <input type="number" min={0} max={23} value={expiryHours}
                       onChange={e => setExpiryHours(Number(e.target.value))}
-                      className="w-16 border rounded-lg px-2 py-1.5 text-center text-sm focus:outline-none focus:border-amber-400"/>
-                    <span className="text-sm text-amber-700 font-medium">hours</span>
+                      className="w-16 border border-amber-300 rounded-lg px-2 py-1.5 text-center text-sm font-black text-gray-900 bg-white shadow-sm focus:outline-none focus:border-amber-500"/>
+                    <span className="text-sm text-gray-900 font-bold">hours</span>
                   </div>
-                  <span className="text-xs text-amber-600">
+                  <span className="text-xs text-amber-950 font-bold">
                     = {totalHours()}h total
                   </span>
                 </div>
-                <p className="text-xs text-amber-600 mt-2">Default: 48 hours. Leave 0+0 for default.</p>
+                <p className="text-xs text-amber-950 font-bold mt-2">Default: 48 hours. Leave 0+0 for default.</p>
               </div>
 
               <button onClick={post} disabled={posting || !form.title.trim()}
-                className="w-full bg-blue-600 text-white py-3 rounded-xl hover:bg-blue-700 disabled:opacity-70 transition font-medium">
+                className="w-full bg-blue-600 text-white py-3 rounded-xl hover:bg-blue-700 disabled:opacity-70 transition font-bold shadow-sm">
                 {posting ? 'Posting…' : (editingId ? '💾 Save Changes' : '📢 Post Announcement')}
               </button>
             </div>
