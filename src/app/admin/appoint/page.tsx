@@ -8,6 +8,7 @@ export default function AppointPositionPage() {
   const [loading, setLoading] = useState(true);
   
   const [selectedStudentId, setSelectedStudentId] = useState('');
+  const [studentSearch, setStudentSearch] = useState('');
   const [position, setPosition] = useState('CR');
   const [branch, setBranch] = useState('');
   const [group, setGroup] = useState('');
@@ -69,6 +70,24 @@ export default function AppointPositionPage() {
 
   const currentCRs = students.filter(s => (s as any).is_cr);
 
+  const filteredStudents = students.filter(s => {
+    if (!studentSearch.trim()) return true;
+    const q = studentSearch.toLowerCase();
+    const nameMatch = (s.name || '').toLowerCase().includes(q);
+    const rollMatch = (s.roll_no || '').toLowerCase().includes(q);
+    const emailMatch = (s.email || '').toLowerCase().includes(q);
+    const branchMatch = ((s as any).branch || '').toLowerCase().includes(q);
+    return nameMatch || rollMatch || emailMatch || branchMatch;
+  });
+
+  const selectedStudent = students.find(s => s.id === selectedStudentId);
+
+  // Keep selected student in options if user searches for another
+  const displayStudents = [...filteredStudents];
+  if (selectedStudent && !displayStudents.some(s => s.id === selectedStudent.id)) {
+    displayStudents.unshift(selectedStudent);
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 md:pl-64 pt-14 md:pt-0">
       <Navbar />
@@ -80,15 +99,88 @@ export default function AppointPositionPage() {
             <h2 className="text-lg font-bold text-gray-900 mb-4">Assign New Position</h2>
             
             <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-bold text-gray-900 mb-1">Select Student</label>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="block text-sm font-bold text-gray-900">Select Student</label>
+                  {selectedStudent && (
+                    <button
+                      type="button"
+                      onClick={() => { setSelectedStudentId(''); setBranch(''); setGroup(''); }}
+                      className="text-xs font-bold text-red-600 hover:text-red-800 hover:underline">
+                      ✕ Clear Selection
+                    </button>
+                  )}
+                </div>
+
+                {/* Search Bar for Students */}
+                <div className="relative">
+                  <span className="absolute left-3 top-2.5 text-gray-500 text-sm">🔍</span>
+                  <input
+                    type="text"
+                    placeholder="Search by name, roll no, email..."
+                    value={studentSearch}
+                    onChange={e => setStudentSearch(e.target.value)}
+                    className="w-full border border-gray-300 pl-9 pr-9 py-2 rounded-xl text-sm font-semibold text-gray-900 bg-white placeholder:text-gray-500 focus:outline-none focus:border-blue-500 shadow-sm"
+                  />
+                  {studentSearch && (
+                    <button
+                      type="button"
+                      onClick={() => setStudentSearch('')}
+                      className="absolute right-3 top-2.5 text-gray-600 hover:text-gray-900 font-bold text-xs">
+                      ✕
+                    </button>
+                  )}
+                </div>
+
+                {/* Quick-Select Results List when searching */}
+                {studentSearch.trim() !== '' && (
+                  <div className="max-h-40 overflow-y-auto border border-blue-200 rounded-xl bg-blue-50/50 p-1.5 space-y-1 shadow-inner">
+                    {filteredStudents.length === 0 ? (
+                      <p className="text-xs font-bold text-gray-700 text-center py-2">No students match "{studentSearch}"</p>
+                    ) : (
+                      filteredStudents.slice(0, 15).map(s => (
+                        <button
+                          key={s.id}
+                          type="button"
+                          onClick={() => {
+                            handleStudentSelect(s.id);
+                            setStudentSearch('');
+                          }}
+                          className={`w-full text-left p-2 rounded-lg text-xs font-semibold flex items-center justify-between transition ${
+                            selectedStudentId === s.id ? 'bg-blue-600 text-white font-bold' : 'bg-white text-gray-900 hover:bg-blue-100 border border-gray-200'
+                          }`}>
+                          <span className="truncate">{s.name}</span>
+                          <span className="font-mono ml-2 shrink-0">{s.roll_no || s.email}</span>
+                        </button>
+                      ))
+                    )}
+                  </div>
+                )}
+
+                {/* Dropdown Select */}
                 <select value={selectedStudentId} onChange={e => handleStudentSelect(e.target.value)}
                   className="w-full border border-gray-300 p-2.5 rounded-xl bg-white text-gray-900 font-semibold focus:border-blue-500 outline-none shadow-sm">
-                  <option value="" className="text-gray-900 font-medium">-- Choose Student --</option>
-                  {students.map(s => (
-                    <option key={s.id} value={s.id} className="text-gray-900 font-medium">{s.name} ({s.roll_no || s.email})</option>
+                  <option value="" className="text-gray-900 font-medium">
+                    {displayStudents.length === 0 ? '-- No students found --' : `-- Choose Student (${displayStudents.length} available) --`}
+                  </option>
+                  {displayStudents.map(s => (
+                    <option key={s.id} value={s.id} className="text-gray-900 font-medium">
+                      {s.name} ({s.roll_no ? `${s.roll_no} • ` : ''}{s.email})
+                    </option>
                   ))}
                 </select>
+
+                {/* Selected Student Confirmation Pill */}
+                {selectedStudent && (
+                  <div className="p-2.5 bg-blue-50 border border-blue-200 rounded-xl flex items-center justify-between text-xs">
+                    <div className="truncate">
+                      <span className="font-bold text-blue-900">Selected: </span>
+                      <span className="font-extrabold text-blue-950">{selectedStudent.name}</span>
+                      <span className="text-blue-800 font-mono font-bold ml-1.5">({selectedStudent.roll_no || selectedStudent.email})</span>
+                    </div>
+                    <span className="text-green-700 font-bold ml-2 shrink-0">✓ Ready</span>
+                  </div>
+                )}
               </div>
 
               <div>
