@@ -41,10 +41,21 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
         const res = await fetch(`/api/teacher/attendance/faces?subject_id=${subjectId}`);
         const data = await res.json();
         
+        // Build map of student info (id -> { name, roll_no })
+        const infoMap: Record<string, { name: string; roll_no: string }> = {};
+        (data.students || []).forEach((s: any) => {
+          if (s.id) infoMap[s.id] = { name: s.name || '', roll_no: s.roll_no || '' };
+        });
+        (students || []).forEach((s: any) => {
+          if (s.id && !infoMap[s.id]) {
+            infoMap[s.id] = { name: s.name || '', roll_no: s.roll_no || '' };
+          } else if (s.id && infoMap[s.id] && !infoMap[s.id].roll_no && s.roll_no) {
+            infoMap[s.id].roll_no = s.roll_no;
+          }
+        });
+
         const labeledDescriptors = (data.students || []).map((s: any) => {
           // Check if the descriptor is multi-angle (array of arrays) or legacy (single array)
-          // Fallback to Centroid (Average) Embedding if 5-angle 2D array is detected
-          // This prevents face-api.js from crashing on multi-array inputs while preserving 3D accuracy
           const isMulti = Array.isArray(s.descriptor[0]);
           if (isMulti) {
              const descriptorsArray = s.descriptor.map((arr: any) => new Float32Array(arr));
@@ -60,7 +71,9 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
           return;
         }
 
-        const faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, 0.42); // Very strict to prevent cross-matching
+        // 0.52 threshold: ideal balance for TinyFaceDetector in real-world lighting
+        const DISTANCE_THRESHOLD = 0.52;
+        const faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, DISTANCE_THRESHOLD);
 
         setStatus('starting_camera');
         // Request higher resolution for M1 Mac performance
@@ -88,8 +101,6 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
         const scanLoop = async () => {
           if (!isRunning || !videoRef.current || !canvasRef.current) return;
           
-          const loopStartTime = Date.now();
-
           if (videoRef.current.readyState === 4) {
              const displaySize = { width: videoRef.current.videoWidth, height: videoRef.current.videoHeight };
              faceapi.matchDimensions(canvasRef.current, displaySize);
@@ -109,46 +120,43 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
                 resizedDetections.forEach(det => {
                    const box = det.detection.box;
                    
-                   // CRITICAL FIX: Ignore background faces and ghost detections.
-                   if (box.width < 100 || box.height < 100) return;
+                   // Ignore tiny background faces or ghost detections
+                   if (box.width < 90 || box.height < 90) return;
 
                    const bestMatch = faceMatcher.findBestMatch(det.descriptor);
-                   const isUnknown = bestMatch.label === 'unknown' || bestMatch.distance > 0.42;
+                   const isUnknown = bestMatch.label === 'unknown' || bestMatch.distance > DISTANCE_THRESHOLD;
                    const studentId = bestMatch.label;
                    
-                   // YOLOv7 style confidence mapping (lower distance = higher confidence)
+                   // Confidence score (lower distance = higher confidence)
                    const confidence = isUnknown ? 0 : Math.max(0, Math.min(99, Math.round((1 - bestMatch.distance) * 100)));
                    
                    let boxColor = '#ef4444'; // Red for unknown
-                   let labelText = `Unknown`;
-                   if (!isUnknown) {
-                      const s = students.find(x => x.id === studentId);
-                      let firstName = 'Unknown';
-                      if (s) {
-                         const nameParts = s.name.trim().split(' ');
-                         firstName = nameParts.length > 1 ? nameParts.slice(0, -1).join(' ') : s.name;
-                         labelText = `${firstName} ${confidence}%`; // YOLO Style Confidence
-                      }
+                   let labelText = 'Unrecognized Face';
 
-                      if (markedRef.current[studentId] === 'P') {
-                         boxColor = '#22c55e'; // YOLO Green
-                      } else {
-                         boxColor = '#22c55e'; 
+                   if (!isUnknown && studentId && studentId !== 'unknown') {
+                      const studentData = infoMap[studentId] || students.find(x => x.id === studentId);
+                      const studentName = studentData?.name?.trim() || 'Student';
+                      const rollNo = studentData?.roll_no ? ` (${studentData.roll_no})` : '';
+
+                      labelText = `${studentName} ${confidence}%`;
+                      boxColor = '#22c55e'; // Green for recognized
+
+                      if (markedRef.current[studentId] !== 'P') {
                          markedRef.current[studentId] = 'P'; 
                          markPromises.push(onMark(studentId));
-                         newlyMarkedNames.push(firstName);
+                         newlyMarkedNames.push(`${studentName}${rollNo}`);
                       }
                    }
 
-                   // YOLOv7 Style Crisp Bounding Box
+                   // Crisp Bounding Box with label
                    const drawBox = new faceapi.draw.DrawBox(box, {
                       label: labelText,
                       boxColor: boxColor,
                       lineWidth: 3,
                       drawLabelOptions: {
                          fontColor: '#ffffff',
-                         fontSize: 20,
-                         padding: 8
+                         fontSize: 18,
+                         padding: 6
                       }
                    });
                    if (canvasRef.current) drawBox.draw(canvasRef.current);
@@ -161,8 +169,8 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
                    const newMatches = newlyMarkedNames.map((n, i) => ({ id: now + '-' + i, name: n, time: now }));
                    setRecentMatches(prev => [...prev, ...newMatches]);
                    setTimeout(() => {
-                      setRecentMatches(prev => prev.filter(m => now - m.time < 3000));
-                   }, 3000);
+                      setRecentMatches(prev => prev.filter(m => now - m.time < 3500));
+                   }, 3500);
                 }
               } catch (err) {
                  console.error("Face matching error:", err);

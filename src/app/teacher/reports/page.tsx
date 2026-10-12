@@ -5,7 +5,7 @@ import { format } from 'date-fns';
 
 interface Subject { id: string; name: string; code: string; }
 interface ReportRow {
-  id: string; roll_no: string; name: string; total: number; attended: number;
+  id: string; roll_no: string; name: string; branch?: string; group?: string; total: number; attended: number;
   percentage: number; safe_to_miss: number;
 }
 
@@ -14,13 +14,16 @@ export default function TeacherReports() {
   const [selected, setSelected] = useState('');
   const [report, setReport] = useState<ReportRow[]>([]);
   const [loading, setLoading] = useState(false);
-    const [defaultersOnly, setDefaultersOnly] = useState(false);
+  const [defaultersOnly, setDefaultersOnly] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<any>(null);
   const [studentHistory, setStudentHistory] = useState<any[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [downloadMode, setDownloadMode] = useState<'all'|'specific'>('all');
   const [downloadSearch, setDownloadSearch] = useState('');
 
+  // Branch and Group filters
+  const [branchFilter, setBranchFilter] = useState('');
+  const [groupFilter, setGroupFilter] = useState('');
 
   const openStudentHistory = async (student: any) => {
     setSelectedStudent(student);
@@ -49,16 +52,17 @@ export default function TeacherReports() {
     const list = defaultersOnly ? report.filter(r => r.percentage < 75) : report;
     if (list.length === 0) return alert('No data to export');
     
-    let csv = 'Roll No,Name,Total Classes,Attended,Percentage\n';
+    let csv = 'Roll No,Name,Branch,Group,Total Classes,Attended,Percentage\n';
     list.forEach(r => {
-      csv += `${r.roll_no},${r.name},${r.total},${r.attended},${r.percentage}%\n`;
+      csv += `${r.roll_no},"${r.name}",${r.branch || ''},${r.group || ''},${r.total},${r.attended},${r.percentage}%\n`;
     });
     
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `Attendance_Report_${selected}_${format(new Date(), 'yyyy-MM-dd')}.csv`;
+    const filterTag = [branchFilter, groupFilter].filter(Boolean).join('_');
+    a.download = `Attendance_Report_${selected}${filterTag ? '_' + filterTag : ''}_${format(new Date(), 'yyyy-MM-dd')}.csv`;
     a.click();
   };
 
@@ -78,17 +82,23 @@ export default function TeacherReports() {
   useEffect(() => {
     const fetchData = () => {
       if (!selected) return;
-      fetch(`/api/attendance/report?subject_id=${selected}`)
+      let url = `/api/attendance/report?subject_id=${selected}`;
+      if (branchFilter) url += `&branch=${encodeURIComponent(branchFilter)}`;
+      if (groupFilter) url += `&group=${encodeURIComponent(groupFilter)}`;
+      fetch(url)
         .then(r=>r.json()).then(d => { setReport(d.report||[]); setLoading(false); });
     };
     setLoading(true);
     fetchData();
     const interval = setInterval(fetchData, 60000);
     return () => clearInterval(interval);
-  }, [selected]);
+  }, [selected, branchFilter, groupFilter]);
 
   const exportCSV = async (studentId?: string) => {
-    const url = `/api/teacher/attendance/full-export?subject_id=${selected}` + (studentId ? `&student_id=${studentId}` : '');
+    let url = `/api/teacher/attendance/full-export?subject_id=${selected}`;
+    if (studentId) url += `&student_id=${encodeURIComponent(studentId)}`;
+    if (branchFilter) url += `&branch=${encodeURIComponent(branchFilter)}`;
+    if (groupFilter) url += `&group=${encodeURIComponent(groupFilter)}`;
     const a = document.createElement('a');
     a.href = url;
     a.download = `report.csv`;
@@ -110,30 +120,30 @@ export default function TeacherReports() {
     <div className="min-h-screen bg-gray-50 md:pl-64 pt-14 md:pt-0">
       <Navbar />
       <div className="max-w-5xl mx-auto px-4 py-8">
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6">
           <h1 className="text-2xl font-bold text-gray-800">📈 Attendance Reports</h1>
-          <div className="flex gap-2 items-center">
+          <div className="flex gap-2 items-center flex-wrap">
             {downloadMode === 'all' ? (
               <button onClick={() => exportCSV()}
-                className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition">
-                ⬇️ Download All Students
+                className="bg-green-600 text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-green-700 transition shadow-sm">
+                ⬇️ Download {branchFilter || groupFilter ? `(${[branchFilter, groupFilter].filter(Boolean).join(' • ')})` : 'All'} CSV
               </button>
             ) : (
               <div className="relative flex items-center shadow-sm">
                 <input type="text" placeholder="Search Roll No..." value={downloadSearch} onChange={e => setDownloadSearch(e.target.value)}
-                  className="border border-gray-300 rounded-l-lg px-3 py-2 text-sm font-semibold text-gray-900 bg-white outline-none focus:border-green-500 w-40 placeholder:text-gray-500" />
+                  className="border border-gray-300 rounded-l-xl px-3 py-2 text-sm font-semibold text-gray-900 bg-white outline-none focus:border-green-500 w-36 sm:w-44 placeholder:text-gray-500" />
                 <button onClick={() => {
                   const s = report.find(r => r.roll_no.toLowerCase() === downloadSearch.toLowerCase() || r.name.toLowerCase().includes(downloadSearch.toLowerCase()));
                   if (s) exportCSV(s.id);
                   else alert('Student not found');
-                }} className="bg-green-600 text-white px-3 py-2 rounded-r-lg text-sm font-bold hover:bg-green-700">
+                }} className="bg-green-600 text-white px-3 py-2 rounded-r-xl text-sm font-bold hover:bg-green-700">
                   Download
                 </button>
               </div>
             )}
             <select value={downloadMode} onChange={e => setDownloadMode(e.target.value as 'all'|'specific')}
-              className="border border-gray-300 rounded-lg px-2.5 py-2 text-sm font-bold outline-none bg-white text-gray-900 shadow-sm">
-              <option value="all" className="text-gray-900 font-bold">All Students</option>
+              className="border border-gray-300 rounded-xl px-3 py-2 text-sm font-bold outline-none bg-white text-gray-900 shadow-sm">
+              <option value="all" className="text-gray-900 font-bold">All in Filter</option>
               <option value="specific" className="text-gray-900 font-bold">Specific Student</option>
             </select>
           </div>
@@ -147,6 +157,66 @@ export default function TeacherReports() {
               {s.code}
             </button>
           ))}
+        </div>
+
+        {/* Branch & Group Filter Bar */}
+        <div className="bg-white rounded-2xl p-4 mb-5 border border-gray-200 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+            <span className="text-sm font-bold text-gray-900 shrink-0">🎯 Filter by:</span>
+            
+            {/* Branch Filter */}
+            <div className="flex items-center gap-1.5">
+              <label className="text-xs font-bold text-gray-800">Branch:</label>
+              <select 
+                value={branchFilter} 
+                onChange={e => setBranchFilter(e.target.value)}
+                className="border border-gray-300 rounded-xl px-3 py-1.5 text-xs font-bold text-gray-900 bg-white focus:outline-none focus:border-blue-500 shadow-sm"
+              >
+                <option value="">All Branches</option>
+                <option value="CSE">CSE</option>
+                <option value="ECE">ECE</option>
+                <option value="MNC">MNC</option>
+                <option value="MEA">MEA</option>
+              </select>
+            </div>
+
+            {/* Group Filter */}
+            <div className="flex items-center gap-1.5">
+              <label className="text-xs font-bold text-gray-800">Group:</label>
+              <select 
+                value={groupFilter} 
+                onChange={e => setGroupFilter(e.target.value)}
+                className="border border-gray-300 rounded-xl px-3 py-1.5 text-xs font-bold text-gray-900 bg-white focus:outline-none focus:border-blue-500 shadow-sm"
+              >
+                <option value="">All Groups</option>
+                <option value="G1">G1</option>
+                <option value="G2">G2</option>
+                <option value="G3">G3</option>
+                <option value="G1A">G1A</option>
+                <option value="G1B">G1B</option>
+                <option value="G2A">G2A</option>
+                <option value="G2B">G2B</option>
+              </select>
+            </div>
+
+            {/* Reset button */}
+            {(branchFilter || groupFilter) && (
+              <button 
+                onClick={() => { setBranchFilter(''); setGroupFilter(''); }}
+                className="text-xs font-bold text-red-600 hover:text-red-800 hover:underline px-2 py-1"
+              >
+                ✕ Reset Filters
+              </button>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2 text-xs font-semibold text-gray-800 w-full sm:w-auto justify-end">
+            <span>Showing:</span>
+            <span className="font-extrabold text-blue-700 bg-blue-50 px-2 py-1 rounded-lg border border-blue-200">
+              {branchFilter || 'All Branches'} • {groupFilter || 'All Groups'}
+            </span>
+            <span className="text-gray-900 font-bold">({report.length} Students)</span>
+          </div>
         </div>
 
         {/* Stats bar */}
@@ -173,6 +243,7 @@ export default function TeacherReports() {
               <tr>
                 <th className="text-left p-4 text-sm font-bold text-gray-900">Roll No</th>
                 <th className="text-left p-4 text-sm font-bold text-gray-900">Name</th>
+                <th className="text-left p-4 text-sm font-bold text-gray-900">Branch & Group</th>
                 <th className="text-left p-4 text-sm font-bold text-gray-900">Attended / Total</th>
                 <th className="text-left p-4 text-sm font-bold text-gray-900">Percentage</th>
                 <th className="text-left p-4 text-sm font-bold text-gray-900">Status</th>
@@ -180,7 +251,7 @@ export default function TeacherReports() {
             </thead>
             <tbody className="divide-y divide-gray-100">
               {loading ? (
-                <tr><td colSpan={5} className="p-8 text-center text-gray-900 font-semibold">Loading report...</td></tr>
+                <tr><td colSpan={6} className="p-8 text-center text-gray-900 font-semibold">Loading report...</td></tr>
               ) : report.sort((a,b) => a.percentage - b.percentage).map(r => {
                 const pct = r.percentage;
                 const barColor = pct >= 85 ? 'bg-green-500' : pct >= 75 ? 'bg-yellow-400' : 'bg-red-500';
@@ -188,6 +259,11 @@ export default function TeacherReports() {
                   <tr key={r.roll_no} onClick={() => openStudentHistory(r)} className={`${pct < 75 ? 'bg-red-50' : 'hover:bg-gray-50'} cursor-pointer transition-colors duration-150`}>
                     <td className="p-4 text-sm font-mono font-bold text-gray-900">{r.roll_no}</td>
                     <td className="p-4 font-bold text-gray-900">{r.name}</td>
+                    <td className="p-4">
+                      <span className="text-xs font-bold text-gray-800 bg-gray-100 px-2 py-1 rounded-md border border-gray-200">
+                        {r.branch || '—'} {r.group ? `(${r.group})` : ''}
+                      </span>
+                    </td>
                     <td className="p-4 text-sm font-bold text-gray-900">{r.attended} / {r.total}</td>
                     <td className="p-4">
                       <div className="flex items-center gap-2">

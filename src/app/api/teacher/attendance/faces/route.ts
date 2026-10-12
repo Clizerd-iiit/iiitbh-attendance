@@ -19,13 +19,15 @@ export async function GET(req: NextRequest) {
   if (ids.length === 0) return NextResponse.json({ students: [] });
 
   const { data: users, error } = await supabaseAdmin.from('users')
-    .select('id, signup_info')
+    .select('id, name, roll_no, signup_info')
     .in('id', ids);
     
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   
   const studentFaces = (users || []).map(u => ({
     id: u.id,
+    name: u.name || 'Student',
+    roll_no: u.roll_no || '',
     descriptor: u.signup_info?.face_descriptor || null
   })).filter(u => u.descriptor !== null);
 

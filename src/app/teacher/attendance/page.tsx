@@ -617,7 +617,7 @@ function AttendancePage() {
           onClose={() => setShowKiosk(false)}
           onMark={async (id) => { await markKiosk(id, 'P'); }}
           markedMap={marked}
-          students={filteredStudents}
+          students={students}
         />
       )}
 

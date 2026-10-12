@@ -12,6 +12,8 @@ export async function GET(req: NextRequest) {
 
   const { searchParams } = new URL(req.url);
   const subjectId = searchParams.get('subject_id');
+  const branch = searchParams.get('branch');
+  const group = searchParams.get('group');
   if (!subjectId) return NextResponse.json({ error: 'subject_id required' }, { status: 400 });
 
   // Verify teacher owns subject
@@ -29,25 +31,38 @@ export async function GET(req: NextRequest) {
 
   const { data: students } = await supabaseAdmin
     .from('enrollments')
-    .select('student_id, student:users(name, roll_no)')
+    .select('student_id, student:users(name, roll_no, branch, section, signup_info)')
     .eq('subject_id', subjectId);
 
   const threshold = 75;
-  const report = (students || []).map(e => {
-    const s = summary?.find(s => s.student_id === e.student_id);
-    const student = e.student as { name?: string; roll_no?: string } | null;
-    const pct = s?.percentage || 0;
-    const attended = s?.attended || 0;
-    const total = s?.total_classes || 0;
-    const canMiss = Math.floor((attended * 100 - threshold * total) / threshold);
-    return {
-      id: e.student_id,
-      roll_no: student?.roll_no || '—',
-      name: student?.name || '—',
-      total, attended, percentage: pct,
-      safe_to_miss: Math.max(0, canMiss),
-    };
-  });
+  const report = (students || [])
+    .filter(e => {
+      const student = e.student as any;
+      const sBranch = (student?.signup_info?.branch || student?.branch || '').trim();
+      const sGroup = (student?.signup_info?.group || student?.section || '').trim();
+      if (branch && sBranch.toUpperCase() !== branch.toUpperCase()) return false;
+      if (group && !sGroup.toUpperCase().includes(group.toUpperCase())) return false;
+      return true;
+    })
+    .map(e => {
+      const s = summary?.find(s => s.student_id === e.student_id);
+      const student = e.student as any;
+      const pct = s?.percentage || 0;
+      const attended = s?.attended || 0;
+      const total = s?.total_classes || 0;
+      const canMiss = Math.floor((attended * 100 - threshold * total) / threshold);
+      const sBranch = (student?.signup_info?.branch || student?.branch || '').trim();
+      const sGroup = (student?.signup_info?.group || student?.section || '').trim();
+      return {
+        id: e.student_id,
+        roll_no: student?.roll_no || '—',
+        name: student?.name || '—',
+        branch: sBranch,
+        group: sGroup,
+        total, attended, percentage: pct,
+        safe_to_miss: Math.max(0, canMiss),
+      };
+    });
 
   return NextResponse.json({ report });
 }

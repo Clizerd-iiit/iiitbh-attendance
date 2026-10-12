@@ -52,13 +52,81 @@ function AttendanceCard({ subject, showPercentage }: { subject: StudentAttendanc
   );
 }
 
+function drawSquareFaceBox(
+  ctx: CanvasRenderingContext2D,
+  box: { x: number; y: number; width: number; height: number },
+  name: string,
+  status: 'scanning' | 'verified' | 'mismatch'
+) {
+  const color = status === 'verified' ? '#22c55e' : status === 'mismatch' ? '#ef4444' : '#3b82f6';
+  const badgeBg = status === 'verified' ? 'rgba(22, 101, 52, 0.95)' : status === 'mismatch' ? 'rgba(153, 27, 27, 0.95)' : 'rgba(15, 23, 42, 0.9)';
+  
+  // Square box dimensions - center on detected face
+  const size = Math.max(box.width, box.height) * 1.05;
+  const cx = box.x + box.width / 2;
+  const cy = box.y + box.height / 2;
+  const x = Math.max(4, cx - size / 2);
+  const y = Math.max(4, cy - size / 2);
+  
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 3;
+  ctx.shadowColor = color;
+  ctx.shadowBlur = status === 'verified' ? 14 : 6;
+  
+  // Outer square frame
+  ctx.strokeRect(x, y, size, size);
+  
+  // High-tech corner brackets
+  const cornerLen = Math.min(24, size * 0.22);
+  ctx.lineWidth = 5;
+  // Top-left
+  ctx.beginPath(); ctx.moveTo(x, y + cornerLen); ctx.lineTo(x, y); ctx.lineTo(x + cornerLen, y); ctx.stroke();
+  // Top-right
+  ctx.beginPath(); ctx.moveTo(x + size - cornerLen, y); ctx.lineTo(x + size, y); ctx.lineTo(x + size, y + cornerLen); ctx.stroke();
+  // Bottom-left
+  ctx.beginPath(); ctx.moveTo(x, y + size - cornerLen); ctx.lineTo(x, y + size); ctx.lineTo(x + cornerLen, y + size); ctx.stroke();
+  // Bottom-right
+  ctx.beginPath(); ctx.moveTo(x + size - cornerLen, y + size); ctx.lineTo(x + size, y + size); ctx.lineTo(x + size, y + size - cornerLen); ctx.stroke();
+
+  // Name Badge on top/bottom of the square frame
+  const badgeText = status === 'verified' ? `✓ ${name}` : status === 'mismatch' ? `✕ ${name}` : `🔍 ${name}`;
+  ctx.font = 'bold 13px system-ui, -apple-system, sans-serif';
+  const textWidth = ctx.measureText(badgeText).width;
+  const badgeWidth = textWidth + 24;
+  const badgeHeight = 26;
+  const badgeX = Math.max(4, Math.min(ctx.canvas.width - badgeWidth - 4, x + (size - badgeWidth) / 2));
+  const badgeY = y > badgeHeight + 8 ? y - badgeHeight - 6 : y + size + 6;
+
+  // Badge capsule
+  ctx.fillStyle = badgeBg;
+  ctx.beginPath();
+  if (typeof (ctx as any).roundRect === 'function') {
+    (ctx as any).roundRect(badgeX, badgeY, badgeWidth, badgeHeight, 6);
+  } else {
+    ctx.rect(badgeX, badgeY, badgeWidth, badgeHeight);
+  }
+  ctx.fill();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  // Badge label
+  ctx.fillStyle = '#ffffff';
+  ctx.shadowBlur = 0;
+  ctx.textBaseline = 'middle';
+  ctx.fillText(badgeText, badgeX + 12, badgeY + badgeHeight / 2);
+  
+  ctx.restore();
+}
+
 export default function StudentDashboard() {
   const { data: session } = useSession();
   const [streak, setStreak] = useState(0);
   const [hasFaceId, setHasFaceId] = useState(true);
-    const [activePoll, setActivePoll] = useState<any>(null);
+  const [activePoll, setActivePoll] = useState<any>(null);
   const [myVote, setMyVote] = useState<number | null>(null);
-    const [showMarkModal, setShowMarkModal] = useState(false);
+  const [showMarkModal, setShowMarkModal] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
   const [markForm, setMarkForm] = useState({ code: '' });
   const [marking, setMarking] = useState(false);
@@ -67,6 +135,7 @@ export default function StudentDashboard() {
   const [batchInfo, setBatchInfo] = useState('');
   const [isCr, setIsCr] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const [summary, setSummary] = useState<(StudentAttendanceSummary & { safe_to_miss: number; classes_to_attend: number })[]>([]);
     const [loading, setLoading] = useState(true);
   const [showPercentage, setShowPercentage] = useState(true);
@@ -152,52 +221,94 @@ export default function StudentDashboard() {
     setMarking(true);
     setFaceCheckState('loading_models');
 
+    let stream: MediaStream | null = null;
     try {
       await Promise.all([
         faceapi.nets.tinyFaceDetector.loadFromUri('/models'),
         faceapi.nets.faceLandmark68Net.loadFromUri('/models'),
         faceapi.nets.faceRecognitionNet.loadFromUri('/models')
       ]);
+
       setFaceCheckState('scanning');
-      const stream = await navigator.mediaDevices.getUserMedia({ video: {} });
+      stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { width: { ideal: 640 }, height: { ideal: 640 }, facingMode: 'user' } 
+      });
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         const playPromise = videoRef.current.play();
-        if (playPromise !== undefined) {
-          playPromise.catch(() => {});
-        }
-      }
-      
-      // Give camera a second to adjust lighting
-      await new Promise(r => setTimeout(r, 1500));
-      if (!videoRef.current) throw new Error("Video element missing");
-      
-      const detection = await faceapi.detectSingleFace(videoRef.current, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks().withFaceDescriptor();
-      stream.getTracks().forEach(t => t.stop()); // stop camera immediately
-      
-      if (!detection) {
-        setFaceCheckState('failed'); setMarking(false);
-        return alert("No face detected! Please look clearly at the camera.");
-      }
-      
-      // Handle Multi-Angle vs Legacy Single-Angle mapping (K-NN min distance)
-      let dist = 1.0;
-      if (Array.isArray(faceDescriptor[0])) {
-          for (let i = 0; i < faceDescriptor.length; i++) {
-              const currentDist = faceapi.euclideanDistance(detection.descriptor, new Float32Array(faceDescriptor[i]));
-              if (currentDist < dist) dist = currentDist;
-          }
-      } else {
-          dist = faceapi.euclideanDistance(detection.descriptor, new Float32Array(faceDescriptor));
+        if (playPromise !== undefined) playPromise.catch(() => {});
       }
 
-      if (dist > 0.54) { // Flexible distance check for 1-to-1 self-attendance
-        setFaceCheckState('failed'); setMarking(false);
-        return alert(`Face mismatch! Distance: ${dist.toFixed(2)}. This doesn't look like you.`);
+      const studentName = session?.user?.name || 'Student';
+      const startTime = Date.now();
+      let matched = false;
+
+      // Realtime detection loop: scans face, draws square frame & name badge
+      while (Date.now() - startTime < 15000 && !matched) {
+        if (!videoRef.current || !canvasRef.current) break;
+
+        const video = videoRef.current;
+        const canvas = canvasRef.current;
+
+        if (video.readyState >= 2) {
+          const displaySize = {
+            width: video.videoWidth || 320,
+            height: video.videoHeight || 320
+          };
+          if (canvas.width !== displaySize.width || canvas.height !== displaySize.height) {
+            canvas.width = displaySize.width;
+            canvas.height = displaySize.height;
+          }
+          faceapi.matchDimensions(canvas, displaySize);
+
+          const detection = await faceapi.detectSingleFace(
+            video,
+            new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.5 })
+          ).withFaceLandmarks().withFaceDescriptor();
+
+          const ctx = canvas.getContext('2d');
+          if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+          if (detection) {
+            const resized = faceapi.resizeResults(detection, displaySize);
+            const box = resized.detection.box;
+
+            // Handle Multi-Angle vs Legacy Single-Angle mapping
+            let dist = 1.0;
+            if (Array.isArray(faceDescriptor[0])) {
+              for (let i = 0; i < faceDescriptor.length; i++) {
+                const currentDist = faceapi.euclideanDistance(detection.descriptor, new Float32Array(faceDescriptor[i]));
+                if (currentDist < dist) dist = currentDist;
+              }
+            } else {
+              dist = faceapi.euclideanDistance(detection.descriptor, new Float32Array(faceDescriptor));
+            }
+
+            if (dist <= 0.54) {
+              // Verified! Draw Green Square with Verified Name Badge
+              if (ctx) drawSquareFaceBox(ctx, box, studentName, 'verified');
+              matched = true;
+              setFaceCheckState('success');
+              // Hold for 1.2s so student clearly sees their square face and verified name badge
+              await new Promise(r => setTimeout(r, 1200));
+              break;
+            } else {
+              // Still scanning / matching face
+              if (ctx) drawSquareFaceBox(ctx, box, studentName, 'scanning');
+            }
+          }
+        }
+        await new Promise(r => setTimeout(r, 120));
       }
-      
-      setFaceCheckState('success');
-      
+
+      if (stream) stream.getTracks().forEach(t => t.stop());
+
+      if (!matched) {
+        setFaceCheckState('failed');
+        setMarking(false);
+        return alert("Face verification failed. Please look straight at the camera with clear lighting.");
+      }
+
       // If face passes, get GPS and execute
       let lat = null, lon = null;
       try {
@@ -220,6 +331,7 @@ export default function StudentDashboard() {
       
     } catch (e) {
       console.error(e);
+      if (stream) stream.getTracks().forEach(t => t.stop());
       setFaceCheckState('failed'); setMarking(false);
       alert("Error accessing camera or AI models");
     }
@@ -342,21 +454,51 @@ export default function StudentDashboard() {
             <h2 className="text-xl font-bold text-gray-800 mb-2">Mark Attendance</h2>
             <p className="text-sm text-gray-700 mb-4">Enter the 4-digit OTP or paste the QR Token shown by your teacher.</p>
             
-            {(faceCheckState === 'loading_models' || faceCheckState === 'scanning') && (
+            {(faceCheckState === 'loading_models' || faceCheckState === 'scanning' || faceCheckState === 'success') && (
               <div className="mb-4 text-center">
-                <div className="w-48 h-48 mx-auto bg-black rounded-xl overflow-hidden relative mb-2">
-                  <video ref={videoRef} className="w-full h-full object-cover" muted playsInline />
-                  <div className="absolute inset-0 border-4 border-blue-500 opacity-70 rounded-xl animate-pulse"></div>
+                <div className="w-64 h-64 mx-auto bg-black rounded-2xl overflow-hidden relative mb-2 shadow-lg border-2 border-gray-800">
+                  <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" />
+                  <canvas ref={canvasRef} className="absolute inset-0 w-full h-full object-cover pointer-events-none" />
+                  
+                  {faceCheckState === 'loading_models' && (
+                    <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center p-4">
+                      <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-3"></div>
+                      <p className="text-white text-xs font-bold tracking-wide">Loading Face AI Models...</p>
+                    </div>
+                  )}
+
+                  {faceCheckState === 'scanning' && (
+                    <div className="absolute top-2 left-2 right-2 flex justify-between items-center pointer-events-none">
+                      <span className="text-[10px] font-bold bg-blue-900/80 text-blue-200 px-2 py-0.5 rounded-full border border-blue-400/30">
+                        Square Face Tracker Active
+                      </span>
+                      <span className="w-2.5 h-2.5 rounded-full bg-blue-500 animate-ping"></span>
+                    </div>
+                  )}
+
+                  {faceCheckState === 'success' && (
+                    <div className="absolute top-2 left-2 right-2 flex justify-between items-center pointer-events-none">
+                      <span className="text-[10px] font-bold bg-green-900/90 text-green-200 px-2.5 py-0.5 rounded-full border border-green-400/40">
+                        Face Verified ✓
+                      </span>
+                    </div>
+                  )}
                 </div>
-                <p className="font-bold text-blue-600 animate-pulse">
-                  {faceCheckState === 'loading_models' ? 'Loading AI...' : 'Scanning Face...'}
-                </p>
-              </div>
-            )}
-            
-            {faceCheckState === 'success' && (
-              <div className="mb-4 text-center p-3 bg-green-50 text-green-700 font-bold rounded-lg">
-                ✅ Face Verified Successfully!
+
+                {faceCheckState === 'loading_models' && (
+                  <p className="font-bold text-blue-600 animate-pulse text-xs">Initializing AI Camera...</p>
+                )}
+                {faceCheckState === 'scanning' && (
+                  <p className="font-bold text-blue-600 animate-pulse text-xs">
+                    Align your face in the square frame...
+                  </p>
+                )}
+                {faceCheckState === 'success' && (
+                  <div className="p-2.5 bg-green-50 border border-green-300 text-green-800 font-bold rounded-xl text-xs flex items-center justify-center gap-2">
+                    <span>✅</span>
+                    <span>Face Verified with Name Badge! Marking attendance...</span>
+                  </div>
+                )}
               </div>
             )}
 
