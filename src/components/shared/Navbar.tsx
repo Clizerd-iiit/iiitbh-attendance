@@ -61,6 +61,7 @@ export function Navbar() {
   const [collapsed, setCollapsed] = useState(false);
   const [counts, setCounts] = useState<any>({});
   const [activeClass, setActiveClass] = useState(false);
+  const [showClearAllData, setShowClearAllData] = useState(false);
 
   const photo = session?.user?.profilePhotoUrl || '';
   const name  = session?.user?.name || '';
@@ -69,6 +70,18 @@ export function Navbar() {
   // Close drawer on route change
   useEffect(() => { setOpen(false); }, [pathname]);
 
+  // Sync showClearAllData from localStorage or cross-tab events
+  useEffect(() => {
+    const saved = localStorage.getItem('show_clear_all_data');
+    if (saved !== null) {
+      setShowClearAllData(saved === 'true');
+    }
+    const handleStorageChange = () => {
+      setShowClearAllData(localStorage.getItem('show_clear_all_data') === 'true');
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
 
   // Global Heartbeat — update online status every 60s across all pages
   useEffect(() => {
@@ -100,6 +113,10 @@ export function Navbar() {
           signOut({ callbackUrl: '/auth/login' });
         }
         if (data.activeClass !== undefined) setActiveClass(data.activeClass);
+        if (data.showClearAllData !== undefined) {
+          setShowClearAllData(data.showClearAllData);
+          localStorage.setItem('show_clear_all_data', data.showClearAllData ? 'true' : 'false');
+        }
         if (data.counts) {
           // If user is currently on the page, force 0 locally immediately for smooth UI
           setCounts({
@@ -220,25 +237,27 @@ export function Navbar() {
           {!collapsed && <span>Logout</span>}
         </button>
 
-        <button onClick={async () => { 
-          if(window.confirm('This will log you out and clear all local cache. Your data on the server will remain safe. Proceed?')) {
-            localStorage.clear();
-            sessionStorage.clear();
-            if ('caches' in window) {
-              const keys = await caches.keys();
-              for (const key of keys) {
-                await caches.delete(key);
+        {showClearAllData && (
+          <button onClick={async () => { 
+            if(window.confirm('This will log you out and clear all local cache. Your data on the server will remain safe. Proceed?')) {
+              localStorage.clear();
+              sessionStorage.clear();
+              if ('caches' in window) {
+                const keys = await caches.keys();
+                for (const key of keys) {
+                  await caches.delete(key);
+                }
               }
+              signOut({ callbackUrl: '/auth/login' });
             }
-            signOut({ callbackUrl: '/auth/login' });
-          }
-        }}
-          className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-orange-500 hover:bg-orange-50 transition text-sm
-            ${collapsed ? 'justify-center' : ''}`}
-          title="Clear All Data">
-          <span className="text-base">🧹</span>
-          {!collapsed && <span>Clear All Data</span>}
-        </button>
+          }}
+            className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-orange-600 hover:bg-orange-50 transition text-sm font-medium
+              ${collapsed ? 'justify-center' : ''}`}
+            title="Clear All Data">
+            <span className="text-base">🧹</span>
+            {!collapsed && <span>Clear All Data</span>}
+          </button>
+        )}
       </div>
     </div>
   );

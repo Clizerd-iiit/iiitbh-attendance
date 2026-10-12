@@ -54,20 +54,25 @@ export async function POST(req: Request) {
     { count: pendingUsers },
     { count: todayLogs },
     { count: todayAnnouncements },
-    { count: unreadMsgs }
+    { count: unreadMsgs },
+    { data: clearDataSetting }
   ] = await Promise.all([
     pendingQuery,
     supabaseAdmin.from('audit_logs').select('*', { count: 'exact', head: true }).gt('created_at', minLogDate),
     supabaseAdmin.from('announcements').select('*', { count: 'exact', head: true }).gt('created_at', minAnnDate),
     session.user.role === 'superadmin'
       ? supabaseAdmin.from('support_messages').select('*', { count: 'exact', head: true }).eq('is_read', false).neq('sender_id', session.user.userId)
-      : supabaseAdmin.from('support_messages').select('*', { count: 'exact', head: true }).eq('is_read', false).neq('sender_id', session.user.userId).eq('user_id', session.user.userId)
+      : supabaseAdmin.from('support_messages').select('*', { count: 'exact', head: true }).eq('is_read', false).neq('sender_id', session.user.userId).eq('user_id', session.user.userId),
+    supabaseAdmin.from('system_settings').select('value').eq('key', 'show_clear_all_data').maybeSingle()
   ]);
+
+  const showClearAllData = clearDataSetting ? clearDataSetting.value === 'true' : false;
 
   return NextResponse.json({ 
     ok: true, 
     deactivated: false,
     activeClass,
+    showClearAllData,
     counts: {
       pending: pendingUsers || 0,
       logs: todayLogs || 0,

@@ -14,6 +14,7 @@ interface Settings {
   share_logs_with_students?: string;
   qr_refresh_interval?: string;
   otp_refresh_interval?: string;
+  show_clear_all_data?: string;
 }
 
 export default function SettingsPage() {
@@ -28,6 +29,7 @@ export default function SettingsPage() {
     attendance_mark_window_minutes: '30',
     share_logs_with_teachers: 'true',
     share_logs_with_students: 'true',
+    show_clear_all_data: 'false',
   });
   const [saved, setSaved] = useState(false);
   const [cleaning, setCleaning] = useState(false);
@@ -73,6 +75,10 @@ export default function SettingsPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(settings),
     });
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('show_clear_all_data', settings.show_clear_all_data || 'false');
+      window.dispatchEvent(new Event('storage'));
+    }
     setSaved(true);
     setTimeout(() => setSaved(false), 3000);
   };
@@ -144,6 +150,18 @@ export default function SettingsPage() {
                   onClick={() => setSettings({...settings, show_student_attendance_percentage: settings.show_student_attendance_percentage === 'false' ? 'true' : 'false'})}
                   className={`w-12 h-6 rounded-full transition-colors relative flex items-center ${settings.show_student_attendance_percentage !== 'false' ? 'bg-green-500' : 'bg-gray-300'}`}>
                   <div className={`w-5 h-5 bg-white rounded-full absolute shadow-sm transition-all duration-300 ${settings.show_student_attendance_percentage !== 'false' ? 'left-6' : 'left-0.5'}`} />
+                </button>
+              </div>
+
+              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100">
+                <div>
+                  <h3 className="font-semibold text-gray-800">Clear All Data Button</h3>
+                  <p className="text-xs text-gray-700 mt-0.5">Show 'Clear All Data' in navigation sidebar</p>
+                </div>
+                <button 
+                  onClick={() => setSettings({...settings, show_clear_all_data: settings.show_clear_all_data === 'true' ? 'false' : 'true'})}
+                  className={`w-12 h-6 rounded-full transition-colors relative flex items-center ${settings.show_clear_all_data === 'true' ? 'bg-green-500' : 'bg-gray-300'}`}>
+                  <div className={`w-5 h-5 bg-white rounded-full absolute shadow-sm transition-all duration-300 ${settings.show_clear_all_data === 'true' ? 'left-6' : 'left-0.5'}`} />
                 </button>
               </div>
 
