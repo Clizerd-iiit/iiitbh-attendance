@@ -30,22 +30,22 @@ export default function IssuesPage() {
         </div>
 
         {loading ? (
-          <div className="text-center py-12 text-gray-500">Loading issues...</div>
+          <div className="text-center py-12 text-gray-800 font-semibold">Loading issues...</div>
         ) : issues.length === 0 ? (
           <div className="text-center py-12 bg-white rounded-xl border border-gray-100 shadow-sm">
             <span className="text-4xl">🎉</span>
-            <p className="mt-4 text-gray-700">No issues reported!</p>
+            <p className="mt-4 text-gray-800 font-medium">No issues reported!</p>
           </div>
         ) : (
           <div className="space-y-4">
             {issues.map((issue) => (
               <div key={issue.id} className="bg-white p-6 rounded-xl shadow-sm border border-red-100 relative">
-                <div className="absolute top-4 right-4 text-xs font-bold bg-orange-100 text-orange-700 px-2 py-1 rounded">
+                <div className="absolute top-4 right-4 text-xs font-bold bg-orange-100 text-orange-800 px-2 py-1 rounded">
                   {issue.status.toUpperCase()}
                 </div>
-                <h3 className="font-bold text-lg text-gray-800 mb-1">{issue.name}</h3>
-                <p className="text-xs text-gray-500 mb-4">{format(new Date(issue.date), 'PPpp')}</p>
-                <div className="bg-gray-50 p-4 rounded-lg text-sm text-gray-800 whitespace-pre-wrap font-mono border border-gray-100">
+                <h3 className="font-bold text-lg text-gray-900 mb-1">{issue.name}</h3>
+                <p className="text-xs text-gray-700 font-medium mb-4">{format(new Date(issue.date), 'PPpp')}</p>
+                <div className="bg-gray-50 p-4 rounded-lg text-sm text-gray-900 whitespace-pre-wrap font-mono border border-gray-200">
                   {issue.details}
                 </div>
               </div>

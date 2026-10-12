@@ -337,9 +337,9 @@ export default function StudentDashboard() {
 
       {/* Mark Attendance Modal */}
       {showMarkModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl">
-            <h2 className="text-xl font-bold mb-2">Mark Attendance</h2>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl mx-auto my-auto max-h-[90vh] overflow-y-auto">
+            <h2 className="text-xl font-bold text-gray-800 mb-2">Mark Attendance</h2>
             <p className="text-sm text-gray-700 mb-4">Enter the 4-digit OTP or paste the QR Token shown by your teacher.</p>
             
             {(faceCheckState === 'loading_models' || faceCheckState === 'scanning') && (

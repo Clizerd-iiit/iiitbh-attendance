@@ -310,17 +310,17 @@ useEffect(() => {
         
         {/* Add Students Modal */}
         {showAddModal && (
-          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm items-center justify-center p-4 backdrop-blur-sm">
-            <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden shadow-2xl">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto">
+            <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[85vh] flex flex-col overflow-hidden shadow-2xl mx-auto my-auto">
               <div className="p-5 border-b border-gray-100 flex justify-between items-center bg-gray-50">
                 <h2 className="text-xl font-bold text-gray-800">Add Students to Subject</h2>
-                <button onClick={() => setShowAddModal(false)} className="text-gray-700 hover:text-gray-800 text-2xl leading-none">&times;</button>
+                <button onClick={() => setShowAddModal(false)} className="text-gray-700 hover:text-gray-900 text-2xl font-bold leading-none">&times;</button>
               </div>
               
               <div className="p-4 flex-1 overflow-y-auto">
                 <div className="flex flex-col sm:flex-row justify-between items-center gap-2 mb-4">
                   <div className="flex gap-2 flex-1 w-full sm:w-auto">
-                    <select value={modalBranchFilter} onChange={e=>setModalBranchFilter(e.target.value)} className="w-1/3 sm:w-auto border rounded-xl px-2 py-1.5 text-sm focus:outline-none focus:border-blue-500 bg-white">
+                    <select value={modalBranchFilter} onChange={e=>setModalBranchFilter(e.target.value)} className="w-1/3 sm:w-auto border border-gray-300 rounded-xl px-2 py-1.5 text-sm text-gray-900 focus:outline-none focus:border-blue-500 bg-white">
                       <option value="">Branch</option>
                       <option value="CSE">CSE</option>
                       <option value="ECE">ECE</option>

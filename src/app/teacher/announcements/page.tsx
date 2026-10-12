@@ -137,10 +137,10 @@ export default function TeacherAnnouncementsPage() {
         {/* New/Edit announcement modal */}
         {showForm && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto">
-            <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-2xl my-auto">
+            <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-2xl mx-auto my-auto">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-bold text-gray-800">{editingId ? 'Edit Announcement' : 'New Announcement'}</h2>
-                <button onClick={() => { setShowForm(false); setEditingId(null); }} className="text-gray-500 hover:text-gray-700 text-2xl font-bold leading-none">&times;</button>
+                <button onClick={() => { setShowForm(false); setEditingId(null); }} className="text-gray-700 hover:text-gray-900 text-2xl font-bold leading-none">&times;</button>
               </div>
               <div className="space-y-4 max-h-[75vh] overflow-y-auto px-1 pb-4">
 
@@ -370,12 +370,12 @@ export default function TeacherAnnouncementsPage() {
                           setForm({ subject_id: ann.subject_id || '', type: ann.type, title: ann.title, content: ann.content || '', link_url: ann.link_url || '' });
                           setEditingId(ann.id);
                           setShowForm(true);
-                        }} className="text-gray-400 hover:text-blue-500 transition text-xl flex-shrink-0 mt-0.5">✏️</button>
-                        <button onClick={() => deleteAnn(ann.id)} className="text-gray-300 hover:text-red-500 transition text-xl flex-shrink-0 mt-0.5">×</button>
+                        }} className="text-gray-600 hover:text-blue-600 transition text-xl flex-shrink-0 mt-0.5">✏️</button>
+                        <button onClick={() => deleteAnn(ann.id)} className="text-gray-600 hover:text-red-600 font-bold transition text-xl flex-shrink-0 mt-0.5">×</button>
                       </div>
                     )}
                     {!(ann.teacher_id === userId || ann.teacher?.role === 'student') && (
-                        <button onClick={() => deleteAnn(ann.id)} className="text-gray-300 hover:text-red-500 transition text-xl flex-shrink-0 mt-0.5">×</button>
+                        <button onClick={() => deleteAnn(ann.id)} className="text-gray-600 hover:text-red-600 font-bold transition text-xl flex-shrink-0 mt-0.5">×</button>
                     )}
                   </div>
                 </div>

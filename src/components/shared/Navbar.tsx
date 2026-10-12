@@ -159,8 +159,8 @@ export function Navbar() {
             <Link key={item.href} href={item.href}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition group relative
                 ${active
-                  ? 'bg-blue-50 text-blue-700 font-semibold'
-                  : 'text-gray-700 hover:bg-gray-100 hover:text-gray-800'
+                  ? 'bg-blue-50 text-blue-700 font-bold'
+                  : 'text-gray-800 hover:bg-gray-100 hover:text-gray-900 font-medium'
                 }
                 ${collapsed ? 'justify-center' : ''}
               `}
@@ -206,8 +206,8 @@ export function Navbar() {
           )}
           {!collapsed && (
             <div className="min-w-0">
-              <p className="text-sm font-semibold text-gray-800 truncate">{name}</p>
-              <p className="text-xs text-gray-700 truncate">{displayRole}</p>
+              <p className="text-sm font-bold text-gray-900 truncate">{name}</p>
+              <p className="text-xs text-gray-800 font-semibold truncate">{displayRole}</p>
             </div>
           )}
         </div>

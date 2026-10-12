@@ -123,29 +123,29 @@ export default function AdminSubjectsPage() {
 
         {/* Modal */}
         {showModal && (
-          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm items-center justify-center p-4 backdrop-blur-sm">
-            <div className="bg-white rounded-2xl w-full max-w-xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto">
+            <div className="bg-white rounded-2xl w-full max-w-xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] mx-auto my-auto">
               <div className="p-5 border-b border-gray-100">
                 <h2 className="text-xl font-bold text-gray-800">{isEditing ? 'Edit Subject' : 'Add Subject'}</h2>
               </div>
               <div className="p-5 overflow-y-auto space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1">Name</label>
-                    <input className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
+                    <label className="block text-xs font-semibold text-gray-800 mb-1">Name</label>
+                    <input className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 bg-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                       value={form.name} onChange={e=>setForm({...form, name:e.target.value})} placeholder="e.g. Mathematics" />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1">Code</label>
-                    <input className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
+                    <label className="block text-xs font-semibold text-gray-800 mb-1">Code</label>
+                    <input className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 bg-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 uppercase"
                       value={form.code} onChange={e=>setForm({...form, code:e.target.value.toUpperCase()})} placeholder="e.g. MA101" />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-3 gap-4">
                   <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1">Branch</label>
-                    <select className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
+                    <label className="block text-xs font-semibold text-gray-800 mb-1">Branch</label>
+                    <select className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 bg-white focus:outline-none focus:border-blue-500"
                       value={form.branch} onChange={e=>setForm({...form, branch:e.target.value})}>
                       <option value="CSE">CSE</option>
                       <option value="ECE">ECE</option>
@@ -154,8 +154,8 @@ export default function AdminSubjectsPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1">Group (Section)</label>
-                    <select className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
+                    <label className="block text-xs font-semibold text-gray-800 mb-1">Group (Section)</label>
+                    <select className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 bg-white focus:outline-none focus:border-blue-500"
                       value={form.section} onChange={e=>setForm({...form, section:e.target.value})}>
                       <option value="G1">G1</option>
                       <option value="G1A">G1A</option>
@@ -166,27 +166,27 @@ export default function AdminSubjectsPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-gray-700 mb-1">Semester</label>
-                    <input type="number" min="1" max="8" className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500"
+                    <label className="block text-xs font-semibold text-gray-800 mb-1">Semester</label>
+                    <input type="number" min="1" max="8" className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 bg-white focus:outline-none focus:border-blue-500"
                       value={form.semester} onChange={e=>setForm({...form, semester:parseInt(e.target.value)})} />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-2">Assign Teachers (Multiple)</label>
-                  <div className="border rounded-lg p-2 max-h-40 overflow-y-auto space-y-1 bg-gray-50">
+                  <label className="block text-xs font-semibold text-gray-800 mb-2">Assign Teachers (Multiple)</label>
+                  <div className="border border-gray-200 rounded-lg p-2 max-h-40 overflow-y-auto space-y-1 bg-gray-50">
                     {teachers.map(t => (
                       <label key={t.id} className="flex items-center gap-2 p-1.5 hover:bg-white rounded cursor-pointer border border-transparent hover:border-gray-200 transition">
-                        <input type="checkbox" className="w-4 h-4 text-blue-600"
+                        <input type="checkbox" className="w-4 h-4 text-blue-600 rounded"
                           checked={form.teacher_ids.includes(t.id)} onChange={() => toggleTeacher(t.id)} />
-                        <span className="text-sm font-medium text-gray-800">{t.name}</span>
+                        <span className="text-sm font-medium text-gray-900">{t.name}</span>
                       </label>
                     ))}
                   </div>
                 </div>
               </div>
-              <div className="p-4 border-t bg-gray-50 flex justify-end gap-3">
-                <button onClick={() => setShowModal(false)} className="px-4 py-2 text-gray-700 hover:bg-gray-200 rounded-lg">Cancel</button>
+              <div className="p-4 border-t bg-gray-50 flex justify-end gap-3 rounded-b-2xl">
+                <button onClick={() => setShowModal(false)} className="px-4 py-2 text-gray-800 hover:bg-gray-200 rounded-lg font-medium">Cancel</button>
                 <button onClick={saveSubject} disabled={!form.name || !form.code}
                   className="bg-blue-600 text-white px-5 py-2 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-70">
                   {isEditing ? 'Save Changes' : 'Add Subject'}

@@ -102,9 +102,9 @@ export default function VaultPage() {
       </div>
 
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-md">
-            <h2 className="text-xl font-bold mb-4">Upload to Vault</h2>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md mx-auto my-auto shadow-2xl">
+            <h2 className="text-xl font-bold text-gray-800 mb-4">Upload to Vault</h2>
             <div className="space-y-4">
               <div>
                 <label className="text-sm font-medium text-gray-800">Subject</label>

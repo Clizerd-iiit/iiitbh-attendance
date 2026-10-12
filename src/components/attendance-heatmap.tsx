@@ -32,8 +32,8 @@ export function AttendanceHeatmap() {
         <div className="flex items-center gap-2">
           <MapPin className="h-6 w-6 text-blue-600" />
           <div>
-            <CardTitle className="text-2xl text-slate-800">Campus Heatmap</CardTitle>
-            <CardDescription className="text-slate-500 mt-1">
+            <CardTitle className="text-2xl text-slate-900 font-bold">Campus Heatmap</CardTitle>
+            <CardDescription className="text-slate-700 font-medium mt-1">
               Live attendance density across academic blocks
             </CardDescription>
           </div>
@@ -45,7 +45,7 @@ export function AttendanceHeatmap() {
           <div className="flex gap-2 mb-2">
             <div className="w-12"></div>
             {times.map((t) => (
-              <div key={t} className="flex-1 text-center text-xs font-medium text-gray-500">
+              <div key={t} className="flex-1 text-center text-xs font-semibold text-gray-800">
                 {t}
               </div>
             ))}
@@ -54,7 +54,7 @@ export function AttendanceHeatmap() {
           {/* Grid */}
           {days.map((day, rowIdx) => (
             <div key={day} className="flex gap-2 items-center">
-              <div className="w-12 text-sm font-medium text-gray-600">{day}</div>
+              <div className="w-12 text-sm font-bold text-gray-800">{day}</div>
               {mockData[rowIdx].map((val, colIdx) => (
                 <div 
                   key={colIdx} 
@@ -66,12 +66,12 @@ export function AttendanceHeatmap() {
           ))}
         </div>
         
-        <div className="mt-6 flex items-center justify-center gap-6 text-sm text-gray-500">
+        <div className="mt-6 flex items-center justify-center gap-6 text-sm text-gray-800 font-semibold">
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded-sm bg-blue-100"></div> Low
+            <div className="w-4 h-4 rounded-sm bg-blue-100 border border-blue-200"></div> Low
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded-sm bg-blue-300"></div> Medium
+            <div className="w-4 h-4 rounded-sm bg-blue-300 border border-blue-400"></div> Medium
           </div>
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 rounded-sm bg-blue-600"></div> High

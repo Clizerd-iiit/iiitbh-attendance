@@ -130,42 +130,42 @@ export function AdminEditStudentModal({ student, onClose, onSaved }: { student: 
   };
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm items-center justify-center p-4 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto">
+      <div className="bg-white rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh] mx-auto my-auto">
         <div className="flex justify-between items-center p-5 border-b bg-gray-50">
           <h2 className="text-xl font-bold text-gray-800">Manage Student: {student.name}</h2>
-          <button onClick={() => { stopCamera(); onClose(); }} className="text-gray-700 hover:text-gray-800 text-2xl">&times;</button>
+          <button onClick={() => { stopCamera(); onClose(); }} className="text-gray-700 hover:text-gray-900 text-2xl font-bold">&times;</button>
         </div>
         
         <div className="flex border-b bg-gray-50 overflow-x-auto shrink-0">
-          <button onClick={() => { setMode('details'); stopCamera(); }} className={`flex-1 py-3 px-4 font-medium text-sm whitespace-nowrap ${mode==='details'?'border-b-2 border-blue-600 text-blue-600':'text-gray-700 hover:bg-gray-100'}`}>Basic Details</button>
-          <button onClick={() => { setMode('face'); startCamera(); }} className={`flex-1 py-3 px-4 font-medium text-sm whitespace-nowrap ${mode==='face'?'border-b-2 border-blue-600 text-blue-600':'text-gray-700 hover:bg-gray-100'}`}>Face ID</button>
-          <button onClick={() => { setMode('enrollments'); stopCamera(); }} className={`flex-1 py-3 px-4 font-medium text-sm whitespace-nowrap ${mode==='enrollments'?'border-b-2 border-blue-600 text-blue-600':'text-gray-700 hover:bg-gray-100'}`}>Subjects & Teachers</button>
+          <button onClick={() => { setMode('details'); stopCamera(); }} className={`flex-1 py-3 px-4 font-semibold text-sm whitespace-nowrap ${mode==='details'?'border-b-2 border-blue-600 text-blue-600':'text-gray-800 hover:bg-gray-100'}`}>Basic Details</button>
+          <button onClick={() => { setMode('face'); startCamera(); }} className={`flex-1 py-3 px-4 font-semibold text-sm whitespace-nowrap ${mode==='face'?'border-b-2 border-blue-600 text-blue-600':'text-gray-800 hover:bg-gray-100'}`}>Face ID</button>
+          <button onClick={() => { setMode('enrollments'); stopCamera(); }} className={`flex-1 py-3 px-4 font-semibold text-sm whitespace-nowrap ${mode==='enrollments'?'border-b-2 border-blue-600 text-blue-600':'text-gray-800 hover:bg-gray-100'}`}>Subjects & Teachers</button>
         </div>
 
         <div className="p-6 overflow-y-auto">
           {mode === 'details' ? (
             <div className="space-y-4">
-              <div><label className="block text-sm font-medium mb-1">Name</label>
-                <input value={name} onChange={e=>setName(e.target.value)} className="w-full border rounded-xl px-3 py-2"/></div>
-              <div><label className="block text-sm font-medium mb-1">Roll No</label>
-                <input value={rollNo} onChange={e=>setRollNo(e.target.value)} className="w-full border rounded-xl px-3 py-2"/></div>
+              <div><label className="block text-sm font-semibold text-gray-800 mb-1">Name</label>
+                <input value={name} onChange={e=>setName(e.target.value)} className="w-full border border-gray-300 rounded-xl px-3 py-2 text-gray-900 bg-white focus:outline-none focus:border-blue-500"/></div>
+              <div><label className="block text-sm font-semibold text-gray-800 mb-1">Roll No</label>
+                <input value={rollNo} onChange={e=>setRollNo(e.target.value)} className="w-full border border-gray-300 rounded-xl px-3 py-2 text-gray-900 bg-white focus:outline-none focus:border-blue-500"/></div>
               <div className="grid grid-cols-3 gap-2">
-                <div><label className="block text-sm font-medium mb-1">Branch</label>
-                  <select value={branch} onChange={e=>{setBranch(e.target.value); setGroup(''); setSubGroup('');}} className="w-full border rounded-xl px-3 py-2 bg-white">
+                <div><label className="block text-sm font-semibold text-gray-800 mb-1">Branch</label>
+                  <select value={branch} onChange={e=>{setBranch(e.target.value); setGroup(''); setSubGroup('');}} className="w-full border border-gray-300 rounded-xl px-3 py-2 bg-white text-gray-900 focus:outline-none focus:border-blue-500">
                     <option value="">Select</option><option value="CSE">CSE</option><option value="ECE">ECE</option><option value="MEA">MEA</option><option value="MNC">MNC</option>
                   </select></div>
-                <div><label className="block text-sm font-medium mb-1">Group</label>
-                  <select value={group} onChange={e=>{setGroup(e.target.value); setSubGroup('');}} className="w-full border rounded-xl px-3 py-2 bg-white">
+                <div><label className="block text-sm font-semibold text-gray-800 mb-1">Group</label>
+                  <select value={group} onChange={e=>{setGroup(e.target.value); setSubGroup('');}} className="w-full border border-gray-300 rounded-xl px-3 py-2 bg-white text-gray-900 focus:outline-none focus:border-blue-500">
                     <option value="">Select</option><option value="G1">G1</option><option value="G2">G2</option>
                   </select></div>
-                <div><label className="block text-sm font-medium mb-1">Sub Group</label>
-                  <select value={subGroup} onChange={e=>setSubGroup(e.target.value)} className="w-full border rounded-xl px-3 py-2 bg-white">
+                <div><label className="block text-sm font-semibold text-gray-800 mb-1">Sub Group</label>
+                  <select value={subGroup} onChange={e=>setSubGroup(e.target.value)} className="w-full border border-gray-300 rounded-xl px-3 py-2 bg-white text-gray-900 focus:outline-none focus:border-blue-500">
                     <option value="">Select</option><option value={`${group}A`}>{group}A</option><option value={`${group}B`}>{group}B</option>
                   </select></div>
               </div>
               <div className="pt-4">
-                <button onClick={saveDetails} disabled={saving} className="w-full py-3 bg-blue-600 text-white rounded-xl font-medium">{saving?'Saving...':'Save Details'}</button>
+                <button onClick={saveDetails} disabled={saving} className="w-full py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition disabled:opacity-70">{saving?'Saving...':'Save Details'}</button>
               </div>
             </div>
           ) : mode === 'face' ? (

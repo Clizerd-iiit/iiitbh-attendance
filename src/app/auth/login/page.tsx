@@ -83,36 +83,36 @@ export default function LoginPage() {
           Sign in with Google
         </button>
 
-        <p className="text-sm text-gray-600 mt-6">
+        <p className="text-sm text-gray-800 font-medium mt-6">
           Having trouble?{' '}
-          <button onClick={() => setShowIssueModal(true)} className="text-blue-600 hover:underline font-medium">
+          <button onClick={() => setShowIssueModal(true)} className="text-blue-700 hover:underline font-bold">
             Contact the system administrator
           </button>
         </p>
       </div>
 
       {showIssueModal && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-sm relative">
-            <button onClick={() => setShowIssueModal(false)} className="absolute top-4 right-4 text-gray-500 hover:text-gray-800">
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-sm relative mx-auto my-auto">
+            <button onClick={() => setShowIssueModal(false)} className="absolute top-4 right-4 text-gray-700 hover:text-gray-900 font-bold text-lg">
               ✕
             </button>
-            <h2 className="text-xl font-bold text-gray-800 mb-4">Report an Issue</h2>
+            <h2 className="text-xl font-bold text-gray-900 mb-4">Report an Issue</h2>
             {issueStatus === 'success' ? (
-              <div className="bg-green-50 text-green-700 p-4 rounded-lg text-sm mb-2 text-center">
+              <div className="bg-green-50 text-green-800 p-4 rounded-lg text-sm mb-2 text-center font-semibold border border-green-200">
                 ✅ Issue sent to Administrator successfully!
               </div>
             ) : (
               <form onSubmit={submitIssue} className="flex flex-col gap-4 text-left">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Your Name / Roll No</label>
-                  <input required value={issueName} onChange={e => setIssueName(e.target.value)} type="text" className="w-full border rounded-lg p-2 focus:ring focus:ring-blue-200 outline-none" placeholder="E.g. Rahul (2101001)" />
+                  <label className="block text-sm font-semibold text-gray-800 mb-1">Your Name / Roll No</label>
+                  <input required value={issueName} onChange={e => setIssueName(e.target.value)} type="text" className="w-full border border-gray-300 rounded-lg p-2 text-gray-900 bg-white focus:ring focus:ring-blue-200 outline-none placeholder:text-gray-500" placeholder="E.g. Rahul (2101001)" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Problem Details</label>
-                  <textarea required value={issueDetails} onChange={e => setIssueDetails(e.target.value)} className="w-full border rounded-lg p-2 focus:ring focus:ring-blue-200 outline-none" rows={4} placeholder="Describe your issue here..." />
+                  <label className="block text-sm font-semibold text-gray-800 mb-1">Problem Details</label>
+                  <textarea required value={issueDetails} onChange={e => setIssueDetails(e.target.value)} className="w-full border border-gray-300 rounded-lg p-2 text-gray-900 bg-white focus:ring focus:ring-blue-200 outline-none placeholder:text-gray-500" rows={4} placeholder="Describe your issue here..." />
                 </div>
-                <button disabled={issueStatus === 'submitting'} type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 rounded-lg transition disabled:opacity-50">
+                <button disabled={issueStatus === 'submitting'} type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg transition disabled:opacity-50">
                   {issueStatus === 'submitting' ? 'Sending...' : 'Submit Issue'}
                 </button>
               </form>

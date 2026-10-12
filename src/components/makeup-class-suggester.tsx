@@ -43,7 +43,7 @@ export function MakeupClassSuggester() {
             <div className="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
               <Calendar className="h-8 w-8 text-blue-600" />
             </div>
-            <p className="text-gray-500 mb-6">Need to reschedule a class? Find the perfect slot where most students are free.</p>
+            <p className="text-gray-800 font-medium mb-6">Need to reschedule a class? Find the perfect slot where most students are free.</p>
             <Button onClick={handleSuggest} className="bg-blue-600 hover:bg-blue-700">
               Find Free Slots
             </Button>
@@ -51,35 +51,35 @@ export function MakeupClassSuggester() {
         ) : isSearching ? (
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-blue-600 font-medium">Analyzing timetables...</p>
+            <p className="text-blue-700 font-semibold">Analyzing timetables...</p>
           </div>
         ) : (
           <div className="space-y-4">
-            <h3 className="font-semibold text-gray-700">Recommended Slots</h3>
+            <h3 className="font-bold text-gray-900">Recommended Slots</h3>
             {suggestions.map((slot, i) => (
-              <div key={i} className="flex items-center justify-between p-4 bg-white border border-gray-100 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+              <div key={i} className="flex items-center justify-between p-4 bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow">
                 <div className="flex items-center gap-4">
                   <div className="bg-blue-50 p-3 rounded-lg">
                     <Clock className="h-5 w-5 text-blue-600" />
                   </div>
                   <div>
-                    <p className="font-bold text-gray-800">{slot.date}</p>
-                    <p className="text-sm text-gray-500">{slot.time}</p>
+                    <p className="font-bold text-gray-900">{slot.date}</p>
+                    <p className="text-sm text-gray-700 font-medium">{slot.time}</p>
                   </div>
                 </div>
                 <div className="text-right">
-                  <span className="inline-flex items-center rounded-full bg-green-50 px-2.5 py-0.5 text-sm font-medium text-green-700 ring-1 ring-inset ring-green-600/20">
+                  <span className="inline-flex items-center rounded-full bg-green-50 px-2.5 py-0.5 text-sm font-semibold text-green-800 ring-1 ring-inset ring-green-600/30">
                     {slot.confidence} Match
                   </span>
                   <div className="mt-2">
-                    <Button size="sm" variant="outline" className="text-blue-600 border-blue-200 hover:bg-blue-50">
+                    <Button size="sm" variant="outline" className="text-blue-700 font-semibold border-blue-300 hover:bg-blue-50">
                       Schedule
                     </Button>
                   </div>
                 </div>
               </div>
             ))}
-            <Button variant="ghost" className="w-full mt-4 text-gray-500" onClick={() => setSuggestions([])}>
+            <Button variant="ghost" className="w-full mt-4 text-gray-800 font-semibold hover:bg-gray-100" onClick={() => setSuggestions([])}>
               Reset
             </Button>
           </div>

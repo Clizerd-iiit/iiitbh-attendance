@@ -145,7 +145,7 @@ export default function AdminAnnouncementsPage() {
 
       {showModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-md">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md mx-auto my-auto shadow-2xl">
             <h2 className="text-xl font-bold mb-4">{editingId ? 'Edit Announcement' : 'Post Global Announcement'}</h2>
             <div className="space-y-3">
               <input placeholder="Title" value={form.title} onChange={e=>setForm({...form, title: e.target.value})} className="w-full border p-2 rounded"/>

@@ -92,12 +92,12 @@ export default function HistoryPage() {
                   </p>
                   <div className="space-y-0.5">
                     {recs.length === 0 && (
-                      <div className="text-xs text-gray-300">—</div>
+                      <div className="text-xs text-gray-600 font-semibold">—</div>
                     )}
                     {recs.map((r, i) => (
-                      <div key={i} className={`flex items-center gap-1 rounded px-1 py-0.5 ${statusColor[r.status] || 'bg-gray-300'} bg-opacity-20`}>
-                        <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${statusColor[r.status] || 'bg-gray-400'}`}/>
-                        <span className="text-xs text-gray-800 truncate">{r.subject_code}</span>
+                      <div key={i} className={`flex items-center gap-1 rounded px-1 py-0.5 ${statusColor[r.status] || 'bg-gray-400'} bg-opacity-25`}>
+                        <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${statusColor[r.status] || 'bg-gray-600'}`}/>
+                        <span className="text-xs text-gray-900 font-medium truncate">{r.subject_code}</span>
                       </div>
                     ))}
                   </div>

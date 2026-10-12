@@ -213,14 +213,14 @@ export default function TeacherReports() {
 
       {/* Student History Modal */}
       {selectedStudent && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-2xl shadow-xl max-h-[90vh] flex flex-col">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-2xl shadow-xl max-h-[90vh] flex flex-col mx-auto my-auto">
             <div className="flex justify-between items-start mb-4">
               <div>
-                <h2 className="text-xl font-bold">{selectedStudent.name}</h2>
+                <h2 className="text-xl font-bold text-gray-800">{selectedStudent.name}</h2>
                 <p className="text-sm text-gray-700 font-mono">{selectedStudent.roll_no}</p>
               </div>
-              <button onClick={() => setSelectedStudent(null)} className="text-gray-700 hover:text-gray-700">✕</button>
+              <button onClick={() => setSelectedStudent(null)} className="text-gray-700 hover:text-gray-900 font-bold text-lg">✕</button>
             </div>
             
             <div className="flex-1 overflow-y-auto pr-2">
