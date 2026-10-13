@@ -71,8 +71,8 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
           return;
         }
 
-        // 0.43 strict threshold for teacher portal face matching
-        const DISTANCE_THRESHOLD = 0.43;
+        // 0.44 calibrated threshold for teacher portal face matching
+        const DISTANCE_THRESHOLD = 0.44;
         const faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, DISTANCE_THRESHOLD);
 
         setStatus('starting_camera');
