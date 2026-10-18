@@ -189,7 +189,13 @@ function AttendancePage() {
     let latitude = null, longitude = null;
     if (selectedMethod !== 'kiosk') {
       try {
-        const pos = await new Promise<GeolocationPosition>((res, rej) => navigator.geolocation.getCurrentPosition(res, rej, { timeout: 5000 }));
+        const pos = await new Promise<GeolocationPosition>((res, rej) => 
+          navigator.geolocation.getCurrentPosition(res, rej, { 
+            enableHighAccuracy: true, 
+            timeout: 10000, 
+            maximumAge: 30000 
+          })
+        );
         latitude = pos.coords.latitude;
         longitude = pos.coords.longitude;
       } catch (e) {

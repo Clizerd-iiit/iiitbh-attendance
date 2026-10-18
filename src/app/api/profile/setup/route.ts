@@ -22,11 +22,20 @@ export async function POST(req: NextRequest) {
     ? { subject_name: subjectName, subject_code: subjectCode }
     : { roll_no: rollNo, branch, section };
 
+  // Check if user is already verified & approved to prevent accidental demotion
+  const { data: existingUser } = await supabaseAdmin
+    .from('users')
+    .select('id, is_verified, verification_status')
+    .eq('email', session.user.email)
+    .single();
+
+  const isAlreadyApproved = existingUser?.verification_status === 'approved';
+
   const updates: Record<string, unknown> = {
     name, role,
     profile_completed: true,
-    verification_status: 'pending',
-    is_verified: false,
+    verification_status: isAlreadyApproved ? 'approved' : 'pending',
+    is_verified: isAlreadyApproved ? true : false,
     signup_info: signupInfo,
     updated_at: new Date().toISOString(),
   };

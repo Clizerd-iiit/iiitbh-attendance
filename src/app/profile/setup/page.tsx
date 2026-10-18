@@ -26,6 +26,16 @@ export default function ProfileSetupPage() {
 
   const fileRef = useRef<HTMLInputElement>(null);
 
+  // If user is already approved, prevent accidental re-submission
+  useEffect(() => {
+    if (session?.user?.verificationStatus === 'approved') {
+      const role = session.user.role;
+      if (role === 'teacher') router.replace('/teacher/dashboard');
+      else if (role === 'student') router.replace('/student/dashboard');
+      else router.replace('/');
+    }
+  }, [session, router]);
+
   useEffect(() => {
     if (step !== 'done') return;
     const checkStatus = async () => {

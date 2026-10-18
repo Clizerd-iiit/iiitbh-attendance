@@ -6,6 +6,7 @@ import { WelcomeCard } from '@/components/shared/WelcomeCard';
 import { QrScanner } from '@/components/student/QrScanner';
 import { StudentAttendanceSummary } from '@/types';
 import * as faceapi from 'face-api.js';
+import { MapPin, Laptop, Smartphone, RefreshCw, X, AlertTriangle, HelpCircle } from 'lucide-react';
 
 function AttendanceCard({ subject, showPercentage }: { subject: StudentAttendanceSummary & { safe_to_miss: number; classes_to_attend: number }, showPercentage: boolean }) {
   const pct = subject.percentage === null ? 100 : subject.percentage;
@@ -137,8 +138,31 @@ export default function StudentDashboard() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [summary, setSummary] = useState<(StudentAttendanceSummary & { safe_to_miss: number; classes_to_attend: number })[]>([]);
-    const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
   const [showPercentage, setShowPercentage] = useState(true);
+
+  // Precise Location Help States
+  const [showLocationHelp, setShowLocationHelp] = useState(false);
+  const [locationHelpTab, setLocationHelpTab] = useState<'android' | 'ios' | 'laptop'>('android');
+  const [locationHelpDetails, setLocationHelpDetails] = useState<{
+    accuracy?: number;
+    errorMsg?: string;
+    coords?: { lat: number; lon: number };
+  }>({});
+  const [retryingGps, setRetryingGps] = useState(false);
+
+  useEffect(() => {
+    if (typeof navigator !== 'undefined') {
+      const ua = navigator.userAgent || '';
+      if (/iPad|iPhone|iPod/.test(ua)) {
+        setLocationHelpTab('ios');
+      } else if (/Android/.test(ua)) {
+        setLocationHelpTab('android');
+      } else {
+        setLocationHelpTab('laptop');
+      }
+    }
+  }, []);
 
   useEffect(() => {
     // If URL has ?token=..., open the modal automatically
@@ -211,6 +235,44 @@ export default function StudentDashboard() {
       });
     } else {
       alert("❌ " + (d.error || "Failed to mark attendance"));
+    }
+  };
+
+  const retryLocationCheck = async () => {
+    setRetryingGps(true);
+    try {
+      const isMobile = typeof navigator !== 'undefined' && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      const pos = await new Promise<GeolocationPosition>((res, rej) => 
+        navigator.geolocation.getCurrentPosition(res, rej, { 
+          enableHighAccuracy: true, 
+          timeout: 15000, 
+          maximumAge: 0 
+        })
+      );
+      
+      if (isMobile && pos.coords.accuracy > 1500) {
+        setLocationHelpDetails({
+          accuracy: Math.round(pos.coords.accuracy),
+          errorMsg: `Still approximate (±${Math.round(pos.coords.accuracy)}m). Please verify 'Use precise location' is toggled ON.`,
+          coords: { lat: pos.coords.latitude, lon: pos.coords.longitude }
+        });
+        setRetryingGps(false);
+        return;
+      }
+      
+      // Success!
+      setShowLocationHelp(false);
+      setRetryingGps(false);
+      if (markForm.code) {
+        setMarking(true);
+        await executeAttendance(pos.coords.latitude, pos.coords.longitude);
+      }
+    } catch (e: any) {
+      setRetryingGps(false);
+      setLocationHelpDetails(prev => ({
+        ...prev,
+        errorMsg: e?.message || "Could not retrieve GPS location. Check device permissions."
+      }));
     }
   };
 
@@ -312,11 +374,25 @@ export default function StudentDashboard() {
       // If face passes, get GPS and execute
       let lat = null, lon = null;
       try {
-        const pos = await new Promise<GeolocationPosition>((res, rej) => navigator.geolocation.getCurrentPosition(res, rej, { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }));
+        const isMobile = typeof navigator !== 'undefined' && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
         
-        // Check for approximate location (accuracy > 200 meters typically means Precise Location is OFF)
-        if (pos.coords.accuracy > 200) {
-          alert("Precise location is required! You seem to be using an 'Approximate Location'. Please go to your device settings, enable 'Precise Location' for your browser, and try again.");
+        const pos = await new Promise<GeolocationPosition>((res, rej) => 
+          navigator.geolocation.getCurrentPosition(res, rej, { 
+            enableHighAccuracy: true, 
+            timeout: 15000, 
+            maximumAge: 30000 
+          })
+        );
+        
+        // On mobile devices, Android/iOS Approximate location produces accuracy > 1500 meters
+        // Laptops/Desktops use Wi-Fi positioning where accuracy is often 300-800m naturally
+        if (isMobile && pos.coords.accuracy > 1500) {
+          setLocationHelpDetails({
+            accuracy: Math.round(pos.coords.accuracy),
+            errorMsg: `Approximate Location detected (±${Math.round(pos.coords.accuracy)}m). Please switch to 'Precise Location'.`,
+            coords: { lat: pos.coords.latitude, lon: pos.coords.longitude }
+          });
+          setShowLocationHelp(true);
           setMarking(false);
           setFaceCheckState('idle');
           return;
@@ -324,8 +400,25 @@ export default function StudentDashboard() {
         
         lat = pos.coords.latitude;
         lon = pos.coords.longitude;
-      } catch (e) {
-        console.warn("Could not get GPS");
+      } catch (err: any) {
+        console.warn("Could not get GPS:", err);
+        if (err?.code === 1) { // PERMISSION_DENIED
+          setLocationHelpDetails({
+            errorMsg: "Location permission is blocked. Please allow location access in your browser or device settings."
+          });
+          setShowLocationHelp(true);
+          setMarking(false);
+          setFaceCheckState('idle');
+          return;
+        } else if (err?.code === 3) { // TIMEOUT
+          setLocationHelpDetails({
+            errorMsg: "GPS location request timed out. Please ensure GPS/Location is turned ON and try again."
+          });
+          setShowLocationHelp(true);
+          setMarking(false);
+          setFaceCheckState('idle');
+          return;
+        }
       }
       await executeAttendance(lat, lon);
       
@@ -536,7 +629,209 @@ export default function StudentDashboard() {
                 {marking ? 'Marking...' : 'Submit'}
               </button>
             </div>
-            <p className="text-xs text-center text-gray-700 mt-4">Location + AI Face verification is required.</p>
+            <div className="mt-4 flex items-center justify-between text-xs text-gray-700">
+              <span>Location + AI Face verification is required.</span>
+              <button 
+                type="button"
+                onClick={() => {
+                  setLocationHelpDetails({});
+                  setShowLocationHelp(true);
+                }}
+                className="text-blue-600 hover:text-blue-800 font-bold flex items-center gap-1 underline underline-offset-2"
+              >
+                <HelpCircle className="w-3.5 h-3.5" />
+                Location Help
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Precise Location Help Modal */}
+      {showLocationHelp && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-gray-200 animate-in fade-in zoom-in duration-150 max-h-[90vh] overflow-y-auto">
+            {/* Header */}
+            <div className="flex items-center justify-between pb-3 border-b border-gray-100">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
+                  <MapPin className="w-5 h-5 text-blue-600" />
+                </div>
+                <div>
+                  <h3 className="text-base sm:text-lg font-bold text-gray-900 leading-snug">Precise Location Required</h3>
+                  <p className="text-xs text-gray-600 font-medium">सटीक लोकेशन चालू करने का तरीका</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setShowLocationHelp(false)}
+                className="p-1.5 rounded-full text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition"
+                title="Close"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Alert Banner if issue occurred */}
+            {locationHelpDetails.errorMsg && (
+              <div className="mt-3 p-3 rounded-xl bg-amber-50 border border-amber-200 flex items-start gap-2.5 text-xs text-amber-900">
+                <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-bold">{locationHelpDetails.errorMsg}</p>
+                  {locationHelpDetails.accuracy && (
+                    <p className="mt-0.5 text-amber-800 font-medium">Detected accuracy radius: ±{locationHelpDetails.accuracy}m</p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Device Selector Tabs */}
+            <div className="flex gap-1.5 p-1 bg-gray-100 rounded-xl mt-4">
+              <button
+                type="button"
+                onClick={() => setLocationHelpTab('android')}
+                className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-lg text-xs font-bold transition ${
+                  locationHelpTab === 'android' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-700 hover:text-gray-900'
+                }`}
+              >
+                <Smartphone className="w-3.5 h-3.5" />
+                Android
+              </button>
+              <button
+                type="button"
+                onClick={() => setLocationHelpTab('ios')}
+                className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-lg text-xs font-bold transition ${
+                  locationHelpTab === 'ios' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-700 hover:text-gray-900'
+                }`}
+              >
+                <Smartphone className="w-3.5 h-3.5" />
+                iPhone (iOS)
+              </button>
+              <button
+                type="button"
+                onClick={() => setLocationHelpTab('laptop')}
+                className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-lg text-xs font-bold transition ${
+                  locationHelpTab === 'laptop' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-700 hover:text-gray-900'
+                }`}
+              >
+                <Laptop className="w-3.5 h-3.5" />
+                Laptop / PC
+              </button>
+            </div>
+
+            {/* Step-by-Step Instructions */}
+            <div className="mt-4 text-xs sm:text-sm text-gray-900 space-y-3">
+              {locationHelpTab === 'android' && (
+                <div className="space-y-3 bg-gray-50 p-4 rounded-xl border border-gray-200">
+                  <div className="flex items-start gap-2.5">
+                    <span className="w-5 h-5 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">1</span>
+                    <p className="text-xs text-gray-900 font-medium">
+                      Browser address bar me left side <strong>Lock (🔒) ya Page Info</strong> icon par tap karein.
+                    </p>
+                  </div>
+                  <div className="flex items-start gap-2.5">
+                    <span className="w-5 h-5 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">2</span>
+                    <p className="text-xs text-gray-900 font-medium">
+                      <strong>Permissions &rarr; Location</strong> par click karein.
+                    </p>
+                  </div>
+                  <div className="flex items-start gap-2.5">
+                    <span className="w-5 h-5 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">3</span>
+                    <p className="text-xs text-gray-900 font-medium">
+                      <strong>"Use precise location" (सटीक स्थान चालू करें)</strong> toggle ko ON karein.
+                    </p>
+                  </div>
+                  <div className="border-t border-gray-200 pt-2 text-[11px] text-gray-700">
+                    💡 <em>Direct Phone Settings: Settings &rarr; Apps &rarr; Chrome &rarr; Permissions &rarr; Location &rarr; Select "Allow only while using the app" & "Use precise location".</em>
+                  </div>
+                </div>
+              )}
+
+              {locationHelpTab === 'ios' && (
+                <div className="space-y-3 bg-gray-50 p-4 rounded-xl border border-gray-200">
+                  <div className="flex items-start gap-2.5">
+                    <span className="w-5 h-5 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">1</span>
+                    <p className="text-xs text-gray-900 font-medium">
+                      iPhone <strong>Settings</strong> app open karein.
+                    </p>
+                  </div>
+                  <div className="flex items-start gap-2.5">
+                    <span className="w-5 h-5 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">2</span>
+                    <p className="text-xs text-gray-900 font-medium">
+                      Neeche scroll karke <strong>Safari</strong> (ya Chrome) par tap karein.
+                    </p>
+                  </div>
+                  <div className="flex items-start gap-2.5">
+                    <span className="w-5 h-5 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">3</span>
+                    <p className="text-xs text-gray-900 font-medium">
+                      <strong>Location</strong> select karein aur <strong>"Precise Location"</strong> toggle ko ON (Green) karein.
+                    </p>
+                  </div>
+                  <div className="border-t border-gray-200 pt-2 text-[11px] text-gray-700">
+                    💡 <em>Settings badalne ke baad browser par wapas aayein aur neeche "Retry" button dabayein.</em>
+                  </div>
+                </div>
+              )}
+
+              {locationHelpTab === 'laptop' && (
+                <div className="space-y-3 bg-gray-50 p-4 rounded-xl border border-gray-200">
+                  <div className="flex items-start gap-2.5">
+                    <span className="w-5 h-5 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">1</span>
+                    <p className="text-xs text-gray-900 font-medium">
+                      Chrome / Edge address bar me URL ke left side <strong>Lock (🔒) icon</strong> click karein.
+                    </p>
+                  </div>
+                  <div className="flex items-start gap-2.5">
+                    <span className="w-5 h-5 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">2</span>
+                    <p className="text-xs text-gray-900 font-medium">
+                      <strong>Location</strong> dropdown ko <strong>"Allow"</strong> par set karein.
+                    </p>
+                  </div>
+                  <div className="flex items-start gap-2.5">
+                    <span className="w-5 h-5 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">3</span>
+                    <p className="text-xs text-gray-900 font-medium">
+                      <strong>System Settings:</strong> Windows Settings &rarr; Privacy &rarr; Location ON karein. Mac me System Settings &rarr; Privacy & Security &rarr; Location Services ON karein.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Action Buttons */}
+            <div className="mt-5 flex flex-col gap-2">
+              <button
+                type="button"
+                onClick={retryLocationCheck}
+                disabled={retryingGps}
+                className="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-bold rounded-xl flex items-center justify-center gap-2 shadow-sm transition disabled:opacity-70 active:scale-[0.99]"
+              >
+                <RefreshCw className={`w-4 h-4 ${retryingGps ? 'animate-spin' : ''}`} />
+                {retryingGps ? 'Checking Location...' : '🔄 Retry Location Check'}
+              </button>
+
+              {locationHelpDetails.coords && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowLocationHelp(false);
+                    if (locationHelpDetails.coords) {
+                      setMarking(true);
+                      executeAttendance(locationHelpDetails.coords.lat, locationHelpDetails.coords.lon);
+                    }
+                  }}
+                  className="w-full py-2 px-4 bg-gray-100 hover:bg-gray-200 text-gray-900 text-xs font-bold rounded-xl transition"
+                >
+                  ⚡ Proceed with Current Location ({locationHelpDetails.accuracy ? `±${locationHelpDetails.accuracy}m` : 'Detected'})
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={() => setShowLocationHelp(false)}
+                className="w-full py-2 text-xs text-gray-600 hover:text-gray-900 font-bold"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}
