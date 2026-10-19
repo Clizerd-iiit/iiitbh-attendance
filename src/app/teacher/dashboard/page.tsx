@@ -1,39 +1,84 @@
 "use client";
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { Navbar } from '@/components/shared/Navbar';
 import { WelcomeCard } from '@/components/shared/WelcomeCard';
 import Link from 'next/link';
 import { Subject } from '@/types';
-
 import { MakeupClassSuggester } from '@/components/makeup-class-suggester';
+import { CRDelegationModal } from '@/components/teacher/CRDelegationModal';
+import { ActiveCRDelegations } from '@/components/teacher/ActiveCRDelegations';
+import type { CRDelegation } from '@/lib/delegation';
 
 export default function TeacherDashboard() {
   const { data: session } = useSession();
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // CR Delegation states
+  const [showCRModal, setShowCRModal] = useState(false);
+  const [selectedSubjectId, setSelectedSubjectId] = useState<string>('');
+  const [delegations, setDelegations] = useState<CRDelegation[]>([]);
+  const [loadingDelegations, setLoadingDelegations] = useState(false);
+
+  const fetchDelegations = useCallback(() => {
+    setLoadingDelegations(true);
+    fetch('/api/cr-delegation')
+      .then(r => r.json())
+      .then(d => {
+        setDelegations(d.delegations || []);
+        setLoadingDelegations(false);
+      })
+      .catch(() => setLoadingDelegations(false));
+  }, []);
+
+  const fetchData = useCallback(() => {
+    fetch('/api/teacher/subjects')
+      .then(r => r.json())
+      .then(d => {
+        setSubjects(d.subjects || []);
+        setLoading(false);
+      });
+    fetchDelegations();
+  }, [fetchDelegations]);
+
   useEffect(() => {
-    const fetchData = () => {
-      fetch('/api/teacher/subjects').then(r => r.json()).then(d => {
-      setSubjects(d.subjects || []);
-      setLoading(false);
-    });
-    };
     fetchData();
     const interval = setInterval(fetchData, 60000);
     return () => clearInterval(interval);
-  }, []);
+  }, [fetchData]);
 
   return (
-    <div className="min-h-screen bg-gray-50 md:pl-64 pt-14 md:pt-0">
+    <div className="min-h-screen bg-gray-50 md:pl-64 pt-14 md:pt-0 pb-16">
       <Navbar />
       <div className="max-w-5xl mx-auto px-4 py-8">
 
         {/* Welcome Card */}
         <div className="mb-6"><WelcomeCard subtitle="Teacher Dashboard" /></div>
 
-        <h2 className="text-lg font-bold text-gray-900 mb-4">Your Subjects</h2>
+        {/* Active CR Delegations (if any) */}
+        <ActiveCRDelegations
+          delegations={delegations}
+          onRefresh={fetchDelegations}
+          loading={loadingDelegations}
+        />
+
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-bold text-gray-900">Your Subjects</h2>
+          {subjects.length > 0 && (
+            <button
+              onClick={() => {
+                setSelectedSubjectId(subjects[0]?.id || '');
+                setShowCRModal(true);
+              }}
+              className="bg-purple-100 hover:bg-purple-200 text-purple-900 border-2 border-purple-300 px-3.5 py-1.5 rounded-xl font-black text-xs flex items-center gap-1.5 shadow-sm transition active:scale-95"
+            >
+              <span>🎖️</span>
+              <span>Delegate to CR</span>
+            </button>
+          )}
+        </div>
+
         <div className="grid md:grid-cols-2 gap-6 mb-8">
           {loading ? (
             [1,2,3].map(i => <div key={i} className="h-40 bg-gray-200 rounded-xl animate-pulse"/>)
@@ -51,13 +96,23 @@ export default function TeacherDashboard() {
                 </div>
                 <span className="bg-blue-100 text-blue-800 text-xs px-2.5 py-1 rounded-full font-bold">Active</span>
               </div>
-              <div className="flex gap-2 mt-4">
+              <div className="flex items-center gap-2 mt-4 flex-wrap">
                 <Link href={`/teacher/attendance?subject=${subject.id}`}
-                  className="flex-1 text-center bg-blue-600 text-white font-bold text-sm py-2 rounded-lg hover:bg-blue-700 transition shadow-sm">
-                  ✅ Take Attendance
+                  className="flex-1 min-w-[120px] text-center bg-blue-600 text-white font-bold text-sm py-2 rounded-lg hover:bg-blue-700 transition shadow-sm">
+                  ✅ Attendance
                 </Link>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedSubjectId(subject.id);
+                    setShowCRModal(true);
+                  }}
+                  className="flex-1 min-w-[120px] text-center bg-purple-100 hover:bg-purple-200 text-purple-900 border border-purple-300 font-black text-sm py-2 rounded-lg transition shadow-sm"
+                >
+                  🎖️ CR Access
+                </button>
                 <Link href={`/teacher/students?subject=${subject.id}`}
-                  className="flex-1 text-center bg-gray-100 text-gray-900 font-bold text-sm py-2 rounded-lg hover:bg-gray-200 transition">
+                  className="px-3 text-center bg-gray-100 text-gray-900 font-bold text-sm py-2 rounded-lg hover:bg-gray-200 transition">
                   👥 Students
                 </Link>
               </div>
@@ -70,6 +125,15 @@ export default function TeacherDashboard() {
           <MakeupClassSuggester />
         </div>
       </div>
+
+      {/* CR Delegation Modal */}
+      <CRDelegationModal
+        isOpen={showCRModal}
+        onClose={() => setShowCRModal(false)}
+        subjects={subjects}
+        defaultSubjectId={selectedSubjectId}
+        onSuccess={fetchDelegations}
+      />
     </div>
   );
 }

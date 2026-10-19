@@ -6,6 +6,9 @@ import { KioskMode } from '@/components/teacher/KioskMode';
 import { Suspense } from 'react';
 import type { User, AttendanceStatus } from '@/types';
 import Link from 'next/link';
+import { CRDelegationModal } from '@/components/teacher/CRDelegationModal';
+import { ActiveCRDelegations } from '@/components/teacher/ActiveCRDelegations';
+import type { CRDelegation } from '@/lib/delegation';
 
 type Method = 'qr' | 'otp' | 'kiosk' | 'past';
 
@@ -48,6 +51,26 @@ function AttendancePage() {
   const [closedClasses, setClosedClasses] = useState<any[]>([]);
   const [showKiosk, setShowKiosk] = useState(false);
   const [fullScreenMode, setFullScreenMode] = useState<Method | null>(null);
+
+  // CR Delegation states
+  const [showCRModal, setShowCRModal] = useState(false);
+  const [delegations, setDelegations] = useState<CRDelegation[]>([]);
+  const [loadingDelegations, setLoadingDelegations] = useState(false);
+
+  const fetchDelegations = useCallback(() => {
+    setLoadingDelegations(true);
+    fetch('/api/cr-delegation')
+      .then(r => r.json())
+      .then(d => {
+        setDelegations(d.delegations || []);
+        setLoadingDelegations(false);
+      })
+      .catch(() => setLoadingDelegations(false));
+  }, []);
+
+  useEffect(() => {
+    fetchDelegations();
+  }, [fetchDelegations]);
 
   // Handle ESC key for full screen
   useEffect(() => {
@@ -322,7 +345,19 @@ function AttendancePage() {
             {/* Subject and Target Filters */}
             <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-200">
               <div className="mb-4">
-                <label className="block text-sm font-bold text-gray-900 mb-2">1. Select Subject</label>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-sm font-bold text-gray-900">1. Select Subject</label>
+                  <button
+                    type="button"
+                    onClick={() => setShowCRModal(true)}
+                    disabled={!subjectId}
+                    className="bg-purple-100 hover:bg-purple-200 text-purple-900 border-2 border-purple-300 px-3.5 py-1.5 rounded-xl font-black text-xs flex items-center gap-1.5 shadow-sm transition active:scale-95 disabled:opacity-50"
+                    title="Delegate Attendance to CR"
+                  >
+                    <span>🎖️</span>
+                    <span>Delegate to CR</span>
+                  </button>
+                </div>
                 <select value={subjectId} onChange={e => setSubjectId(e.target.value)}
                   className="w-full border border-gray-300 rounded-xl px-4 py-3 bg-white text-gray-900 font-bold text-base md:text-lg focus:outline-none focus:border-blue-500 shadow-sm">
                   <option value="" disabled>-- Select a Subject --</option>
@@ -415,6 +450,14 @@ function AttendancePage() {
                 <p className="text-sm font-medium text-gray-800">Add past attendance or feed offline records manually. (Mark Absentees / Mark Presentees Mode).</p>
               </Link>
             </div>
+
+            {/* Active CR Delegations */}
+            <ActiveCRDelegations
+              delegations={delegations}
+              onRefresh={fetchDelegations}
+              loading={loadingDelegations}
+            />
+
             {/* Today's Closed Classes */}
             {closedClasses.length > 0 && (
               <div className="bg-white rounded-2xl shadow-sm p-6 border border-gray-200 mt-6">
@@ -662,6 +705,15 @@ function AttendancePage() {
           </div>
         </div>
       )}
+
+      {/* CR Delegation Modal */}
+      <CRDelegationModal
+        isOpen={showCRModal}
+        onClose={() => setShowCRModal(false)}
+        subjects={subjects}
+        defaultSubjectId={subjectId}
+        onSuccess={fetchDelegations}
+      />
     </div>
   );
 }

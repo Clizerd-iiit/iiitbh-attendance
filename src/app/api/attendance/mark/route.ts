@@ -127,13 +127,20 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // SECURITY: Only teachers/admins can mark for others or use kiosk/manual methods
-  if (['manual', 'kiosk'].includes(method) && !['teacher', 'superadmin'].includes(session.user.role as string)) {
+  // SECURITY: Only teachers/admins or authorized delegated CR can mark for others or use kiosk/manual methods
+  const currentUserId = (session.user.userId || (session.user as any).id) as string;
+  let canManageAttendance = ['teacher', 'superadmin'].includes(session.user.role as string);
+  if (!canManageAttendance && session.user.role === 'student' && classId && currentUserId) {
+    const { canCREditClass } = await import('@/lib/delegation');
+    canManageAttendance = await canCREditClass(currentUserId, classId);
+  }
+
+  if (['manual', 'kiosk'].includes(method) && !canManageAttendance) {
     return NextResponse.json({ error: 'Students can only mark via QR or OTP' }, { status: 403 });
   }
 
-  let targetStudentId = session.user.userId;
-  if (['teacher', 'superadmin'].includes(session.user.role as string)) {
+  let targetStudentId = currentUserId;
+  if (canManageAttendance) {
     targetStudentId = studentId || session.user.userId;
   }
   const markStatus: AttendanceStatus = status || 'P';

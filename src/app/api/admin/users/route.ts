@@ -26,12 +26,20 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
-  if (!session?.user || !['teacher', 'superadmin'].includes(session.user.role as string))
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { searchParams } = new URL(req.url);
   const role      = searchParams.get('role');
   const subjectId = searchParams.get('subject_id');
+
+  const userId = (session.user.userId || (session.user as any).id) as string;
+  let isAllowed = ['teacher', 'superadmin'].includes(session.user.role as string);
+  if (!isAllowed && session.user.role === 'student' && subjectId && userId) {
+    const { hasActiveDelegationForSubject } = await import('@/lib/delegation');
+    isAllowed = await hasActiveDelegationForSubject(userId, subjectId);
+  }
+
+  if (!isAllowed) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
   let query = supabaseAdmin.from('users').select('*').order('name');
   if (role) query = query.eq('role', role);
@@ -44,7 +52,7 @@ export async function GET(req: NextRequest) {
     query = query.in('id', ids);
   }
 
-  if (session.user.role === 'teacher') {
+  if (session.user.role === 'teacher' || session.user.role === 'student') {
     // Re-apply the same query logic but with restricted select fields
     let safeQuery = supabaseAdmin.from('users')
       .select('id, name, email, roll_no, section, semester, profile_photo_url, is_active, signup_info, branch')

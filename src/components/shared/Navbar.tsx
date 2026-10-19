@@ -38,8 +38,9 @@ const SIDEBAR_ITEMS: Record<string, {href: string, icon: string, label: string}[
     { href: '/teacher/contact',       icon: '🎧', label: 'Contact Admin' },
   ],
   student: [
-    { href: '/student/dashboard',     icon: '📱', label: 'Dashboard' },
-    { href: '/student/history',       icon: '📅', label: 'My Attendance' },
+    { href: '/student/dashboard',       icon: '📱', label: 'Dashboard' },
+    { href: '/student/take-attendance', icon: '📋', label: 'Take Attendance' },
+    { href: '/student/history',         icon: '📅', label: 'My Attendance' },
     { href: '/student/announcements', icon: '📢', label: 'Announcements' },
     { href: '/admin/logs',            icon: '🕵️', label: 'Audit Logs' },
     { href: '/directory/teachers',    icon: '🎓', label: 'Teachers' },
@@ -62,6 +63,7 @@ export function Navbar() {
   const [counts, setCounts] = useState<any>({});
   const [activeClass, setActiveClass] = useState(false);
   const [showClearAllData, setShowClearAllData] = useState(false);
+  const [hasCRDelegation, setHasCRDelegation] = useState(false);
 
   const photo = session?.user?.profilePhotoUrl || '';
   const name  = session?.user?.name || '';
@@ -82,6 +84,22 @@ export function Navbar() {
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
+
+  // Check active CR delegation for student
+  useEffect(() => {
+    if (session?.user?.role === 'student') {
+      const checkCR = async () => {
+        try {
+          const res = await fetch('/api/cr-delegation');
+          const data = await res.json();
+          setHasCRDelegation((data.delegations || []).length > 0);
+        } catch (e) {}
+      };
+      checkCR();
+      const id = setInterval(checkCR, 30000);
+      return () => clearInterval(id);
+    }
+  }, [session]);
 
   // Global Heartbeat — update online status every 60s across all pages
   useEffect(() => {
@@ -188,7 +206,27 @@ export function Navbar() {
                   <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse border border-white"/>
                 )}
               </span>
-              {!collapsed && <span className="text-sm flex-1 truncate flex items-center gap-2">{item.label}{item.label === 'Dashboard' && activeClass && <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded animate-pulse shadow-sm tracking-wide">LIVE CLASS</span>}</span>}
+              {!collapsed && (
+                <span className="text-sm flex-1 truncate flex items-center gap-2">
+                  {item.label}
+                  {item.label === 'Dashboard' && activeClass && (
+                    <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded animate-pulse shadow-sm tracking-wide">
+                      LIVE CLASS
+                    </span>
+                  )}
+                  {item.label === 'Take Attendance' && (
+                    hasCRDelegation ? (
+                      <span className="bg-purple-600 text-white text-[9px] font-black px-1.5 py-0.5 rounded shadow-sm tracking-wide">
+                        UNLOCKED
+                      </span>
+                    ) : (
+                      <span className="text-[10px] opacity-60" title="Locked until teacher grants access">
+                        🔒
+                      </span>
+                    )
+                  )}
+                </span>
+              )}
               
               {!collapsed && badge > 0 && (
                 <span className="bg-red-500 text-white text-xs font-bold px-1.5 py-0.5 rounded-full flex-shrink-0 animate-pulse">

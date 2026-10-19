@@ -5,11 +5,21 @@ import { supabaseAdmin } from '@/lib/supabase';
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
-  if (!session?.user || !['teacher', 'superadmin'].includes(session.user.role as string)) 
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { classId, studentIds, status, method } = await req.json();
   if (!classId || !studentIds || !Array.isArray(studentIds)) return NextResponse.json({ error: 'Invalid payload' }, { status: 400 });
+
+  const userId = (session.user.userId || (session.user as any).id) as string;
+  let isAuthorized = ['teacher', 'superadmin'].includes(session.user.role as string);
+  if (!isAuthorized && session.user.role === 'student' && userId) {
+    const { canCREditClass } = await import('@/lib/delegation');
+    isAuthorized = await canCREditClass(userId, classId);
+  }
+
+  if (!isAuthorized) {
+    return NextResponse.json({ error: 'Unauthorized to mark bulk attendance for this class' }, { status: 403 });
+  }
 
   const markStatus = status || 'P';
   let dbMethod = method;
