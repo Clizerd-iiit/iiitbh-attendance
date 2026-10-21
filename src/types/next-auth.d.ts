@@ -9,6 +9,8 @@ declare module 'next-auth' {
       verificationStatus?: string;
       profilePhotoUrl?:    string;
       isActive?:           boolean;
+      isPseudoadmin?:      boolean;
+      pseudoadminBranch?:  string;
     } & DefaultSession['user'];
   }
 }
@@ -20,6 +22,8 @@ declare module 'next-auth/jwt' {
     profileCompleted?:   boolean;
     verificationStatus?: string;
     profilePhotoUrl?:    string;
-      isActive?:           boolean;
+    isActive?:           boolean;
+    isPseudoadmin?:      boolean;
+    pseudoadminBranch?:  string;
   }
 }

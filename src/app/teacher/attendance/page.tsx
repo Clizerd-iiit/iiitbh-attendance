@@ -37,6 +37,13 @@ function AttendancePage() {
   // Local filters for students list
   const [branchFilter, setBranchFilter] = useState('');
   const [groupFilter, setGroupFilter] = useState('');
+
+  // Configurable security verification checkmarks
+  const [otpRequireGeofence, setOtpRequireGeofence] = useState(true);
+  const [otpRequireFace, setOtpRequireFace] = useState(true);
+
+  const [qrRequireGeofence, setQrRequireGeofence] = useState(true);
+  const [qrRequireFace, setQrRequireFace] = useState(true);
   
   const [pastSearchMonth, setPastSearchMonth] = useState(new Date().toISOString().slice(0, 7));
   const [pastSearchDate, setPastSearchDate] = useState('');
@@ -208,9 +215,12 @@ function AttendancePage() {
     if (!subjectId) return alert('Please select a subject first.');
     setLoading(true);
     setMethod(selectedMethod);
-    
+
+    const requireGeofence = selectedMethod === 'otp' ? otpRequireGeofence : (selectedMethod === 'qr' ? qrRequireGeofence : false);
+    const requireFace = selectedMethod === 'otp' ? otpRequireFace : (selectedMethod === 'qr' ? qrRequireFace : false);
+
     let latitude = null, longitude = null;
-    if (selectedMethod !== 'kiosk') {
+    if (selectedMethod !== 'kiosk' && requireGeofence) {
       try {
         const pos = await new Promise<GeolocationPosition>((res, rej) => 
           navigator.geolocation.getCurrentPosition(res, rej, { 
@@ -229,7 +239,17 @@ function AttendancePage() {
     const res = await fetch('/api/teacher/classes', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ subjectId, method: selectedMethod, latitude, longitude, geofenceRadius: radius, qrInterval: qrRefreshInterval, otpInterval: otpRefreshInterval }),
+      body: JSON.stringify({
+        subjectId,
+        method: selectedMethod,
+        latitude,
+        longitude,
+        geofenceRadius: requireGeofence ? radius : 0,
+        requireGeofence,
+        requireFace,
+        qrInterval: qrRefreshInterval,
+        otpInterval: otpRefreshInterval
+      }),
     });
     const data = await res.json();
     if (!res.ok) {
@@ -245,7 +265,7 @@ function AttendancePage() {
     if (selectedMethod === 'kiosk') {
       setShowKiosk(true);
     }
-  }, [subjectId, radius, qrRefreshInterval, otpRefreshInterval]);
+  }, [subjectId, radius, qrRefreshInterval, otpRefreshInterval, otpRequireGeofence, otpRequireFace, qrRequireGeofence, qrRequireFace]);
 
 
   const handleDeleteClass = async (classId: string) => {
@@ -368,19 +388,31 @@ function AttendancePage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-gray-900 mb-1">Target Branch (Optional)</label>
-                  <select value={branchFilter} onChange={e => setBranchFilter(e.target.value)}
+                  <select value={branchFilter} onChange={e => {
+                    const b = e.target.value;
+                    setBranchFilter(b);
+                    if (b !== 'CSE') setGroupFilter('');
+                  }}
                     className="w-full border border-gray-300 rounded-xl px-3 py-2.5 bg-white text-gray-900 font-semibold focus:outline-none focus:border-blue-500 text-sm shadow-sm">
                     <option value="">All Branches</option>
-                    <option value="CSE">CSE</option><option value="ECE">ECE</option><option value="MNC">MNC</option><option value="MEA">MEA</option>
+                    <option value="CSE">CSE</option><option value="ECE">ECE</option><option value="MNC">MNC</option><option value="MAE">MAE</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-gray-900 mb-1">Target Group (Optional)</label>
-                  <select value={groupFilter} onChange={e => setGroupFilter(e.target.value)}
-                    className="w-full border border-gray-300 rounded-xl px-3 py-2.5 bg-white text-gray-900 font-semibold focus:outline-none focus:border-blue-500 text-sm shadow-sm">
-                    <option value="">All Groups</option>
-                    <option value="G1">G1</option><option value="G2">G2</option><option value="G3">G3</option>
-                  </select>
+                  <label className="block text-xs font-bold text-gray-900 mb-1">Target Group {branchFilter === 'CSE' ? '(CSE Groups)' : '(Optional)'}</label>
+                  {branchFilter && branchFilter !== 'CSE' ? (
+                    <div className="w-full border border-dashed border-gray-300 rounded-xl px-3 py-2.5 bg-gray-50 text-gray-600 font-medium text-xs flex items-center justify-between">
+                      <span>All Groups (No group division)</span>
+                      <span className="text-[10px] bg-gray-200 text-gray-800 px-1.5 py-0.5 rounded font-bold">Auto</span>
+                    </div>
+                  ) : (
+                    <select value={groupFilter} onChange={e => setGroupFilter(e.target.value)}
+                      className="w-full border border-gray-300 rounded-xl px-3 py-2.5 bg-white text-gray-900 font-semibold focus:outline-none focus:border-blue-500 text-sm shadow-sm">
+                      <option value="">All Groups</option>
+                      <option value="G1">Group 1 (G1)</option>
+                      <option value="G2">Group 2 (G2)</option>
+                    </select>
+                  )}
                 </div>
               </div>
             </div>
@@ -397,46 +429,150 @@ function AttendancePage() {
               </button>
 
               {/* Method 2: OTP */}
-              <div className="bg-white p-6 rounded-2xl border-2 border-transparent hover:border-green-400 transition group flex flex-col justify-between">
+              <div className="bg-white p-6 rounded-2xl border-2 border-transparent hover:border-green-400 transition group flex flex-col justify-between shadow-sm">
                 <div>
-                  <div className="text-4xl mb-4">🔢</div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-2">OTP + Geofence + Face ID</h3>
-                  <p className="text-sm font-medium text-gray-800 mb-4">Students mark via portal. Big OTP is displayed here. High volume concurrent scanning.</p>
-                </div>
-                <div>
-                  <div className="flex items-center gap-3 mb-4">
-                    <span className="text-xs font-bold text-gray-900 shrink-0">Radius:</span>
-                    <input type="range" min="3" max="500" value={radius} onChange={e=>setRadius(Number(e.target.value))} className="flex-1 accent-green-500" />
-                    <div className="flex items-center gap-1 bg-white border border-gray-300 rounded-lg px-2 py-1 shadow-sm">
-                      <input type="number" min="3" max="500" value={radius} onChange={e=>{const v=Number(e.target.value); if(v>=3 && v<=5000) setRadius(v); else if (e.target.value==='') setRadius(0);}} className="w-12 text-sm font-extrabold text-gray-900 bg-transparent focus:outline-none text-right" />
-                      <span className="text-xs text-gray-900 font-bold">m</span>
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="text-4xl">🔢</div>
+                    <div className="flex flex-wrap gap-1">
+                      {otpRequireGeofence && (
+                        <span className="text-[11px] font-extrabold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 border border-blue-200">
+                          📍 Geofence
+                        </span>
+                      )}
+                      {otpRequireFace && (
+                        <span className="text-[11px] font-extrabold px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 border border-purple-200">
+                          👤 Face ID
+                        </span>
+                      )}
+                      {!otpRequireGeofence && !otpRequireFace && (
+                        <span className="text-[11px] font-extrabold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-200">
+                          ⚡ OTP Only
+                        </span>
+                      )}
                     </div>
                   </div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-1">
+                    OTP {otpRequireGeofence ? '+ Geofence ' : ''}{otpRequireFace ? '+ Face ID' : ''}{!otpRequireGeofence && !otpRequireFace ? 'Only' : ''}
+                  </h3>
+                  <p className="text-sm font-medium text-gray-700 mb-4">
+                    Students enter 4-digit code. Check or uncheck security verification layers:
+                  </p>
+
+                  {/* Security Checkmarks */}
+                  <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 mb-4 space-y-2">
+                    <label className="flex items-center gap-2.5 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={otpRequireGeofence}
+                        onChange={e => setOtpRequireGeofence(e.target.checked)}
+                        className="w-4 h-4 rounded text-green-600 accent-green-600 focus:ring-green-500 cursor-pointer"
+                      />
+                      <span className="text-xs font-bold text-gray-900 select-none">
+                        📍 Enable Geofence (Anti-Proxy GPS)
+                      </span>
+                    </label>
+                    <label className="flex items-center gap-2.5 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={otpRequireFace}
+                        onChange={e => setOtpRequireFace(e.target.checked)}
+                        className="w-4 h-4 rounded text-green-600 accent-green-600 focus:ring-green-500 cursor-pointer"
+                      />
+                      <span className="text-xs font-bold text-gray-900 select-none">
+                        👤 Enable Face ID (AI Face Recognition)
+                      </span>
+                    </label>
+                  </div>
+                </div>
+
+                <div>
+                  {otpRequireGeofence && (
+                    <div className="flex items-center gap-3 mb-4">
+                      <span className="text-xs font-bold text-gray-900 shrink-0">Radius:</span>
+                      <input type="range" min="3" max="500" value={radius} onChange={e=>setRadius(Number(e.target.value))} className="flex-1 accent-green-500" />
+                      <div className="flex items-center gap-1 bg-white border border-gray-300 rounded-lg px-2 py-1 shadow-sm">
+                        <input type="number" min="3" max="500" value={radius} onChange={e=>{const v=Number(e.target.value); if(v>=3 && v<=5000) setRadius(v); else if (e.target.value==='') setRadius(0);}} className="w-12 text-sm font-extrabold text-gray-900 bg-transparent focus:outline-none text-right" />
+                        <span className="text-xs text-gray-900 font-bold">m</span>
+                      </div>
+                    </div>
+                  )}
                   <button onClick={() => startClass('otp')} disabled={!subjectId || loading}
-                    className="w-full bg-green-600 text-white py-3 rounded-xl font-bold hover:bg-green-700 disabled:opacity-70">
+                    className="w-full bg-green-600 text-white py-3 rounded-xl font-bold hover:bg-green-700 disabled:opacity-70 transition shadow-sm">
                     Start with OTP
                   </button>
                 </div>
               </div>
 
               {/* Method 3: Scanner (QR) */}
-              <div className="bg-white p-6 rounded-2xl border-2 border-transparent hover:border-purple-400 transition group flex flex-col justify-between">
+              <div className="bg-white p-6 rounded-2xl border-2 border-transparent hover:border-purple-400 transition group flex flex-col justify-between shadow-sm">
                 <div>
-                  <div className="text-4xl mb-4">📱</div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-2">Scanner + Geofence + Face ID</h3>
-                  <p className="text-sm font-medium text-gray-800 mb-4">Students scan a big QR code via portal. High volume concurrent scanning.</p>
-                </div>
-                <div>
-                  <div className="flex items-center gap-3 mb-4">
-                    <span className="text-xs font-bold text-gray-900 shrink-0">Radius:</span>
-                    <input type="range" min="3" max="500" value={radius} onChange={e=>setRadius(Number(e.target.value))} className="flex-1 accent-purple-500" />
-                    <div className="flex items-center gap-1 bg-white border border-gray-300 rounded-lg px-2 py-1 shadow-sm">
-                      <input type="number" min="3" max="500" value={radius} onChange={e=>{const v=Number(e.target.value); if(v>=3 && v<=5000) setRadius(v); else if (e.target.value==='') setRadius(0);}} className="w-12 text-sm font-extrabold text-gray-900 bg-transparent focus:outline-none text-right" />
-                      <span className="text-xs text-gray-900 font-bold">m</span>
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="text-4xl">📱</div>
+                    <div className="flex flex-wrap gap-1">
+                      {qrRequireGeofence && (
+                        <span className="text-[11px] font-extrabold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 border border-blue-200">
+                          📍 Geofence
+                        </span>
+                      )}
+                      {qrRequireFace && (
+                        <span className="text-[11px] font-extrabold px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 border border-purple-200">
+                          👤 Face ID
+                        </span>
+                      )}
+                      {!qrRequireGeofence && !qrRequireFace && (
+                        <span className="text-[11px] font-extrabold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-200">
+                          ⚡ QR Only
+                        </span>
+                      )}
                     </div>
                   </div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-1">
+                    Scanner {qrRequireGeofence ? '+ Geofence ' : ''}{qrRequireFace ? '+ Face ID' : ''}{!qrRequireGeofence && !qrRequireFace ? 'Only' : ''}
+                  </h3>
+                  <p className="text-sm font-medium text-gray-700 mb-4">
+                    Students scan rotating QR code. Check or uncheck security verification layers:
+                  </p>
+
+                  {/* Security Checkmarks */}
+                  <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 mb-4 space-y-2">
+                    <label className="flex items-center gap-2.5 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={qrRequireGeofence}
+                        onChange={e => setQrRequireGeofence(e.target.checked)}
+                        className="w-4 h-4 rounded text-purple-600 accent-purple-600 focus:ring-purple-500 cursor-pointer"
+                      />
+                      <span className="text-xs font-bold text-gray-900 select-none">
+                        📍 Enable Geofence (Anti-Proxy GPS)
+                      </span>
+                    </label>
+                    <label className="flex items-center gap-2.5 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={qrRequireFace}
+                        onChange={e => setQrRequireFace(e.target.checked)}
+                        className="w-4 h-4 rounded text-purple-600 accent-purple-600 focus:ring-purple-500 cursor-pointer"
+                      />
+                      <span className="text-xs font-bold text-gray-900 select-none">
+                        👤 Enable Face ID (AI Face Recognition)
+                      </span>
+                    </label>
+                  </div>
+                </div>
+
+                <div>
+                  {qrRequireGeofence && (
+                    <div className="flex items-center gap-3 mb-4">
+                      <span className="text-xs font-bold text-gray-900 shrink-0">Radius:</span>
+                      <input type="range" min="3" max="500" value={radius} onChange={e=>setRadius(Number(e.target.value))} className="flex-1 accent-purple-500" />
+                      <div className="flex items-center gap-1 bg-white border border-gray-300 rounded-lg px-2 py-1 shadow-sm">
+                        <input type="number" min="3" max="500" value={radius} onChange={e=>{const v=Number(e.target.value); if(v>=3 && v<=5000) setRadius(v); else if (e.target.value==='') setRadius(0);}} className="w-12 text-sm font-extrabold text-gray-900 bg-transparent focus:outline-none text-right" />
+                        <span className="text-xs text-gray-900 font-bold">m</span>
+                      </div>
+                    </div>
+                  )}
                   <button onClick={() => startClass('qr')} disabled={!subjectId || loading}
-                    className="w-full bg-purple-600 text-white py-3 rounded-xl font-bold hover:bg-purple-700 disabled:opacity-70">
+                    className="w-full bg-purple-600 text-white py-3 rounded-xl font-bold hover:bg-purple-700 disabled:opacity-70 transition shadow-sm">
                     Start with QR
                   </button>
                 </div>

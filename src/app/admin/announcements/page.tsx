@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { useSession } from 'next-auth/react';
 import { Navbar } from '@/components/shared/Navbar';
 import { Announcement } from '@/types';
 import { format } from 'date-fns';
@@ -16,6 +17,7 @@ const typeConfig = {
 };
 
 export default function AdminAnnouncementsPage() {
+  const { data: session } = useSession();
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
   const [isCR, setIsCR] = useState(false);
@@ -23,6 +25,8 @@ export default function AdminAnnouncementsPage() {
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({ title: '', content: '', type: 'text', target_branch: '', target_group: '' });
+
+  const isSuperAdmin = session?.user?.role === 'superadmin';
   
   const postAnnouncement = async () => {
     if (!form.title) return alert('Title required');
@@ -124,14 +128,14 @@ export default function AdminAnnouncementsPage() {
                         By {teacher?.name || 'Unknown'} <span className="text-gray-700 font-normal">({teacher?.role === 'superadmin' ? 'Administrator' : teacher?.role === 'teacher' ? 'Professor' : 'Class Representative'})</span> {a.teacher_id === userId ? ' (You)' : ''}
                       </p>
                     </div>
-                    {(true) && (
+                    {(isSuperAdmin || a.teacher_id === userId) && (
                       <div className="flex gap-2">
                         <button onClick={() => {
                           setForm({ title: a.title, content: a.content || '', type: a.type, target_branch: a.target_branch || '', target_group: a.target_group || '' });
                           setEditingId(a.id);
                           setShowModal(true);
-                        }} className="text-xs text-blue-600 hover:bg-blue-50 px-2 py-1 rounded transition">Edit</button>
-                        <button onClick={() => deleteAnnouncement(a.id)} className="text-xs text-red-500 hover:bg-red-50 px-2 py-1 rounded transition">Delete</button>
+                        }} className="text-xs text-blue-600 hover:bg-blue-50 px-2 py-1 rounded transition font-bold">Edit</button>
+                        <button onClick={() => deleteAnnouncement(a.id)} className="text-xs text-red-600 hover:bg-red-50 px-2 py-1 rounded transition font-bold">Delete</button>
                       </div>
                     )}
                   </div>
@@ -152,15 +156,41 @@ export default function AdminAnnouncementsPage() {
               <textarea placeholder="Message..." value={form.content} onChange={e=>setForm({...form, content: e.target.value})} className="w-full border p-2 rounded h-24"/>
               
               <div className="grid grid-cols-2 gap-2">
-                <select value={form.target_branch} onChange={e=>setForm({...form, target_branch: e.target.value})} className="border p-2 rounded text-sm">
+                <select
+                  value={form.target_branch}
+                  onChange={e => {
+                    const b = e.target.value;
+                    setForm(prev => ({
+                      ...prev,
+                      target_branch: b,
+                      target_group: b !== 'CSE' ? '' : prev.target_group,
+                    }));
+                  }}
+                  className="border p-2 rounded text-sm bg-white font-medium"
+                >
                   <option value="">All Branches</option>
-                  <option value="CSE">CSE</option><option value="ECE">ECE</option><option value="MNC">MNC</option><option value="MAE">MAE</option>
+                  <option value="CSE">CSE</option>
+                  <option value="ECE">ECE</option>
+                  <option value="MNC">MNC</option>
+                  <option value="MAE">MAE</option>
                 </select>
-                <select value={form.target_group} onChange={e=>setForm({...form, target_group: e.target.value})} className="border p-2 rounded text-sm">
-                  <option value="">All Groups</option>
-                  <option value="G1">G1</option><option value="G2">G2</option><option value="G3">G3</option>
-                  <option value="G1A">G1A</option><option value="G1B">G1B</option><option value="G2A">G2A</option><option value="G2B">G2B</option>
-                </select>
+
+                {form.target_branch && form.target_branch !== 'CSE' ? (
+                  <div className="border border-dashed p-2 rounded text-xs bg-gray-50 text-gray-600 font-semibold flex items-center justify-between">
+                    <span>All Groups</span>
+                    <span className="text-[10px] bg-gray-200 px-1.5 py-0.5 rounded font-bold">Auto</span>
+                  </div>
+                ) : (
+                  <select
+                    value={form.target_group}
+                    onChange={e => setForm({ ...form, target_group: e.target.value })}
+                    className="border p-2 rounded text-sm bg-white font-medium"
+                  >
+                    <option value="">All Groups</option>
+                    <option value="G1">Group 1 (G1)</option>
+                    <option value="G2">Group 2 (G2)</option>
+                  </select>
+                )}
               </div>
             </div>
             <div className="flex gap-3 mt-5">

@@ -169,34 +169,40 @@ export default function TeacherReports() {
               <label className="text-xs font-bold text-gray-800">Branch:</label>
               <select 
                 value={branchFilter} 
-                onChange={e => setBranchFilter(e.target.value)}
+                onChange={e => {
+                  const b = e.target.value;
+                  setBranchFilter(b);
+                  if (b !== 'CSE') setGroupFilter('');
+                }}
                 className="border border-gray-300 rounded-xl px-3 py-1.5 text-xs font-bold text-gray-900 bg-white focus:outline-none focus:border-blue-500 shadow-sm"
               >
                 <option value="">All Branches</option>
                 <option value="CSE">CSE</option>
                 <option value="ECE">ECE</option>
                 <option value="MNC">MNC</option>
-                <option value="MEA">MEA</option>
+                <option value="MAE">MAE</option>
               </select>
             </div>
 
             {/* Group Filter */}
             <div className="flex items-center gap-1.5">
               <label className="text-xs font-bold text-gray-800">Group:</label>
-              <select 
-                value={groupFilter} 
-                onChange={e => setGroupFilter(e.target.value)}
-                className="border border-gray-300 rounded-xl px-3 py-1.5 text-xs font-bold text-gray-900 bg-white focus:outline-none focus:border-blue-500 shadow-sm"
-              >
-                <option value="">All Groups</option>
-                <option value="G1">G1</option>
-                <option value="G2">G2</option>
-                <option value="G3">G3</option>
-                <option value="G1A">G1A</option>
-                <option value="G1B">G1B</option>
-                <option value="G2A">G2A</option>
-                <option value="G2B">G2B</option>
-              </select>
+              {branchFilter && branchFilter !== 'CSE' ? (
+                <div className="border border-dashed border-gray-300 rounded-xl px-2.5 py-1 text-xs font-semibold text-gray-600 bg-gray-50 flex items-center gap-1">
+                  <span>All Groups</span>
+                  <span className="text-[10px] bg-gray-200 px-1 py-0.2 rounded font-bold">Auto</span>
+                </div>
+              ) : (
+                <select 
+                  value={groupFilter} 
+                  onChange={e => setGroupFilter(e.target.value)}
+                  className="border border-gray-300 rounded-xl px-3 py-1.5 text-xs font-bold text-gray-900 bg-white focus:outline-none focus:border-blue-500 shadow-sm"
+                >
+                  <option value="">All Groups</option>
+                  <option value="G1">Group 1 (G1)</option>
+                  <option value="G2">Group 2 (G2)</option>
+                </select>
+              )}
             </div>
 
             {/* Reset button */}

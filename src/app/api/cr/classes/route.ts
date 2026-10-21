@@ -5,6 +5,7 @@ import { supabaseAdmin } from '@/lib/supabase';
 import { v4 as uuidv4 } from 'uuid';
 import { autoCloseAbandonedClasses } from '@/lib/autoCloseClasses';
 import { hasActiveDelegationForSubject } from '@/lib/delegation';
+import { setClassSettings } from '@/lib/classSettings';
 
 export const dynamic = 'force-dynamic';
 
@@ -21,6 +22,8 @@ export async function POST(req: NextRequest) {
     latitude,
     longitude,
     geofenceRadius,
+    requireGeofence = true,
+    requireFace = true,
     qrInterval = 60,
     otpInterval = 60,
     delegationId,
@@ -52,6 +55,10 @@ export async function POST(req: NextRequest) {
   const qrCode = uuidv4();
   const otp = Math.floor(1000 + Math.random() * 9000).toString();
 
+  const finalLat = requireGeofence ? latitude : null;
+  const finalLon = requireGeofence ? longitude : null;
+  const finalRadius = requireGeofence ? (geofenceRadius || 150) : 0;
+
   const { data: newClass, error } = await supabaseAdmin
     .from('classes')
     .insert({
@@ -64,14 +71,20 @@ export async function POST(req: NextRequest) {
       otp_expires_at: new Date(now.getTime() + otpInterval * 1000).toISOString(),
       status: 'active',
       created_by: session.user.userId,
-      latitude,
-      longitude,
-      geofence_radius: geofenceRadius || 150,
+      latitude: finalLat,
+      longitude: finalLon,
+      geofence_radius: finalRadius,
     })
     .select()
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  await setClassSettings(newClass.id, {
+    require_geofence: !!requireGeofence,
+    require_face: !!requireFace,
+  });
+
   return NextResponse.json({ class: newClass, qrCode, otp });
 }
 

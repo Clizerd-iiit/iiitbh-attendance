@@ -154,19 +154,29 @@ useEffect(() => {
           <div className="px-6 py-4 border-b border-gray-200 flex flex-col sm:flex-row justify-between items-center gap-4">
             <div className="flex flex-col sm:flex-row items-center gap-3 w-full lg:w-auto">
               <span className="font-bold text-gray-900 whitespace-nowrap">{students.length} enrolled</span>
-              <select value={branchFilter} onChange={e=>setBranchFilter(e.target.value)} className="w-full sm:w-auto border border-gray-300 rounded-xl px-3 py-2 text-sm font-bold text-gray-900 focus:outline-none focus:border-blue-500 bg-white shadow-sm">
+              <select value={branchFilter} onChange={e=>{
+                const b = e.target.value;
+                setBranchFilter(b);
+                if (b !== 'CSE') setGroupFilter('');
+              }} className="w-full sm:w-auto border border-gray-300 rounded-xl px-3 py-2 text-sm font-bold text-gray-900 focus:outline-none focus:border-blue-500 bg-white shadow-sm">
                 <option value="" className="text-gray-900 font-bold">All Branches</option>
                 <option value="CSE" className="text-gray-900 font-bold">CSE</option>
                 <option value="ECE" className="text-gray-900 font-bold">ECE</option>
-                <option value="MEA" className="text-gray-900 font-bold">MEA</option>
+                <option value="MAE" className="text-gray-900 font-bold">MAE</option>
                 <option value="MNC" className="text-gray-900 font-bold">MNC</option>
               </select>
-              <select value={groupFilter} onChange={e=>setGroupFilter(e.target.value)} className="w-full sm:w-auto border border-gray-300 rounded-xl px-3 py-2 text-sm font-bold text-gray-900 focus:outline-none focus:border-blue-500 bg-white shadow-sm">
-                <option value="" className="text-gray-900 font-bold">All Groups</option>
-                <option value="G1" className="text-gray-900 font-bold">G1</option>
-                <option value="G2" className="text-gray-900 font-bold">G2</option>
-                <option value="G3" className="text-gray-900 font-bold">G3</option>
-              </select>
+              {branchFilter && branchFilter !== 'CSE' ? (
+                <div className="border border-dashed border-gray-300 rounded-xl px-3 py-2 text-xs font-semibold text-gray-600 bg-gray-50 flex items-center gap-1">
+                  <span>All Groups</span>
+                  <span className="text-[10px] bg-gray-200 px-1 py-0.2 rounded font-bold">Auto</span>
+                </div>
+              ) : (
+                <select value={groupFilter} onChange={e=>setGroupFilter(e.target.value)} className="w-full sm:w-auto border border-gray-300 rounded-xl px-3 py-2 text-sm font-bold text-gray-900 focus:outline-none focus:border-blue-500 bg-white shadow-sm">
+                  <option value="" className="text-gray-900 font-bold">All Groups</option>
+                  <option value="G1" className="text-gray-900 font-bold">Group 1 (G1)</option>
+                  <option value="G2" className="text-gray-900 font-bold">Group 2 (G2)</option>
+                </select>
+              )}
               <input type="text" placeholder="Search by name or roll no..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
                 className="w-full sm:w-56 border border-gray-300 rounded-xl px-3 py-2 text-sm font-semibold text-gray-900 focus:outline-none focus:border-blue-500 bg-white shadow-sm placeholder:text-gray-500" />
             </div>
@@ -262,6 +272,11 @@ useEffect(() => {
                     <td className="p-4 text-sm font-mono font-bold text-gray-900">{s.roll_no || '—'}</td>
                     <td className="p-4 font-bold text-gray-900 flex items-center gap-2">
                       {s.name}
+                      {s.signup_info?.is_pseudoadmin && (
+                        <span className="bg-gradient-to-r from-amber-500 to-amber-600 text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-sm flex items-center gap-1">
+                          <span>🛡️</span> Admin {s.signup_info?.pseudoadmin_branch ? `(${s.signup_info.pseudoadmin_branch})` : ''}
+                        </span>
+                      )}
                       {s.is_cr && <span className="bg-purple-100 text-purple-800 text-xs px-1.5 py-0.5 rounded font-extrabold border border-purple-200">CR</span>}
                     </td>
                     <td className="p-4 text-sm">

@@ -58,12 +58,14 @@ export async function POST(req: NextRequest) {
   let isCR = false;
   
   if (role === 'student') {
-        const { data: profile, error: profileErr } = await supabaseAdmin.from('users').select('is_cr').eq('id', session.user.userId).single();
-    if (profileErr && profileErr.message.includes('column users.is_cr does not exist')) {
-       return NextResponse.json({ error: 'Database migration required' }, { status: 500 });
+    const { data: profile, error: profileErr } = await supabaseAdmin.from('users').select('is_cr, signup_info').eq('id', session.user.userId).single();
+    if (profile?.signup_info?.is_pseudoadmin) {
+      // Allowed! Pseudoadmin can create global announcements like admin
+    } else if (profile?.is_cr) {
+      isCR = true;
+    } else {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
-    if (profile?.is_cr) isCR = true;
-    else return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   } else if (!['teacher','superadmin'].includes(role)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
@@ -103,8 +105,18 @@ export async function DELETE(req: NextRequest) {
   const role = session.user.role as string;
   let canDelete = false;
 
+  const isPseudoadmin = !!(session.user as any).isPseudoadmin;
+
   if (role === 'superadmin') {
     canDelete = true;
+  } else if (isPseudoadmin) {
+    // Pseudoadmin can only delete their own announcements
+    const { data: ann } = await supabaseAdmin.from('announcements').select('teacher_id').eq('id', id).single();
+    if (ann && ann.teacher_id === session.user.userId) {
+      canDelete = true;
+    } else {
+      return NextResponse.json({ error: 'Pseudoadmins cannot delete announcements posted by others' }, { status: 403 });
+    }
   } else if (role === 'teacher') {
     // Check if creator is me, or a CR
     const { data: ann } = await supabaseAdmin.from('announcements').select('teacher_id').eq('id', id).single();

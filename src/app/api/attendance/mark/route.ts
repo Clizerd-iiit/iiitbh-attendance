@@ -7,6 +7,7 @@ import { updateAttendanceInSheet } from '@/lib/sheets';
 import type { AttendanceStatus } from '@/types';
 
 import { rateLimit, getIp } from '@/lib/rate-limit';
+import { getClassSettings } from '@/lib/classSettings';
 export async function POST(req: NextRequest) {
   const ip = getIp(req);
   if (!rateLimit(ip, 10, 60000)) return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
@@ -76,8 +77,10 @@ export async function POST(req: NextRequest) {
     if (new Date(cls.qr_expires_at) < new Date())
       return NextResponse.json({ error: 'QR code expired' }, { status: 400 });
       
-    // Anti-Proxy Check
-    if (cls.latitude && cls.longitude) {
+    const classSettings = await getClassSettings(classId);
+
+    // Anti-Proxy Check (only if require_geofence is enabled)
+    if (classSettings.require_geofence && cls.latitude && cls.longitude) {
       if (!latitude || !longitude) return NextResponse.json({ error: 'Location required to mark attendance (Anti-Proxy enabled)' }, { status: 400 });
       const dist = getDistance(cls.latitude, cls.longitude, latitude, longitude);
       const allowedRadius = cls.geofence_radius || 150;
@@ -95,8 +98,10 @@ export async function POST(req: NextRequest) {
     if (new Date(cls.otp_expires_at) < new Date())
       return NextResponse.json({ error: 'OTP expired' }, { status: 400 });
       
-    // Anti-Proxy Check
-    if (cls.latitude && cls.longitude) {
+    const classSettings = await getClassSettings(classId);
+
+    // Anti-Proxy Check (only if require_geofence is enabled)
+    if (classSettings.require_geofence && cls.latitude && cls.longitude) {
       if (!latitude || !longitude) return NextResponse.json({ error: 'Location required to mark attendance (Anti-Proxy enabled)' }, { status: 400 });
       const dist = getDistance(cls.latitude, cls.longitude, latitude, longitude);
       const allowedRadius = cls.geofence_radius || 150;

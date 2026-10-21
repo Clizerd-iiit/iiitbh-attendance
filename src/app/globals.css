@@ -12,11 +12,102 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* ------------------------------------------------------------------ */
+/* DARK BROWNISH THEME (RICH ESPRESSO & WARM SAND)                    */
+/* ------------------------------------------------------------------ */
+html.dark {
+  --background: #17120e;
+  --foreground: #f6eee5;
+  color-scheme: dark;
+}
+
+html.dark body {
+  background-color: #17120e !important;
+  color: #f6eee5 !important;
+}
+
+html.dark .bg-white {
+  background-color: #241c16 !important;
+  color: #f6eee5 !important;
+  border-color: #3d3026 !important;
+}
+
+html.dark .bg-gray-50 {
+  background-color: #1a1410 !important;
+  color: #f6eee5 !important;
+}
+
+html.dark .bg-gray-100 {
+  background-color: #2a2018 !important;
+  color: #f6eee5 !important;
+}
+
+html.dark .text-gray-900,
+html.dark .text-gray-800 {
+  color: #fcf7f2 !important;
+}
+
+html.dark .text-gray-700,
+html.dark .text-gray-600 {
+  color: #d8c8ba !important;
+}
+
+html.dark .border-gray-200,
+html.dark .border-gray-300 {
+  border-color: #3f3126 !important;
+}
+
+html.dark input,
+html.dark select,
+html.dark textarea {
+  background-color: #2b211a !important;
+  color: #fcf7f2 !important;
+  border-color: #4a3a2d !important;
+}
+
+/* ------------------------------------------------------------------ */
+/* SNOWFALL LOOP ANIMATION                                            */
+/* ------------------------------------------------------------------ */
+@keyframes snowfall {
+  0% {
+    transform: translateY(-10vh) translateX(0);
+    opacity: 0;
   }
+  15% {
+    opacity: 0.85;
+  }
+  85% {
+    opacity: 0.85;
+  }
+  100% {
+    transform: translateY(105vh) translateX(30px);
+    opacity: 0;
+  }
+}
+
+.snow-flake {
+  position: absolute;
+  top: -20px;
+  background: white;
+  border-radius: 50%;
+  pointer-events: none;
+  filter: blur(0.5px);
+  animation: snowfall linear infinite;
+}
+
+/* Glassmorphism Classes */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+}
+
+html.dark .glass-panel {
+  background: rgba(36, 28, 22, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(82, 63, 48, 0.45);
 }
 
 body {

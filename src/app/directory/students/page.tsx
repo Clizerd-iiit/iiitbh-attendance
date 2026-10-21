@@ -74,14 +74,26 @@ export default function StudentDirectoryPage() {
           className="w-full text-black font-bold border-2 border-gray-300 bg-white rounded-xl px-4 py-3 mb-4 focus:outline-none focus:border-blue-500 shadow-sm text-base"/>
 
         <div className="flex flex-wrap gap-3 mb-6 items-center bg-white p-3 rounded-xl border shadow-sm">
-          <select value={branchFilter} onChange={e => setBranchFilter(e.target.value)} className="bg-gray-50 text-gray-900 font-bold border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-blue-500 shadow-sm">
+          <select value={branchFilter} onChange={e => {
+            const b = e.target.value;
+            setBranchFilter(b);
+            if (b !== 'CSE') setGroupFilter('');
+          }} className="bg-gray-50 text-gray-900 font-bold border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-blue-500 shadow-sm">
             <option value="">All Branches</option>
-            <option value="CSE">CSE</option><option value="ECE">ECE</option><option value="MNC">MNC</option><option value="MEA">MEA</option>
+            <option value="CSE">CSE</option><option value="ECE">ECE</option><option value="MNC">MNC</option><option value="MAE">MAE</option>
           </select>
-          <select value={groupFilter} onChange={e => setGroupFilter(e.target.value)} className="bg-gray-50 text-gray-900 font-bold border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-blue-500 shadow-sm">
-            <option value="">All Groups</option>
-            <option value="G1">G1</option><option value="G2">G2</option><option value="G3">G3</option>
-          </select>
+          {branchFilter && branchFilter !== 'CSE' ? (
+            <div className="bg-gray-50 text-gray-600 font-semibold border border-dashed border-gray-200 rounded-lg px-3 py-1.5 text-xs flex items-center gap-1">
+              <span>All Groups</span>
+              <span className="text-[10px] bg-gray-200 px-1 py-0.2 rounded font-bold">Auto</span>
+            </div>
+          ) : (
+            <select value={groupFilter} onChange={e => setGroupFilter(e.target.value)} className="bg-gray-50 text-gray-900 font-bold border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-blue-500 shadow-sm">
+              <option value="">All Groups</option>
+              <option value="G1">Group 1 (G1)</option>
+              <option value="G2">Group 2 (G2)</option>
+            </select>
+          )}
           <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="bg-gray-50 text-gray-900 font-bold border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-blue-500 shadow-sm">
             <option value="">Any Status</option>
             <option value="online">🟢 Online</option>
@@ -117,7 +129,12 @@ export default function StudentDirectoryPage() {
                     title={s.is_online ? 'Online' : 'Offline'}/>
                 </div>
                 <div className="flex items-center gap-2 justify-center truncate">
-                  <p className="font-medium text-gray-800 text-sm truncate">{s.name}</p>
+                  <p className="font-semibold text-gray-800 text-sm truncate">{s.name}</p>
+                  {s.signup_info?.is_pseudoadmin && (
+                    <span className="bg-gradient-to-r from-amber-500 to-amber-600 text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-sm flex items-center gap-1">
+                      <span>🛡️</span> Admin {s.signup_info?.pseudoadmin_branch ? `(${s.signup_info.pseudoadmin_branch})` : ''}
+                    </span>
+                  )}
                   {s.is_cr && <span className="bg-purple-100 text-purple-700 text-xs px-1.5 py-0.5 rounded font-bold">CR</span>}
                 </div>
                 {s.roll_no && <p className="text-xs text-gray-700 font-mono">{s.roll_no}</p>}

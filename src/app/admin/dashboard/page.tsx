@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { useSession } from 'next-auth/react';
 import { Navbar } from '@/components/shared/Navbar';
 import Link from 'next/link';
 
@@ -13,7 +14,11 @@ interface Stats {
 }
 
 export default function AdminDashboard() {
+  const { data: session } = useSession();
   const [stats, setStats] = useState<Stats>({ totalStudents: 0, totalTeachers: 0, totalSubjects: 0, classesToday: 0 });
+
+  const isSuperAdmin = session?.user?.role === 'superadmin';
+  const branchName = (session?.user as any)?.pseudoadminBranch;
 
   useEffect(() => {
     const fetchData = () => {
@@ -24,7 +29,7 @@ export default function AdminDashboard() {
     return () => clearInterval(interval);
   }, []);
 
-  const quickLinks = [
+  const superAdminLinks = [
     { href: '/admin/users', icon: '👥', label: 'Manage Users', desc: 'Add, edit, disable students & teachers' },
     { href: '/admin/subjects', icon: '📚', label: 'Subjects', desc: 'Create subjects & assign teachers' },
     { href: '/admin/logs', icon: '🔍', label: 'Audit Logs', desc: 'Full history of all changes' },
@@ -32,15 +37,33 @@ export default function AdminDashboard() {
     { href: '/admin/settings', icon: '⚙️', label: 'Settings', desc: 'Configure thresholds, domain, expiry' },
   ];
 
+  const pseudoAdminLinks = [
+    { href: '/admin/users', icon: '👥', label: 'Manage Users', desc: 'View and manage student details' },
+    { href: '/admin/subjects', icon: '📚', label: 'Subjects', desc: 'View subjects and course mappings' },
+  ];
+
+  const quickLinks = isSuperAdmin ? superAdminLinks : pseudoAdminLinks;
+
   return (
     <div className="min-h-screen bg-gray-50 md:pl-64 pt-14 md:pt-0">
       <Navbar />
       <div className="max-w-6xl mx-auto px-4 py-8">
         <div className="flex items-center gap-3 mb-8">
-          <span className="text-3xl">🦸</span>
+          <span className="text-3xl">{isSuperAdmin ? '🦸' : '🛡️'}</span>
           <div>
-            <h1 className="text-2xl font-bold text-gray-800">Super Admin Dashboard</h1>
-            <p className="text-gray-700">Full system control</p>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-bold text-gray-800">
+                {isSuperAdmin ? 'Super Admin Dashboard' : 'Admin Dashboard'}
+              </h1>
+              {!isSuperAdmin && (
+                <span className="bg-amber-100 text-amber-900 border border-amber-300 text-xs font-black px-2.5 py-0.5 rounded-full shadow-sm">
+                  🛡️ Admin {branchName ? `(${branchName})` : ''}
+                </span>
+              )}
+            </div>
+            <p className="text-gray-700">
+              {isSuperAdmin ? 'Full system control' : `Branch Administration Portal ${branchName ? `• ${branchName}` : ''}`}
+            </p>
           </div>
         </div>
 
@@ -60,7 +83,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Quick Links */}
-        <div className="grid md:grid-cols-3 gap-4 mb-8">
+        <div className={`grid gap-4 mb-8 ${isSuperAdmin ? 'md:grid-cols-3' : 'md:grid-cols-2'}`}>
           {quickLinks.map(link => (
             <Link key={link.href} href={link.href}
               className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition border hover:border-blue-300">

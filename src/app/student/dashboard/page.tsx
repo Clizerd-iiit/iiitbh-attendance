@@ -277,102 +277,136 @@ export default function StudentDashboard() {
   };
 
   const handleMarkAttendance = async () => {
-    if (!markForm.code) return alert("Enter OTP or QR Token");
-    if (!faceDescriptor) { alert("Face ID not found, please setup."); return; }
-    
+    const code = (markForm.code || '').trim();
+    if (!code) return alert("Enter OTP or QR Token");
+
     setMarking(true);
-    setFaceCheckState('loading_models');
 
-    let stream: MediaStream | null = null;
+    // 1. Fetch class verification requirements set by teacher
+    let reqs = { requireFace: true, requireGeofence: true };
     try {
-      await Promise.all([
-        faceapi.nets.tinyFaceDetector.loadFromUri('/models'),
-        faceapi.nets.faceLandmark68Net.loadFromUri('/models'),
-        faceapi.nets.faceRecognitionNet.loadFromUri('/models')
-      ]);
-
-      setFaceCheckState('scanning');
-      stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { width: { ideal: 640 }, height: { ideal: 640 }, facingMode: 'user' } 
-      });
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        const playPromise = videoRef.current.play();
-        if (playPromise !== undefined) playPromise.catch(() => {});
-      }
-
-      const studentName = session?.user?.name || 'Student';
-      const startTime = Date.now();
-      let matched = false;
-
-      // Realtime detection loop: scans face, draws square frame & name badge
-      while (Date.now() - startTime < 15000 && !matched) {
-        if (!videoRef.current || !canvasRef.current) break;
-
-        const video = videoRef.current;
-        const canvas = canvasRef.current;
-
-        if (video.readyState >= 2) {
-          const displaySize = {
-            width: video.videoWidth || 320,
-            height: video.videoHeight || 320
-          };
-          if (canvas.width !== displaySize.width || canvas.height !== displaySize.height) {
-            canvas.width = displaySize.width;
-            canvas.height = displaySize.height;
-          }
-          faceapi.matchDimensions(canvas, displaySize);
-
-          const detection = await faceapi.detectSingleFace(
-            video,
-            new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.5 })
-          ).withFaceLandmarks().withFaceDescriptor();
-
-          const ctx = canvas.getContext('2d');
-          if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-          if (detection) {
-            const resized = faceapi.resizeResults(detection, displaySize);
-            const box = resized.detection.box;
-
-            // Handle Multi-Angle vs Legacy Single-Angle mapping
-            let dist = 1.0;
-            if (Array.isArray(faceDescriptor[0])) {
-              for (let i = 0; i < faceDescriptor.length; i++) {
-                const currentDist = faceapi.euclideanDistance(detection.descriptor, new Float32Array(faceDescriptor[i]));
-                if (currentDist < dist) dist = currentDist;
-              }
-            } else {
-              dist = faceapi.euclideanDistance(detection.descriptor, new Float32Array(faceDescriptor));
-            }
-
-            if (dist <= 0.54) {
-              // Verified! Draw Green Square with Verified Name Badge
-              if (ctx) drawSquareFaceBox(ctx, box, studentName, 'verified');
-              matched = true;
-              setFaceCheckState('success');
-              // Hold for 1.2s so student clearly sees their square face and verified name badge
-              await new Promise(r => setTimeout(r, 1200));
-              break;
-            } else {
-              // Still scanning / matching face
-              if (ctx) drawSquareFaceBox(ctx, box, studentName, 'scanning');
-            }
-          }
-        }
-        await new Promise(r => setTimeout(r, 120));
-      }
-
-      if (stream) stream.getTracks().forEach(t => t.stop());
-
-      if (!matched) {
-        setFaceCheckState('failed');
+      const chkRes = await fetch(`/api/attendance/check-requirements?code=${encodeURIComponent(code)}`);
+      const chkData = await chkRes.json();
+      if (!chkRes.ok) {
         setMarking(false);
-        return alert("Face verification failed. Please look straight at the camera with clear lighting.");
+        return alert("❌ " + (chkData.error || "Active class not found or code expired."));
+      }
+      reqs = {
+        requireFace: chkData.requireFace !== false,
+        requireGeofence: chkData.requireGeofence !== false,
+      };
+    } catch (e) {
+      console.warn("Could not check class requirements, defaulting to standard verification", e);
+    }
+
+    // 2. Face ID check (only if teacher enabled Face ID)
+    if (reqs.requireFace) {
+      if (!faceDescriptor) {
+        setMarking(false);
+        alert("Face ID is required for this class session, but you have not registered Face ID yet. Please set it up in your profile.");
+        return;
       }
 
-      // If face passes, get GPS and execute
-      let lat = null, lon = null;
+      setFaceCheckState('loading_models');
+
+      let stream: MediaStream | null = null;
+      try {
+        await Promise.all([
+          faceapi.nets.tinyFaceDetector.loadFromUri('/models'),
+          faceapi.nets.faceLandmark68Net.loadFromUri('/models'),
+          faceapi.nets.faceRecognitionNet.loadFromUri('/models')
+        ]);
+
+        setFaceCheckState('scanning');
+        stream = await navigator.mediaDevices.getUserMedia({ 
+          video: { width: { ideal: 640 }, height: { ideal: 640 }, facingMode: 'user' } 
+        });
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          const playPromise = videoRef.current.play();
+          if (playPromise !== undefined) playPromise.catch(() => {});
+        }
+
+        const studentName = session?.user?.name || 'Student';
+        const startTime = Date.now();
+        let matched = false;
+
+        // Realtime detection loop: scans face, draws square frame & name badge
+        while (Date.now() - startTime < 15000 && !matched) {
+          if (!videoRef.current || !canvasRef.current) break;
+
+          const video = videoRef.current;
+          const canvas = canvasRef.current;
+
+          if (video.readyState >= 2) {
+            const displaySize = {
+              width: video.videoWidth || 320,
+              height: video.videoHeight || 320
+            };
+            if (canvas.width !== displaySize.width || canvas.height !== displaySize.height) {
+              canvas.width = displaySize.width;
+              canvas.height = displaySize.height;
+            }
+            faceapi.matchDimensions(canvas, displaySize);
+
+            const detection = await faceapi.detectSingleFace(
+              video,
+              new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.5 })
+            ).withFaceLandmarks().withFaceDescriptor();
+
+            const ctx = canvas.getContext('2d');
+            if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            if (detection) {
+              const resized = faceapi.resizeResults(detection, displaySize);
+              const box = resized.detection.box;
+
+              // Handle Multi-Angle vs Legacy Single-Angle mapping
+              let dist = 1.0;
+              if (Array.isArray(faceDescriptor[0])) {
+                for (let i = 0; i < faceDescriptor.length; i++) {
+                  const currentDist = faceapi.euclideanDistance(detection.descriptor, new Float32Array(faceDescriptor[i]));
+                  if (currentDist < dist) dist = currentDist;
+                }
+              } else {
+                dist = faceapi.euclideanDistance(detection.descriptor, new Float32Array(faceDescriptor));
+              }
+
+              if (dist <= 0.54) {
+                // Verified! Draw Green Square with Verified Name Badge
+                if (ctx) drawSquareFaceBox(ctx, box, studentName, 'verified');
+                matched = true;
+                setFaceCheckState('success');
+                // Hold for 1.2s so student clearly sees their square face and verified name badge
+                await new Promise(r => setTimeout(r, 1200));
+                break;
+              } else {
+                // Still scanning / matching face
+                if (ctx) drawSquareFaceBox(ctx, box, studentName, 'scanning');
+              }
+            }
+          }
+          await new Promise(r => setTimeout(r, 120));
+        }
+
+        if (stream) stream.getTracks().forEach(t => t.stop());
+
+        if (!matched) {
+          setFaceCheckState('failed');
+          setMarking(false);
+          return alert("Face verification failed. Please look straight at the camera with clear lighting.");
+        }
+      } catch (e) {
+        console.error(e);
+        if (stream) stream.getTracks().forEach(t => t.stop());
+        setFaceCheckState('failed'); setMarking(false);
+        return alert("Error accessing camera or AI models");
+      }
+    }
+
+    // 3. Geofence Location check (only if teacher enabled Geofence)
+    let lat = null, lon = null;
+    if (reqs.requireGeofence) {
       try {
         const isMobile = typeof navigator !== 'undefined' && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
         
@@ -420,14 +454,10 @@ export default function StudentDashboard() {
           return;
         }
       }
-      await executeAttendance(lat, lon);
-      
-    } catch (e) {
-      console.error(e);
-      if (stream) stream.getTracks().forEach(t => t.stop());
-      setFaceCheckState('failed'); setMarking(false);
-      alert("Error accessing camera or AI models");
     }
+
+    // 4. Submit attendance directly
+    await executeAttendance(lat, lon);
   };
 
   const submitVote = async (index: number) => {

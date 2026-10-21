@@ -6,6 +6,7 @@ import { useSession, signOut } from 'next-auth/react';
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { PhotoZoom } from './PhotoZoom';
+import { ThemeToggle } from './ThemeToggle';
 
 const SIDEBAR_ITEMS: Record<string, {href: string, icon: string, label: string}[]> = {
   superadmin: [
@@ -56,8 +57,30 @@ export function Navbar() {
   
   const rawRole = session?.user?.role as string;
   const role = rawRole === 'admin' ? 'superadmin' : rawRole;
-  const items = SIDEBAR_ITEMS[role] || [];
   
+  const isPseudoadmin = !!(session?.user as any)?.isPseudoadmin;
+  const pseudoadminBranch = (session?.user as any)?.pseudoadminBranch;
+
+  // For pseudoadmin students, surface Admin tools prominently
+  let items = SIDEBAR_ITEMS[role] || [];
+  if (isPseudoadmin && role === 'student') {
+    items = [
+      { href: '/admin/dashboard', icon: '📊', label: 'Admin Dashboard' },
+      { href: '/admin/verify', icon: '⏳', label: 'Verify Users' },
+      { href: '/admin/announcements', icon: '📢', label: 'Announcements' },
+      { href: '/admin/users', icon: '👥', label: 'All Users' },
+      { href: '/admin/subjects', icon: '📚', label: 'Subjects' },
+      { href: '/student/dashboard', icon: '📱', label: 'Student Portal' },
+      { href: '/student/take-attendance', icon: '📋', label: 'Take Attendance' },
+      { href: '/student/history', icon: '📅', label: 'My Attendance' },
+      { href: '/admin/logs', icon: '🕵️', label: 'Audit Logs' },
+      { href: '/directory/teachers', icon: '🎓', label: 'Teachers' },
+      { href: '/directory/students', icon: '🧑‍🎓', label: 'Students' },
+      { href: '/profile', icon: '👤', label: 'My Profile' },
+      { href: '/student/contact', icon: '🎧', label: 'Contact Admin' },
+    ];
+  }
+
   const [open, setOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [counts, setCounts] = useState<any>({});
@@ -262,9 +285,20 @@ export function Navbar() {
           {!collapsed && (
             <div className="min-w-0">
               <p className="text-sm font-bold text-gray-900 truncate">{name}</p>
-              <p className="text-xs text-gray-800 font-semibold truncate">{displayRole}</p>
+              {isPseudoadmin ? (
+                <span className="bg-gradient-to-r from-amber-500 to-amber-600 text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-sm flex items-center gap-1 w-fit mt-0.5">
+                  <span>🛡️</span> Admin {pseudoadminBranch ? `(${pseudoadminBranch})` : ''}
+                </span>
+              ) : (
+                <p className="text-xs text-gray-800 font-semibold truncate">{displayRole}</p>
+              )}
             </div>
           )}
+        </div>
+
+        {/* Theme Switcher Toggle */}
+        <div className="pt-1 pb-1">
+          <ThemeToggle className="w-full justify-center" />
         </div>
 
         <button onClick={() => { if(window.confirm('Are you sure you want to exit?')) signOut({ callbackUrl: '/auth/login' }) }}
@@ -313,6 +347,9 @@ export function Navbar() {
             <Image unoptimized={true} src="/iiitbh-logo.jpg" alt="IIIT BH" fill className="object-cover"/>
           </div>
           <span className="font-bold text-gray-800 text-sm">AMS</span>
+        </div>
+        <div className="ml-auto">
+          <ThemeToggle />
         </div>
       </div>
 

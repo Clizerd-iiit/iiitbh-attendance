@@ -96,18 +96,29 @@ export default function AdminUsers() {
           
           {(filter === 'student' || filter === 'all') && (
             <>
-              <select value={branchFilter} onChange={e => setBranchFilter(e.target.value)} className="border border-gray-200 rounded-xl px-3 py-1.5 text-sm bg-white outline-none focus:border-blue-500">
+              <select value={branchFilter} onChange={e => {
+                const b = e.target.value;
+                setBranchFilter(b);
+                if (b !== 'CSE') setGroupFilter('');
+              }} className="border border-gray-200 rounded-xl px-3 py-1.5 text-sm bg-white outline-none focus:border-blue-500 font-semibold">
                 <option value="">All Branches</option>
                 <option value="CSE">CSE</option>
                 <option value="ECE">ECE</option>
-                <option value="MEA">MEA</option>
+                <option value="MAE">MAE</option>
                 <option value="MNC">MNC</option>
               </select>
-              <select value={groupFilter} onChange={e => setGroupFilter(e.target.value)} className="border border-gray-200 rounded-xl px-3 py-1.5 text-sm bg-white outline-none focus:border-blue-500">
-                <option value="">All Groups</option>
-                <option value="G1">G1</option>
-                <option value="G2">G2</option>
-              </select>
+              {branchFilter && branchFilter !== 'CSE' ? (
+                <div className="border border-dashed border-gray-200 rounded-xl px-3 py-1.5 text-xs font-semibold text-gray-500 bg-gray-50 flex items-center gap-1">
+                  <span>All Groups</span>
+                  <span className="text-[10px] bg-gray-200 px-1 py-0.2 rounded font-bold">Auto</span>
+                </div>
+              ) : (
+                <select value={groupFilter} onChange={e => setGroupFilter(e.target.value)} className="border border-gray-200 rounded-xl px-3 py-1.5 text-sm bg-white outline-none focus:border-blue-500 font-semibold">
+                  <option value="">All Groups</option>
+                  <option value="G1">G1</option>
+                  <option value="G2">G2</option>
+                </select>
+              )}
             </>
           )}
         </div>
@@ -140,6 +151,11 @@ export default function AdminUsers() {
                       <div>
                         <div className="flex items-center gap-2">
                           <p className="font-semibold text-gray-800 text-sm">{u.name}</p>
+                          {u.signup_info?.is_pseudoadmin && (
+                            <span className="bg-gradient-to-r from-amber-500 to-amber-600 text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-sm flex items-center gap-1">
+                              <span>🛡️</span> Admin {u.signup_info?.pseudoadmin_branch ? `(${u.signup_info.pseudoadmin_branch})` : ''}
+                            </span>
+                          )}
                           {(u as any).is_cr && <span className="bg-purple-100 text-purple-700 text-xs px-1.5 py-0.5 rounded font-bold border border-purple-200">CR</span>}
                         </div>
                         <p className="text-xs text-gray-700">{u.email}</p>

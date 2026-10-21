@@ -1,8 +1,10 @@
 'use client';
 import { signIn, useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import Image from 'next/image';
+import { ThemeToggle } from '@/components/shared/ThemeToggle';
+import { Lock, Sparkles, Building2, HelpCircle } from 'lucide-react';
 
 export default function LoginPage() {
   const { data: session } = useSession();
@@ -16,7 +18,8 @@ export default function LoginPage() {
     if (session?.user?.role) {
       const r = session.user.role;
       if (!session.user.profileCompleted && r !== 'superadmin') {
-        router.push('/profile/setup'); return;
+        router.push('/profile/setup');
+        return;
       }
       if (r === 'superadmin') router.push('/admin/dashboard');
       else if (r === 'teacher') router.push('/teacher/dashboard');
@@ -31,7 +34,7 @@ export default function LoginPage() {
       await fetch('/api/public-issue', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: issueName, details: issueDetails })
+        body: JSON.stringify({ name: issueName, details: issueDetails }),
       });
       setIssueStatus('success');
       setTimeout(() => {
@@ -45,14 +48,73 @@ export default function LoginPage() {
     }
   };
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-indigo-900 flex items-center justify-center p-4 relative">
-      <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md text-center">
+  // Generate lightweight looped snowfall particles
+  const snowflakes = useMemo(() => {
+    return Array.from({ length: 38 }).map((_, i) => ({
+      id: i,
+      left: `${(i * 2.7) % 100}%`,
+      size: `${(i % 5) + 3}px`,
+      duration: `${6 + (i % 6) * 1.2}s`,
+      delay: `${(i * 0.35) % 5}s`,
+      opacity: 0.35 + (i % 5) * 0.12,
+    }));
+  }, []);
 
-        {/* College Logo — circular */}
+  return (
+    <div className="min-h-screen relative flex items-center justify-center p-4 overflow-hidden bg-slate-950">
+      {/* ── Background Scenery Layer (IIIT Bhagalpur Campus) ── */}
+      <div className="absolute inset-0 z-0">
+        <Image
+          src="/iiitbh-campus.jpg"
+          alt="IIIT Bhagalpur Campus"
+          fill
+          priority
+          className="object-cover object-center scale-105 filter contrast-125 brightness-75 transition-all duration-700"
+        />
+
+        {/* White Architectural Sketch & Frosted Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-blue-950/60 to-slate-900/80 backdrop-blur-[2px]" />
+
+        {/* Artistic line sketch overlay texture */}
+        <div
+          className="absolute inset-0 opacity-25 mix-blend-screen pointer-events-none bg-center bg-cover"
+          style={{
+            backgroundImage: "radial-gradient(circle at center, rgba(255,255,255,0.2) 1px, transparent 1px)",
+            backgroundSize: "24px 24px",
+          }}
+        />
+      </div>
+
+      {/* ── Snowfall Loop Particles ── */}
+      <div className="absolute inset-0 pointer-events-none z-10 overflow-hidden">
+        {snowflakes.map(flake => (
+          <span
+            key={flake.id}
+            className="snow-flake"
+            style={{
+              left: flake.left,
+              width: flake.size,
+              height: flake.size,
+              animationDuration: flake.duration,
+              animationDelay: flake.delay,
+              opacity: flake.opacity,
+            }}
+          />
+        ))}
+      </div>
+
+      {/* ── Top Bar with Theme Toggle ── */}
+      <div className="absolute top-4 right-4 z-30">
+        <ThemeToggle className="glass-panel" />
+      </div>
+
+      {/* ── Main Glassmorphism Login Card ── */}
+      <div className="relative z-20 w-full max-w-md glass-panel rounded-3xl p-8 sm:p-9 shadow-2xl text-center border border-white/40 dark:border-amber-900/40">
+        {/* College Logo */}
         <div className="flex flex-col items-center mb-6">
-          <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-blue-200 shadow-lg mb-4">
-            <Image unoptimized={true}
+          <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-white/80 dark:border-amber-700/60 shadow-xl mb-4 relative bg-white">
+            <Image
+              unoptimized={true}
               src="/iiitbh-logo.jpg"
               alt="IIIT Bhagalpur Logo"
               width={96}
@@ -60,60 +122,118 @@ export default function LoginPage() {
               className="object-cover w-full h-full"
             />
           </div>
-          <h1 className="text-2xl font-bold text-gray-800">IIIT Bhagalpur</h1>
-          <p className="text-blue-600 font-medium text-sm mt-0.5">Attendance Management System</p>
-        </div>
-
-        <div className="bg-blue-50 rounded-xl p-3 mb-6">
-          <p className="text-sm text-blue-700">
-            🔒 Use your <strong>@iiitbh.ac.in</strong> college email to login
+          <h1 className="text-2xl sm:text-3xl font-black text-gray-900 dark:text-amber-100 tracking-tight">
+            IIIT Bhagalpur
+          </h1>
+          <p className="text-blue-600 dark:text-amber-400 font-extrabold text-sm mt-0.5 flex items-center gap-1.5 justify-center">
+            <Sparkles className="w-4 h-4" /> Attendance Management System
           </p>
         </div>
 
+        {/* Email Domain Info Pill */}
+        <div className="bg-blue-50/90 dark:bg-amber-950/50 border border-blue-200/80 dark:border-amber-800/60 rounded-2xl p-3.5 mb-6 text-left shadow-sm">
+          <p className="text-xs sm:text-sm text-blue-900 dark:text-amber-200 font-bold flex items-center gap-2">
+            <Lock className="w-4 h-4 shrink-0 text-blue-600 dark:text-amber-400" />
+            <span>
+              Use your official <strong>@iiitbh.ac.in</strong> email account to sign in.
+            </span>
+          </p>
+        </div>
+
+        {/* Sign in with Google Button */}
         <button
           onClick={() => signIn('google', { callbackUrl: '/' })}
-          className="w-full flex items-center justify-center gap-3 bg-white border-2 border-gray-200 hover:border-blue-400 hover:bg-blue-50 text-gray-800 font-medium py-3 px-6 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md"
+          className="w-full flex items-center justify-center gap-3 bg-white dark:bg-[#34271f] border-2 border-gray-200 dark:border-[#4f3b2d] hover:border-blue-500 dark:hover:border-amber-500 hover:bg-blue-50 dark:hover:bg-[#413127] text-gray-900 dark:text-amber-100 font-black py-3.5 px-6 rounded-2xl transition-all duration-200 shadow-md hover:shadow-xl active:scale-[0.98] cursor-pointer"
         >
-          <svg className="w-5 h-5" viewBox="0 0 24 24">
-            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+          <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24">
+            <path
+              fill="#4285F4"
+              d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+            />
+            <path
+              fill="#34A853"
+              d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+            />
+            <path
+              fill="#FBBC05"
+              d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+            />
+            <path
+              fill="#EA4335"
+              d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+            />
           </svg>
-          Sign in with Google
+          <span className="text-sm sm:text-base">Sign in with Google</span>
         </button>
 
-        <p className="text-sm text-gray-800 font-medium mt-6">
-          Having trouble?{' '}
-          <button onClick={() => setShowIssueModal(true)} className="text-blue-700 hover:underline font-bold">
-            Contact the system administrator
+        {/* Help Link */}
+        <p className="text-xs sm:text-sm text-gray-700 dark:text-amber-200/80 font-bold mt-6">
+          Having trouble signing in?{' '}
+          <button
+            onClick={() => setShowIssueModal(true)}
+            className="text-blue-700 dark:text-amber-400 hover:underline font-black cursor-pointer inline-flex items-center gap-1"
+          >
+            <span>Contact Administrator</span>
           </button>
         </p>
       </div>
 
+      {/* ── Report Issue Modal ── */}
       {showIssueModal && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-sm relative mx-auto my-auto">
-            <button onClick={() => setShowIssueModal(false)} className="absolute top-4 right-4 text-gray-700 hover:text-gray-900 font-bold text-lg">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 overflow-y-auto">
+          <div className="glass-panel rounded-3xl p-6 sm:p-7 w-full max-w-sm relative mx-auto my-auto shadow-2xl border border-white/50 dark:border-amber-900/50">
+            <button
+              onClick={() => setShowIssueModal(false)}
+              className="absolute top-4 right-4 text-gray-500 hover:text-gray-900 dark:hover:text-white font-bold text-lg w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100 dark:hover:bg-amber-900/40 transition"
+            >
               ✕
             </button>
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Report an Issue</h2>
+            <h2 className="text-xl font-black text-gray-900 dark:text-amber-100 mb-2 flex items-center gap-2">
+              <HelpCircle className="w-5 h-5 text-amber-500" />
+              Report an Issue
+            </h2>
+            <p className="text-xs text-gray-600 dark:text-gray-400 font-medium mb-4">
+              Describe your sign-in problem. The administration will assist you shortly.
+            </p>
+
             {issueStatus === 'success' ? (
-              <div className="bg-green-50 text-green-800 p-4 rounded-lg text-sm mb-2 text-center font-semibold border border-green-200">
+              <div className="bg-green-50 dark:bg-green-950/60 text-green-900 dark:text-green-200 p-4 rounded-2xl text-xs sm:text-sm mb-2 text-center font-bold border border-green-200 dark:border-green-800">
                 ✅ Issue sent to Administrator successfully!
               </div>
             ) : (
-              <form onSubmit={submitIssue} className="flex flex-col gap-4 text-left">
+              <form onSubmit={submitIssue} className="flex flex-col gap-3.5 text-left">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-800 mb-1">Your Name / Roll No</label>
-                  <input required value={issueName} onChange={e => setIssueName(e.target.value)} type="text" className="w-full border border-gray-300 rounded-lg p-2 text-gray-900 bg-white focus:ring focus:ring-blue-200 outline-none placeholder:text-gray-500" placeholder="E.g. Rahul (2101001)" />
+                  <label className="block text-xs font-black text-gray-900 dark:text-gray-200 uppercase tracking-wider mb-1">
+                    Your Name / Roll No
+                  </label>
+                  <input
+                    required
+                    value={issueName}
+                    onChange={e => setIssueName(e.target.value)}
+                    type="text"
+                    className="w-full border border-gray-300 dark:border-amber-900/50 rounded-xl p-2.5 text-sm font-semibold text-gray-900 dark:text-white bg-white/80 dark:bg-[#2b211a] focus:ring focus:ring-amber-200 outline-none placeholder:text-gray-500"
+                    placeholder="E.g. Rahul (2101001)"
+                  />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-800 mb-1">Problem Details</label>
-                  <textarea required value={issueDetails} onChange={e => setIssueDetails(e.target.value)} className="w-full border border-gray-300 rounded-lg p-2 text-gray-900 bg-white focus:ring focus:ring-blue-200 outline-none placeholder:text-gray-500" rows={4} placeholder="Describe your issue here..." />
+                  <label className="block text-xs font-black text-gray-900 dark:text-gray-200 uppercase tracking-wider mb-1">
+                    Problem Details
+                  </label>
+                  <textarea
+                    required
+                    rows={3}
+                    value={issueDetails}
+                    onChange={e => setIssueDetails(e.target.value)}
+                    className="w-full border border-gray-300 dark:border-amber-900/50 rounded-xl p-2.5 text-sm font-semibold text-gray-900 dark:text-white bg-white/80 dark:bg-[#2b211a] focus:ring focus:ring-amber-200 outline-none placeholder:text-gray-500"
+                    placeholder="Explain what is going wrong..."
+                  />
                 </div>
-                <button disabled={issueStatus === 'submitting'} type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg transition disabled:opacity-50">
-                  {issueStatus === 'submitting' ? 'Sending...' : 'Submit Issue'}
+                <button
+                  disabled={issueStatus === 'submitting'}
+                  type="submit"
+                  className="w-full bg-blue-600 dark:bg-amber-600 hover:bg-blue-700 dark:hover:bg-amber-700 text-white font-black py-2.5 rounded-xl transition shadow active:scale-95 disabled:opacity-50 text-sm mt-1 cursor-pointer"
+                >
+                  {issueStatus === 'submitting' ? 'Submitting...' : 'Send to Admin'}
                 </button>
               </form>
             )}

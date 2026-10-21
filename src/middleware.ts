@@ -27,14 +27,28 @@ export default withAuth(
     }
 
     // Role-based route protection
-    // Teachers can view /admin/logs and /admin/verify
-        if (pathname.startsWith('/admin/logs') && ['student', 'teacher', 'superadmin'].includes(role)) {
+    const isPseudoadmin = !!token?.isPseudoadmin;
+
+    // Pseudoadmin allowed routes
+    if (isPseudoadmin && (
+      pathname === '/admin/dashboard' ||
+      pathname.startsWith('/admin/verify') ||
+      pathname.startsWith('/admin/announcements') ||
+      pathname.startsWith('/admin/users') ||
+      pathname.startsWith('/admin/subjects') ||
+      pathname.startsWith('/admin/logs')
+    )) {
+      return NextResponse.next();
+    }
+
+    // Teachers can view /admin/logs, /admin/verify, /admin/appoint
+    if (pathname.startsWith('/admin/logs') && ['student', 'teacher', 'superadmin'].includes(role)) {
       return NextResponse.next();
     }
     if (pathname.startsWith('/admin/verify') && ['teacher', 'superadmin'].includes(role)) {
       return NextResponse.next();
     }
-    if (pathname.startsWith('/admin/appoint') && ['teacher', 'superadmin'].includes(role)) {
+    if (pathname.startsWith('/admin/appoint') && role === 'superadmin') {
       return NextResponse.next();
     }
     if (pathname.startsWith('/admin') && role !== 'superadmin') {

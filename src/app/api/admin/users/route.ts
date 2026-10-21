@@ -33,7 +33,7 @@ export async function GET(req: NextRequest) {
   const subjectId = searchParams.get('subject_id');
 
   const userId = (session.user.userId || (session.user as any).id) as string;
-  let isAllowed = ['teacher', 'superadmin'].includes(session.user.role as string);
+  let isAllowed = ['teacher', 'superadmin'].includes(session.user.role as string) || !!(session.user as any).isPseudoadmin;
   if (!isAllowed && session.user.role === 'student' && subjectId && userId) {
     const { hasActiveDelegationForSubject } = await import('@/lib/delegation');
     isAllowed = await hasActiveDelegationForSubject(userId, subjectId);
@@ -120,22 +120,65 @@ export async function PATCH(req: NextRequest) {
     Object.keys(updates).forEach(k => { if (!safeKeys.includes(k)) delete updates[k]; });
   }
 
-  // Extract branch/group and move to signup_info
-  if (updates.branch !== undefined || updates.group !== undefined || updates.sub_group !== undefined) {
+  // Extract branch/group/pseudoadmin and move to signup_info
+  if (
+    updates.branch !== undefined ||
+    updates.group !== undefined ||
+    updates.sub_group !== undefined ||
+    updates.is_pseudoadmin !== undefined ||
+    updates.pseudoadmin_branch !== undefined
+  ) {
     const { data: user } = await supabaseAdmin.from('users').select('signup_info').eq('id', id).single();
     const info = { ...(user?.signup_info || {}) };
     if (updates.branch !== undefined) { info.branch = updates.branch; delete updates.branch; }
     if (updates.group !== undefined) { info.group = updates.group; delete updates.group; }
     if (updates.sub_group !== undefined) { info.sub_group = updates.sub_group; delete updates.sub_group; }
+    
+    if (updates.is_pseudoadmin !== undefined) {
+      // Only real superadmin can appoint or revoke pseudoadmin
+      if (session.user.role !== 'superadmin') {
+        return NextResponse.json({ error: 'Only SuperAdmin can appoint Branch Admins' }, { status: 403 });
+      }
+      info.is_pseudoadmin = !!updates.is_pseudoadmin;
+      info.pseudoadmin_branch = updates.pseudoadmin_branch || info.branch || 'CSE';
+      delete updates.is_pseudoadmin;
+      delete updates.pseudoadmin_branch;
+
+      // Also sync to system_settings for fast indexing
+      if (info.is_pseudoadmin) {
+        await supabaseAdmin.from('system_settings').upsert({
+          key: `pseudoadmin_${id}`,
+          value: JSON.stringify({
+            is_pseudoadmin: true,
+            branch: info.pseudoadmin_branch,
+            appointed_at: new Date().toISOString(),
+            appointed_by: session.user.userId,
+          }),
+          updated_at: new Date().toISOString(),
+        });
+      } else {
+        await supabaseAdmin.from('system_settings').delete().eq('key', `pseudoadmin_${id}`);
+      }
+    }
     updates.signup_info = info;
   }
 
   const { error } = await supabaseAdmin.from('users').update(updates).eq('id', id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
+  let auditAction = 'UPDATE_USER';
+  if (body.is_pseudoadmin !== undefined) {
+    auditAction = body.is_pseudoadmin ? 'APPOINT_BRANCH_ADMIN' : 'REVOKE_BRANCH_ADMIN';
+  } else if (body.is_cr !== undefined) {
+    auditAction = body.is_cr ? 'APPOINT_CR' : 'REVOKE_CR';
+  }
+
   await logAudit({
-    userId: session.user.userId!, action: 'UPDATE_USER',
-    tableName: 'users', recordId: id, newValue: updates,
+    userId: session.user.userId!,
+    action: auditAction,
+    tableName: 'users',
+    recordId: id,
+    newValue: { ...updates, is_pseudoadmin: body.is_pseudoadmin, branch: body.pseudoadmin_branch },
   });
 
   return NextResponse.json({ success: true });

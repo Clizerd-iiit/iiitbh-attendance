@@ -63,6 +63,13 @@ export default function CRTakeAttendancePage() {
   const [groupFilter, setGroupFilter] = useState('');
   const [searchStudent, setSearchStudent] = useState('');
 
+  // Configurable security verification checkmarks
+  const [otpRequireGeofence, setOtpRequireGeofence] = useState(true);
+  const [otpRequireFace, setOtpRequireFace] = useState(true);
+
+  const [qrRequireGeofence, setQrRequireGeofence] = useState(true);
+  const [qrRequireFace, setQrRequireFace] = useState(true);
+
   // Bulk Attendance Caution Modal state
   const [showBulkCaution, setShowBulkCaution] = useState(false);
   const [bulkCautionAccepted, setBulkCautionAccepted] = useState(false);
@@ -192,10 +199,13 @@ export default function CRTakeAttendancePage() {
     setLoading(true);
     setMethod(selectedMethod);
 
+    const requireGeofence = selectedMethod === 'otp' ? otpRequireGeofence : (selectedMethod === 'qr' ? qrRequireGeofence : false);
+    const requireFace = selectedMethod === 'otp' ? otpRequireFace : (selectedMethod === 'qr' ? qrRequireFace : false);
+
     let latitude: number | null = null;
     let longitude: number | null = null;
 
-    if (selectedMethod !== 'kiosk') {
+    if (selectedMethod !== 'kiosk' && requireGeofence) {
       try {
         const pos = await new Promise<GeolocationPosition>((res, rej) =>
           navigator.geolocation.getCurrentPosition(res, rej, {
@@ -220,7 +230,9 @@ export default function CRTakeAttendancePage() {
           method: selectedMethod,
           latitude,
           longitude,
-          geofenceRadius: radius,
+          geofenceRadius: requireGeofence ? radius : 0,
+          requireGeofence,
+          requireFace,
           qrInterval: 60,
           otpInterval: 60,
           delegationId: activeDelegation.id,
@@ -675,13 +687,55 @@ export default function CRTakeAttendancePage() {
               {/* Method 1: QR Code */}
               <div className="bg-white p-6 rounded-2xl border-2 border-transparent hover:border-purple-400 transition group flex flex-col justify-between shadow-sm">
                 <div>
-                  <div className="w-12 h-12 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center font-bold text-2xl mb-4">
-                    <QrCode className="w-6 h-6" />
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="w-12 h-12 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center font-bold text-2xl">
+                      <QrCode className="w-6 h-6" />
+                    </div>
+                    <div className="flex flex-wrap gap-1">
+                      {qrRequireGeofence && (
+                        <span className="text-[11px] font-extrabold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 border border-blue-200">
+                          📍 Geofence
+                        </span>
+                      )}
+                      {qrRequireFace && (
+                        <span className="text-[11px] font-extrabold px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 border border-purple-200">
+                          👤 Face ID
+                        </span>
+                      )}
+                    </div>
                   </div>
-                  <h3 className="text-xl font-black text-gray-900 mb-2">Dynamic QR Code</h3>
+                  <h3 className="text-xl font-black text-gray-900 mb-1">
+                    Dynamic QR {qrRequireGeofence ? '+ Geofence ' : ''}{qrRequireFace ? '+ Face ID' : ''}{!qrRequireGeofence && !qrRequireFace ? 'Only' : ''}
+                  </h3>
                   <p className="text-xs sm:text-sm font-semibold text-gray-700 mb-4">
-                    Displays high-speed rotating QR on screen or projector. Classmates scan via their app.
+                    Displays rotating QR code. Toggle required security checks:
                   </p>
+
+                  {/* Security Checkmarks */}
+                  <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 mb-4 space-y-2">
+                    <label className="flex items-center gap-2.5 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={qrRequireGeofence}
+                        onChange={e => setQrRequireGeofence(e.target.checked)}
+                        className="w-4 h-4 rounded text-purple-600 accent-purple-600 focus:ring-purple-500 cursor-pointer"
+                      />
+                      <span className="text-xs font-bold text-gray-900 select-none">
+                        📍 Enable Geofence (Anti-Proxy)
+                      </span>
+                    </label>
+                    <label className="flex items-center gap-2.5 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={qrRequireFace}
+                        onChange={e => setQrRequireFace(e.target.checked)}
+                        className="w-4 h-4 rounded text-purple-600 accent-purple-600 focus:ring-purple-500 cursor-pointer"
+                      />
+                      <span className="text-xs font-bold text-gray-900 select-none">
+                        👤 Enable Face ID (AI Face Recognition)
+                      </span>
+                    </label>
+                  </div>
                 </div>
                 <button
                   onClick={() => startClass('qr')}
@@ -695,13 +749,55 @@ export default function CRTakeAttendancePage() {
               {/* Method 2: OTP */}
               <div className="bg-white p-6 rounded-2xl border-2 border-transparent hover:border-green-400 transition group flex flex-col justify-between shadow-sm">
                 <div>
-                  <div className="w-12 h-12 rounded-xl bg-green-100 text-green-700 flex items-center justify-center font-bold text-2xl mb-4">
-                    <KeyRound className="w-6 h-6" />
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="w-12 h-12 rounded-xl bg-green-100 text-green-700 flex items-center justify-center font-bold text-2xl">
+                      <KeyRound className="w-6 h-6" />
+                    </div>
+                    <div className="flex flex-wrap gap-1">
+                      {otpRequireGeofence && (
+                        <span className="text-[11px] font-extrabold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 border border-blue-200">
+                          📍 Geofence
+                        </span>
+                      )}
+                      {otpRequireFace && (
+                        <span className="text-[11px] font-extrabold px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 border border-purple-200">
+                          👤 Face ID
+                        </span>
+                      )}
+                    </div>
                   </div>
-                  <h3 className="text-xl font-black text-gray-900 mb-2">OTP + Geofence</h3>
+                  <h3 className="text-xl font-black text-gray-900 mb-1">
+                    OTP {otpRequireGeofence ? '+ Geofence ' : ''}{otpRequireFace ? '+ Face ID' : ''}{!otpRequireGeofence && !otpRequireFace ? 'Only' : ''}
+                  </h3>
                   <p className="text-xs sm:text-sm font-semibold text-gray-700 mb-4">
-                    Generates 4-digit numeric code with anti-proxy classroom geofencing. Fast for large groups.
+                    Generates 4-digit code. Toggle required security checks:
                   </p>
+
+                  {/* Security Checkmarks */}
+                  <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 mb-4 space-y-2">
+                    <label className="flex items-center gap-2.5 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={otpRequireGeofence}
+                        onChange={e => setOtpRequireGeofence(e.target.checked)}
+                        className="w-4 h-4 rounded text-green-600 accent-green-600 focus:ring-green-500 cursor-pointer"
+                      />
+                      <span className="text-xs font-bold text-gray-900 select-none">
+                        📍 Enable Geofence (Anti-Proxy)
+                      </span>
+                    </label>
+                    <label className="flex items-center gap-2.5 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={otpRequireFace}
+                        onChange={e => setOtpRequireFace(e.target.checked)}
+                        className="w-4 h-4 rounded text-green-600 accent-green-600 focus:ring-green-500 cursor-pointer"
+                      />
+                      <span className="text-xs font-bold text-gray-900 select-none">
+                        👤 Enable Face ID (AI Face Recognition)
+                      </span>
+                    </label>
+                  </div>
                 </div>
                 <button
                   onClick={() => startClass('otp')}

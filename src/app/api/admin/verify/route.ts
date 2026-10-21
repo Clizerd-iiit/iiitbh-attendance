@@ -10,8 +10,11 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
-  if (!session?.user || !['superadmin', 'teacher'].includes(session.user.role as string))
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  const isAllowed = session?.user && (
+    ['superadmin', 'teacher'].includes(session.user.role as string) ||
+    !!(session.user as any)?.isPseudoadmin
+  );
+  if (!isAllowed) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
   await cleanupRejectedUsers();
   const { searchParams } = new URL(req.url);
@@ -29,8 +32,11 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
-  if (!session?.user || !['superadmin', 'teacher'].includes(session.user.role as string))
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  const isAllowed = session?.user && (
+    ['superadmin', 'teacher'].includes(session.user.role as string) ||
+    !!(session.user as any)?.isPseudoadmin
+  );
+  if (!isAllowed) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
   const { userId, action, reason } = await req.json();
 

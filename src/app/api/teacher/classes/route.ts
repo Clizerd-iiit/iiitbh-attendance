@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth';
 import { supabaseAdmin } from '@/lib/supabase';
 import { v4 as uuidv4 } from 'uuid';
 import { autoCloseAbandonedClasses } from '@/lib/autoCloseClasses';
+import { setClassSettings } from '@/lib/classSettings';
 
 
 export const dynamic = 'force-dynamic';
@@ -38,7 +39,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
   const body = await req.json();
-  const { subjectId, method, latitude, longitude, geofenceRadius, qrInterval = 60, otpInterval = 60 } = body;
+  const {
+    subjectId,
+    method,
+    latitude,
+    longitude,
+    geofenceRadius,
+    requireGeofence = true,
+    requireFace = true,
+    qrInterval = 60,
+    otpInterval = 60,
+  } = body;
 
   if (session.user.role === 'teacher') {
     const { data: subject } = await supabaseAdmin.from('subjects')
@@ -57,6 +68,11 @@ export async function POST(req: NextRequest) {
   const qrCode = method === 'kiosk' ? uuidv4() + '-kiosk' : uuidv4();
   const otp = method === 'kiosk' ? 'KIOSK-' + Math.floor(Math.random()*10000) : Math.floor(1000 + Math.random() * 9000).toString();
 
+  // If geofence is disabled, store null coordinates
+  const finalLat = requireGeofence ? latitude : null;
+  const finalLon = requireGeofence ? longitude : null;
+  const finalRadius = requireGeofence ? (geofenceRadius || 150) : 0;
+
   const { data: newClass, error } = await supabaseAdmin.from('classes').insert({
     subject_id: subjectId,
     date: istDate,
@@ -66,10 +82,20 @@ export async function POST(req: NextRequest) {
     otp,
     otp_expires_at: new Date(now.getTime() + otpInterval * 1000).toISOString(),
     status: 'active',
-    created_by: session.user.userId, latitude, longitude, geofence_radius: geofenceRadius || 150,
+    created_by: session.user.userId,
+    latitude: finalLat,
+    longitude: finalLon,
+    geofence_radius: finalRadius,
   }).select().single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  // Store verification flags
+  await setClassSettings(newClass.id, {
+    require_geofence: !!requireGeofence,
+    require_face: !!requireFace,
+  });
+
   return NextResponse.json({ class: newClass, qrCode, otp });
 }
 
