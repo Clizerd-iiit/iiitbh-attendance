@@ -3,16 +3,15 @@
 import React, { useMemo } from 'react';
 
 export function GlobalBackground() {
-  // Generate lightweight ambient looped smoke / drift particles
+  // Generate lightweight ambient looped particles with original delicate size (3px-7px)
   const particles = useMemo(() => {
-    return Array.from({ length: 36 }).map((_, i) => ({
+    return Array.from({ length: 42 }).map((_, i) => ({
       id: i,
-      left: `${(i * 2.77) % 100}%`,
-      size: `${(i % 6) * 4 + 6}px`,
-      duration: `${10 + (i % 8) * 2.2}s`,
-      delay: `${(i * 0.4) % 6}s`,
-      opacity: 0.2 + (i % 5) * 0.08,
-      blur: `${(i % 3) * 1.5 + 1}px`,
+      left: `${(i * 2.38) % 100}%`,
+      size: `${(i % 5) + 3}px`,
+      duration: `${6.5 + (i % 6) * 1.3}s`,
+      delay: `${(i * 0.28) % 5}s`,
+      opacity: 0.35 + (i % 5) * 0.12,
     }));
   }, []);
 
@@ -34,7 +33,6 @@ export function GlobalBackground() {
               animationDuration: p.duration,
               animationDelay: p.delay,
               opacity: p.opacity,
-              filter: `blur(${p.blur})`,
             }}
           />
         ))}

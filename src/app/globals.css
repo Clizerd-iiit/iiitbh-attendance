@@ -132,16 +132,16 @@ html.dark textarea {
 .snow-flake {
   position: absolute;
   top: -20px;
-  background: rgba(148, 163, 184, 0.45);
+  background: rgba(148, 163, 184, 0.6);
   border-radius: 50%;
   pointer-events: none;
-  filter: blur(0.7px);
+  filter: blur(0.4px);
   animation: smokeDrift linear infinite;
 }
 
 html.dark .smoke-particle,
 html.dark .snow-flake {
-  background: rgba(254, 243, 199, 0.65);
+  background: rgba(254, 243, 199, 0.7);
 }
 
 /* Glassmorphism Classes */
