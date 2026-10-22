@@ -57,6 +57,16 @@ export async function GET(req: NextRequest) {
     return true;
   });
 
+  // Sort students strictly by roll number in increasing order from top to bottom
+  students.sort((a, b) => {
+    const rA = ((a.student as any)?.roll_no || '').trim();
+    const rB = ((b.student as any)?.roll_no || '').trim();
+    if (!rA && !rB) return 0;
+    if (!rA) return 1;
+    if (!rB) return -1;
+    return rA.localeCompare(rB, undefined, { numeric: true, sensitivity: 'base' });
+  });
+
   // 3. Get attendance records
   let recQuery = supabaseAdmin.from('attendance').select('student_id, class_id, status')
     .in('class_id', classList.map(c => c.id));

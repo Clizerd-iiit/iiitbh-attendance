@@ -75,6 +75,13 @@ export default function StudentDirectoryPage() {
     }
     
     return true;
+  }).sort((a, b) => {
+    const rA = (a.roll_no || '').trim();
+    const rB = (b.roll_no || '').trim();
+    if (!rA && !rB) return 0;
+    if (!rA) return 1;
+    if (!rB) return -1;
+    return rA.localeCompare(rB, undefined, { numeric: true, sensitivity: 'base' });
   });
 
   return (

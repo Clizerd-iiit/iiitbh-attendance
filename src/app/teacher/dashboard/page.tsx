@@ -9,6 +9,7 @@ import { MakeupClassSuggester } from '@/components/makeup-class-suggester';
 import { CRDelegationModal } from '@/components/teacher/CRDelegationModal';
 import { ActiveCRDelegations } from '@/components/teacher/ActiveCRDelegations';
 import type { CRDelegation } from '@/lib/delegation';
+import { OnboardingTour } from '@/components/shared/OnboardingTour';
 
 export default function TeacherDashboard() {
   const { data: session } = useSession();
@@ -54,70 +55,74 @@ export default function TeacherDashboard() {
       <div className="max-w-5xl mx-auto px-4 py-8">
 
         {/* Welcome Card */}
-        <div className="mb-6"><WelcomeCard subtitle="Teacher Dashboard" /></div>
+        <div id="tour-teacher-welcome" className="mb-6"><WelcomeCard subtitle="Teacher Dashboard" /></div>
 
         {/* Active CR Delegations (if any) */}
-        <ActiveCRDelegations
-          delegations={delegations}
-          onRefresh={fetchDelegations}
-          loading={loadingDelegations}
-        />
-
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-gray-900">Your Subjects</h2>
-          {subjects.length > 0 && (
-            <button
-              onClick={() => {
-                setSelectedSubjectId(subjects[0]?.id || '');
-                setShowCRModal(true);
-              }}
-              className="bg-purple-100 hover:bg-purple-200 text-purple-900 border-2 border-purple-300 px-3.5 py-1.5 rounded-xl font-black text-xs flex items-center gap-1.5 shadow-sm transition active:scale-95"
-            >
-              <span>🎖️</span>
-              <span>Delegate to CR</span>
-            </button>
-          )}
+        <div id="tour-cr-delegation">
+          <ActiveCRDelegations
+            delegations={delegations}
+            onRefresh={fetchDelegations}
+            loading={loadingDelegations}
+          />
         </div>
 
-        <div className="grid md:grid-cols-2 gap-6 mb-8">
-          {loading ? (
-            [1,2,3].map(i => <div key={i} className="h-40 bg-gray-200 rounded-xl animate-pulse"/>)
-          ) : subjects.length === 0 ? (
-            <div className="col-span-2 text-center text-gray-900 font-semibold py-12 bg-white rounded-xl border border-gray-200">
-              <p className="text-4xl mb-2">📚</p>
-              <p>No subjects assigned yet. Contact administrator.</p>
-            </div>
-          ) : subjects.map(subject => (
-            <div key={subject.id} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition">
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <h3 className="font-bold text-gray-900 text-lg">{subject.name}</h3>
-                  <p className="text-gray-900 font-semibold text-sm mt-0.5">{subject.code} · Section {subject.section} · Sem {subject.semester}</p>
+        <div id="tour-teacher-subjects">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-bold text-gray-900">Your Subjects</h2>
+            {subjects.length > 0 && (
+              <button
+                onClick={() => {
+                  setSelectedSubjectId(subjects[0]?.id || '');
+                  setShowCRModal(true);
+                }}
+                className="bg-purple-100 hover:bg-purple-200 text-purple-900 border-2 border-purple-300 px-3.5 py-1.5 rounded-xl font-black text-xs flex items-center gap-1.5 shadow-sm transition active:scale-95"
+              >
+                <span>🎖️</span>
+                <span>Delegate to CR</span>
+              </button>
+            )}
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-6 mb-8">
+            {loading ? (
+              [1,2,3].map(i => <div key={i} className="h-40 bg-gray-200 rounded-xl animate-pulse"/>)
+            ) : subjects.length === 0 ? (
+              <div className="col-span-2 text-center text-gray-900 font-semibold py-12 bg-white rounded-xl border border-gray-200">
+                <p className="text-4xl mb-2">📚</p>
+                <p>No subjects assigned yet. Contact administrator.</p>
+              </div>
+            ) : subjects.map(subject => (
+              <div key={subject.id} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition">
+                <div className="flex justify-between items-start mb-4">
+                  <div>
+                    <h3 className="font-bold text-gray-900 text-lg">{subject.name}</h3>
+                    <p className="text-gray-900 font-semibold text-sm mt-0.5">{subject.code} · Section {subject.section} · Sem {subject.semester}</p>
+                  </div>
+                  <span className="bg-blue-100 text-blue-800 text-xs px-2.5 py-1 rounded-full font-bold">Active</span>
                 </div>
-                <span className="bg-blue-100 text-blue-800 text-xs px-2.5 py-1 rounded-full font-bold">Active</span>
+                <div className="flex items-center gap-2 mt-4 flex-wrap">
+                  <Link href={`/teacher/attendance?subject=${subject.id}`}
+                    className="flex-1 min-w-[120px] text-center bg-blue-600 text-white font-bold text-sm py-2 rounded-lg hover:bg-blue-700 transition shadow-sm">
+                    ✅ Attendance
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedSubjectId(subject.id);
+                      setShowCRModal(true);
+                    }}
+                    className="flex-1 min-w-[120px] text-center bg-purple-100 hover:bg-purple-200 text-purple-900 border border-purple-300 font-black text-sm py-2 rounded-lg transition shadow-sm"
+                  >
+                    🎖️ CR Access
+                  </button>
+                  <Link href={`/teacher/students?subject=${subject.id}`}
+                    className="px-3 text-center bg-gray-100 text-gray-900 font-bold text-sm py-2 rounded-lg hover:bg-gray-200 transition">
+                    👥 Students
+                  </Link>
+                </div>
               </div>
-              <div className="flex items-center gap-2 mt-4 flex-wrap">
-                <Link href={`/teacher/attendance?subject=${subject.id}`}
-                  className="flex-1 min-w-[120px] text-center bg-blue-600 text-white font-bold text-sm py-2 rounded-lg hover:bg-blue-700 transition shadow-sm">
-                  ✅ Attendance
-                </Link>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSelectedSubjectId(subject.id);
-                    setShowCRModal(true);
-                  }}
-                  className="flex-1 min-w-[120px] text-center bg-purple-100 hover:bg-purple-200 text-purple-900 border border-purple-300 font-black text-sm py-2 rounded-lg transition shadow-sm"
-                >
-                  🎖️ CR Access
-                </button>
-                <Link href={`/teacher/students?subject=${subject.id}`}
-                  className="px-3 text-center bg-gray-100 text-gray-900 font-bold text-sm py-2 rounded-lg hover:bg-gray-200 transition">
-                  👥 Students
-                </Link>
-              </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
 
         {/* Phase 2: Makeup Class Suggester */}
@@ -134,6 +139,9 @@ export default function TeacherDashboard() {
         defaultSubjectId={selectedSubjectId}
         onSuccess={fetchDelegations}
       />
+
+      {/* Interactive Feature Tour */}
+      <OnboardingTour role="teacher" />
     </div>
   );
 }

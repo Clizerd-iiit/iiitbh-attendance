@@ -7,6 +7,7 @@ import { QrScanner } from '@/components/student/QrScanner';
 import { StudentAttendanceSummary } from '@/types';
 import * as faceapi from 'face-api.js';
 import { MapPin, Laptop, Smartphone, RefreshCw, X, AlertTriangle, HelpCircle } from 'lucide-react';
+import { OnboardingTour } from '@/components/shared/OnboardingTour';
 
 function AttendanceCard({ subject, showPercentage }: { subject: StudentAttendanceSummary & { safe_to_miss: number; classes_to_attend: number }, showPercentage: boolean }) {
   const pct = subject.percentage === null ? 100 : subject.percentage;
@@ -488,11 +489,11 @@ export default function StudentDashboard() {
         )}
 
         {/* Welcome Card */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+        <div id="tour-welcome" className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
           <div className="w-full sm:w-auto">
             <WelcomeCard subtitle={batchInfo || "Your Attendance Overview"} isCr={isCr} />
           </div>
-          <button onClick={() => {
+          <button id="tour-mark-attendance" onClick={() => {
             if (!hasFaceId) { alert('Please setup Face ID first!'); window.location.href='/student/face-register'; return; }
             setShowMarkModal(true);
           }} className="w-full sm:w-auto justify-center bg-blue-600 text-white px-5 py-3 rounded-xl font-bold shadow-md hover:bg-blue-700 transition flex items-center gap-2 sm:mt-0">
@@ -526,7 +527,7 @@ export default function StudentDashboard() {
         )}
 
         {/* Overall card */}
-        <div className="grid grid-cols-3 gap-4 mb-6">
+        <div id="tour-overall-attendance" className="grid grid-cols-3 gap-4 mb-6">
           <div className="col-span-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl p-6 shadow-sm">
             <p className="text-blue-200 text-sm mb-1">Overall Attendance</p>
             {showPercentage ? (
@@ -553,21 +554,23 @@ export default function StudentDashboard() {
         </div>
 
         {/* Subject-wise */}
-        <h2 className="text-lg font-semibold text-gray-800 mb-4">Subject-wise Breakdown</h2>
-        {loading ? (
-          <div className="grid gap-4 md:grid-cols-2">
-            {[1,2,3,4].map(i => <div key={i} className="h-36 bg-gray-200 rounded-xl animate-pulse"/>)}
-          </div>
-        ) : summary.length === 0 ? (
-          <div className="text-center text-gray-700 py-12 bg-white rounded-xl">
-            <p className="text-4xl mb-2">📚</p>
-            <p>No subjects enrolled yet</p>
-          </div>
-        ) : (
-          <div className="grid gap-4 md:grid-cols-2">
-            {summary.map(s => <AttendanceCard key={s.subject_id} subject={s} showPercentage={showPercentage}/>)}
-          </div>
-        )}
+        <div id="tour-subject-breakdown">
+          <h2 className="text-lg font-semibold text-gray-800 mb-4">Subject-wise Breakdown</h2>
+          {loading ? (
+            <div className="grid gap-4 md:grid-cols-2">
+              {[1,2,3,4].map(i => <div key={i} className="h-36 bg-gray-200 rounded-xl animate-pulse"/>)}
+            </div>
+          ) : summary.length === 0 ? (
+            <div className="text-center text-gray-700 py-12 bg-white rounded-xl">
+              <p className="text-4xl mb-2">📚</p>
+              <p>No subjects enrolled yet</p>
+            </div>
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2">
+              {summary.map(s => <AttendanceCard key={s.subject_id} subject={s} showPercentage={showPercentage}/>)}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Mark Attendance Modal */}
@@ -865,6 +868,9 @@ export default function StudentDashboard() {
           </div>
         </div>
       )}
+
+      {/* Interactive Feature Tour */}
+      <OnboardingTour role="student" />
     </div>
   );
 }

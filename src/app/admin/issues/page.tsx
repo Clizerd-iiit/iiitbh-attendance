@@ -7,6 +7,25 @@ export default function IssuesPage() {
   const [issues, setIssues] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const deleteIssue = async (id: string) => {
+    if (!window.confirm('Are you sure you want to permanently delete this reported issue from storage?')) return;
+    setDeletingId(id);
+    try {
+      const res = await fetch(`/api/public-issue?id=${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        setIssues(prev => prev.filter(i => i.id !== id));
+      } else {
+        alert('Failed to delete issue');
+      }
+    } catch {
+      alert('Error connecting to server');
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   useEffect(() => {
     fetch('/api/public-issue')
       .then(res => res.json())
@@ -40,11 +59,26 @@ export default function IssuesPage() {
           <div className="space-y-4">
             {issues.map((issue) => (
               <div key={issue.id} className="bg-white p-6 rounded-xl shadow-sm border border-red-100 relative">
-                <div className="absolute top-4 right-4 text-xs font-bold bg-orange-100 text-orange-800 px-2 py-1 rounded">
-                  {issue.status.toUpperCase()}
+                <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold bg-orange-100 text-orange-800 px-2.5 py-1 rounded-full border border-orange-200">
+                      {issue.status.toUpperCase()}
+                    </span>
+                    <span className="text-xs text-gray-500 font-medium">
+                      {format(new Date(issue.date), 'PPpp')}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => deleteIssue(issue.id)}
+                    disabled={deletingId === issue.id}
+                    className="p-1.5 px-3 bg-red-50 hover:bg-red-600 text-red-600 hover:text-white rounded-lg transition shadow-sm border border-red-200 text-xs font-bold flex items-center gap-1.5 active:scale-95 disabled:opacity-50 cursor-pointer"
+                    title="Permanently Delete Issue"
+                  >
+                    <span>🗑️</span>
+                    <span>{deletingId === issue.id ? 'Deleting...' : 'Delete'}</span>
+                  </button>
                 </div>
                 <h3 className="font-bold text-lg text-gray-900 mb-1">{issue.name}</h3>
-                <p className="text-xs text-gray-700 font-medium mb-4">{format(new Date(issue.date), 'PPpp')}</p>
                 <div className="bg-gray-50 p-4 rounded-lg text-sm text-gray-900 whitespace-pre-wrap font-mono border border-gray-200">
                   {issue.details}
                 </div>

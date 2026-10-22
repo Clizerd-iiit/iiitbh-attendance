@@ -48,7 +48,7 @@ export default withAuth(
     if (pathname.startsWith('/admin/verify') && ['teacher', 'superadmin'].includes(role)) {
       return NextResponse.next();
     }
-    if (pathname.startsWith('/admin/appoint') && role === 'superadmin') {
+    if (pathname.startsWith('/admin/appoint') && ['teacher', 'superadmin'].includes(role)) {
       return NextResponse.next();
     }
     if (pathname.startsWith('/admin') && role !== 'superadmin') {

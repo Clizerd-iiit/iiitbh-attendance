@@ -109,10 +109,10 @@ export default function LoginPage() {
       </div>
 
       {/* ── Main Glassmorphism Login Card ── */}
-      <div className="relative z-20 w-full max-w-md glass-panel rounded-3xl p-8 sm:p-9 shadow-2xl text-center border border-white/40 dark:border-amber-900/40">
+      <div className="relative z-20 w-full max-w-md ultra-glass-card rounded-3xl p-8 sm:p-9 shadow-2xl text-center">
         {/* College Logo */}
         <div className="flex flex-col items-center mb-6">
-          <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-white/80 dark:border-amber-700/60 shadow-xl mb-4 relative bg-white">
+          <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-white/90 dark:border-amber-400/80 shadow-2xl mb-4 relative bg-white">
             <Image
               unoptimized={true}
               src="/iiitbh-logo.jpg"
@@ -122,20 +122,20 @@ export default function LoginPage() {
               className="object-cover w-full h-full"
             />
           </div>
-          <h1 className="text-2xl sm:text-3xl font-black text-gray-900 dark:text-amber-100 tracking-tight">
+          <h1 className="text-2xl sm:text-3xl font-black text-white dark:text-[#fcf7f2] tracking-tight drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">
             IIIT Bhagalpur
           </h1>
-          <p className="text-blue-600 dark:text-amber-400 font-extrabold text-sm mt-0.5 flex items-center gap-1.5 justify-center">
-            <Sparkles className="w-4 h-4" /> Attendance Management System
+          <p className="text-blue-100 dark:text-amber-300 font-extrabold text-sm mt-0.5 flex items-center gap-1.5 justify-center drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]">
+            <Sparkles className="w-4 h-4 text-amber-300" /> Attendance Management System
           </p>
         </div>
 
         {/* Email Domain Info Pill */}
-        <div className="bg-blue-50/90 dark:bg-amber-950/50 border border-blue-200/80 dark:border-amber-800/60 rounded-2xl p-3.5 mb-6 text-left shadow-sm">
-          <p className="text-xs sm:text-sm text-blue-900 dark:text-amber-200 font-bold flex items-center gap-2">
-            <Lock className="w-4 h-4 shrink-0 text-blue-600 dark:text-amber-400" />
+        <div className="bg-white/20 dark:bg-black/35 backdrop-blur-md border border-white/30 dark:border-amber-700/40 rounded-2xl p-3.5 mb-6 text-left shadow-sm">
+          <p className="text-xs sm:text-sm text-white dark:text-amber-100 font-bold flex items-center gap-2 drop-shadow-sm">
+            <Lock className="w-4 h-4 shrink-0 text-amber-300 dark:text-amber-400" />
             <span>
-              Use your official <strong>@iiitbh.ac.in</strong> email account to sign in.
+              Use your official <strong className="underline decoration-amber-300">@iiitbh.ac.in</strong> email account to sign in.
             </span>
           </p>
         </div>
@@ -143,7 +143,7 @@ export default function LoginPage() {
         {/* Sign in with Google Button */}
         <button
           onClick={() => signIn('google', { callbackUrl: '/' })}
-          className="w-full flex items-center justify-center gap-3 bg-white dark:bg-[#34271f] border-2 border-gray-200 dark:border-[#4f3b2d] hover:border-blue-500 dark:hover:border-amber-500 hover:bg-blue-50 dark:hover:bg-[#413127] text-gray-900 dark:text-amber-100 font-black py-3.5 px-6 rounded-2xl transition-all duration-200 shadow-md hover:shadow-xl active:scale-[0.98] cursor-pointer"
+          className="w-full flex items-center justify-center gap-3 bg-white hover:bg-gray-50 text-gray-900 font-black py-3.5 px-6 rounded-2xl transition-all duration-200 shadow-xl hover:shadow-2xl active:scale-[0.98] cursor-pointer border border-white/40"
         >
           <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24">
             <path
@@ -163,15 +163,15 @@ export default function LoginPage() {
               d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
             />
           </svg>
-          <span className="text-sm sm:text-base">Sign in with Google</span>
+          <span className="text-sm sm:text-base tracking-wide">Sign in with Google</span>
         </button>
 
         {/* Help Link */}
-        <p className="text-xs sm:text-sm text-gray-700 dark:text-amber-200/80 font-bold mt-6">
+        <p className="text-xs sm:text-sm text-white/90 dark:text-amber-200/90 font-bold mt-6 drop-shadow-sm">
           Having trouble signing in?{' '}
           <button
             onClick={() => setShowIssueModal(true)}
-            className="text-blue-700 dark:text-amber-400 hover:underline font-black cursor-pointer inline-flex items-center gap-1"
+            className="text-amber-300 dark:text-amber-400 hover:text-white dark:hover:text-amber-200 underline font-black cursor-pointer inline-flex items-center gap-1"
           >
             <span>Contact Administrator</span>
           </button>

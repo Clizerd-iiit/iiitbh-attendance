@@ -112,9 +112,21 @@ export default function AdminSubjectsPage() {
                 </div>
               </div>
               
-              <div className="absolute top-2 right-2 flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button onClick={() => { setForm({ ...s, teacher_ids: s.teacher_ids || [] }); setIsEditing(true); setShowModal(true); }} className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 hover:bg-blue-600 hover:text-white flex items-center justify-center transition shadow-sm">✏️</button>
-                <button onClick={() => deleteSubject(s.id)} className="w-8 h-8 rounded-full bg-red-100 text-red-600 hover:bg-red-600 hover:text-white flex items-center justify-center transition shadow-sm">🗑️</button>
+              <div className="absolute top-2 right-2 flex items-center gap-1.5 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                <button 
+                  onClick={() => { setForm({ ...s, teacher_ids: s.teacher_ids || [] }); setIsEditing(true); setShowModal(true); }} 
+                  className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 hover:bg-blue-600 hover:text-white flex items-center justify-center transition shadow-sm border border-blue-200 text-sm active:scale-95"
+                  title="Edit Subject"
+                >
+                  ✏️
+                </button>
+                <button 
+                  onClick={() => deleteSubject(s.id)} 
+                  className="w-8 h-8 rounded-full bg-red-100 text-red-700 hover:bg-red-600 hover:text-white flex items-center justify-center transition shadow-sm border border-red-200 text-sm active:scale-95"
+                  title="Delete Subject"
+                >
+                  🗑️
+                </button>
               </div>
             </div>
           ))}

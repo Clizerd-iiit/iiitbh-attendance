@@ -1,13 +1,25 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { useSession } from 'next-auth/react';
 import { Navbar } from '@/components/shared/Navbar';
 import { User } from '@/types';
 import { Shield, Award, Users, CheckCircle, Search, Trash2 } from 'lucide-react';
 
 export default function AppointPositionPage() {
+  const { data: session } = useSession();
+  const rawRole = session?.user?.role as string;
+  const isSuperAdmin = rawRole === 'superadmin' || rawRole === 'admin';
+  const isTeacher = rawRole === 'teacher';
+
   const [students, setStudents] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeCompartment, setActiveCompartment] = useState<'admin' | 'cr'>('admin');
+  const [activeCompartment, setActiveCompartment] = useState<'admin' | 'cr'>(isTeacher ? 'cr' : 'admin');
+
+  useEffect(() => {
+    if (isTeacher) {
+      setActiveCompartment('cr');
+    }
+  }, [isTeacher]);
 
   // Admin Appoint State
   const [adminStudentId, setAdminStudentId] = useState('');
@@ -49,6 +61,13 @@ export default function AppointPositionPage() {
       (s.roll_no || '').toLowerCase().includes(q) ||
       (s.email || '').toLowerCase().includes(q)
     );
+  }).sort((a, b) => {
+    const rA = (a.roll_no || '').trim();
+    const rB = (b.roll_no || '').trim();
+    if (!rA && !rB) return 0;
+    if (!rA) return 1;
+    if (!rB) return -1;
+    return rA.localeCompare(rB, undefined, { numeric: true, sensitivity: 'base' });
   });
 
   // Filter students for CR select
@@ -60,14 +79,29 @@ export default function AppointPositionPage() {
       (s.roll_no || '').toLowerCase().includes(q) ||
       (s.email || '').toLowerCase().includes(q)
     );
+  }).sort((a, b) => {
+    const rA = (a.roll_no || '').trim();
+    const rB = (b.roll_no || '').trim();
+    if (!rA && !rB) return 0;
+    if (!rA) return 1;
+    if (!rB) return -1;
+    return rA.localeCompare(rB, undefined, { numeric: true, sensitivity: 'base' });
   });
 
   const selectedAdminStudent = students.find(s => s.id === adminStudentId);
   const selectedCRStudent = students.find(s => s.id === crStudentId);
 
   // Appointed Lists
-  const currentBranchAdmins = students.filter(s => s.signup_info?.is_pseudoadmin);
-  const currentCRs = students.filter(s => (s as any).is_cr);
+  const currentBranchAdmins = students.filter(s => s.signup_info?.is_pseudoadmin).sort((a, b) => {
+    const rA = (a.roll_no || '').trim();
+    const rB = (b.roll_no || '').trim();
+    return rA.localeCompare(rB, undefined, { numeric: true });
+  });
+  const currentCRs = students.filter(s => (s as any).is_cr).sort((a, b) => {
+    const rA = (a.roll_no || '').trim();
+    const rB = (b.roll_no || '').trim();
+    return rA.localeCompare(rB, undefined, { numeric: true });
+  });
 
   // Handle Assign Branch Admin
   const handleAssignAdmin = async () => {
@@ -168,53 +202,57 @@ export default function AppointPositionPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div>
             <h1 className="text-2xl sm:text-3xl font-black text-gray-900 flex items-center gap-2.5">
-              <span>🎖️</span> Appoint & Manage Positions
+              <span>🎖️</span> {isTeacher ? 'Appoint Class Representative (CR)' : 'Appoint & Manage Positions'}
             </h1>
             <p className="text-sm font-semibold text-gray-600 mt-1">
-              Assign authoritative Branch Admins or Class Representatives (CR) across departments.
+              {isTeacher
+                ? 'Assign Class Representatives (CR) across departments for your classes.'
+                : 'Assign authoritative Branch Admins or Class Representatives (CR) across departments.'}
             </p>
           </div>
 
-          {/* Compartment Tabs */}
-          <div className="flex p-1 bg-gray-200/80 rounded-2xl border border-gray-300 w-fit shrink-0">
-            <button
-              type="button"
-              onClick={() => setActiveCompartment('admin')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-black transition ${
-                activeCompartment === 'admin'
-                  ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-md'
-                  : 'text-gray-700 hover:text-gray-900'
-              }`}
-            >
-              <Shield className="w-4 h-4" />
-              <span>Admin Compartment</span>
-              <span className="ml-1 text-[11px] bg-black/20 px-1.5 py-0.2 rounded-full">
-                {currentBranchAdmins.length}
-              </span>
-            </button>
+          {/* Compartment Tabs - Hidden for teachers since they only manage CRs */}
+          {!isTeacher && (
+            <div className="flex p-1 bg-gray-200/80 rounded-2xl border border-gray-300 w-fit shrink-0">
+              <button
+                type="button"
+                onClick={() => setActiveCompartment('admin')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-black transition ${
+                  activeCompartment === 'admin'
+                    ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-md'
+                    : 'text-gray-700 hover:text-gray-900'
+                }`}
+              >
+                <Shield className="w-4 h-4" />
+                <span>Admin Compartment</span>
+                <span className="ml-1 text-[11px] bg-black/20 px-1.5 py-0.2 rounded-full">
+                  {currentBranchAdmins.length}
+                </span>
+              </button>
 
-            <button
-              type="button"
-              onClick={() => setActiveCompartment('cr')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-black transition ${
-                activeCompartment === 'cr'
-                  ? 'bg-purple-600 text-white shadow-md'
-                  : 'text-gray-700 hover:text-gray-900'
-              }`}
-            >
-              <Award className="w-4 h-4" />
-              <span>CR Compartment</span>
-              <span className="ml-1 text-[11px] bg-black/20 px-1.5 py-0.2 rounded-full">
-                {currentCRs.length}
-              </span>
-            </button>
-          </div>
+              <button
+                type="button"
+                onClick={() => setActiveCompartment('cr')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-black transition ${
+                  activeCompartment === 'cr'
+                    ? 'bg-purple-600 text-white shadow-md'
+                    : 'text-gray-700 hover:text-gray-900'
+                }`}
+              >
+                <Award className="w-4 h-4" />
+                <span>CR Compartment</span>
+                <span className="ml-1 text-[11px] bg-black/20 px-1.5 py-0.2 rounded-full">
+                  {currentCRs.length}
+                </span>
+              </button>
+            </div>
+          )}
         </div>
 
         {/* ------------------------------------------------------------------ */}
-        {/* COMPARTMENT 1: BRANCH ADMIN (PSEUDOADMIN)                          */}
+        {/* COMPARTMENT 1: BRANCH ADMIN (Only SuperAdmin can view)             */}
         {/* ------------------------------------------------------------------ */}
-        {activeCompartment === 'admin' && (
+        {!isTeacher && activeCompartment === 'admin' && (
           <div className="grid md:grid-cols-2 gap-6 animate-fadeIn">
             {/* Form */}
             <div className="bg-white p-6 rounded-3xl shadow-sm border-2 border-amber-200 h-fit">

@@ -3,8 +3,8 @@ import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { Navbar } from '@/components/shared/Navbar';
 import Link from 'next/link';
-
 import { AttendanceHeatmap } from '@/components/attendance-heatmap';
+import { OnboardingTour } from '@/components/shared/OnboardingTour';
 
 interface Stats {
   totalStudents: number;
@@ -68,7 +68,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <div id="tour-admin-stats" className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           {[
             { label: 'Students', value: stats.totalStudents, color: 'blue' },
             { label: 'Teachers', value: stats.totalTeachers, color: 'green' },
@@ -84,14 +84,21 @@ export default function AdminDashboard() {
 
         {/* Quick Links */}
         <div className={`grid gap-4 mb-8 ${isSuperAdmin ? 'md:grid-cols-3' : 'md:grid-cols-2'}`}>
-          {quickLinks.map(link => (
-            <Link key={link.href} href={link.href}
-              className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition border hover:border-blue-300">
-              <div className="text-3xl mb-2">{link.icon}</div>
-              <h3 className="font-semibold text-gray-800">{link.label}</h3>
-              <p className="text-gray-700 text-sm mt-1">{link.desc}</p>
-            </Link>
-          ))}
+          {quickLinks.map(link => {
+            let linkId: string | undefined = undefined;
+            if (link.href === '/admin/users') linkId = 'tour-admin-users';
+            if (link.href === '/admin/subjects') linkId = 'tour-admin-subjects';
+            if (link.href === '/admin/appoint') linkId = 'tour-admin-appoint';
+
+            return (
+              <Link key={link.href} href={link.href} id={linkId}
+                className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition border hover:border-blue-300">
+                <div className="text-3xl mb-2">{link.icon}</div>
+                <h3 className="font-semibold text-gray-800">{link.label}</h3>
+                <p className="text-gray-700 text-sm mt-1">{link.desc}</p>
+              </Link>
+            );
+          })}
         </div>
 
         {/* Phase 2: Heatmap */}
@@ -99,6 +106,9 @@ export default function AdminDashboard() {
           <AttendanceHeatmap />
         </div>
       </div>
+
+      {/* Interactive Feature Tour */}
+      <OnboardingTour role="superadmin" />
     </div>
   );
 }

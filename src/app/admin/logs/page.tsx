@@ -244,7 +244,7 @@ export default function AuditLogsPage() {
 
                 {isSuperAdmin && (
                   <button onClick={() => deleteLog(log.id)}
-                    className="flex-shrink-0 text-gray-200 hover:text-red-400 transition opacity-0 group-hover:opacity-100 text-xl leading-none mt-0.5">
+                    className="flex-shrink-0 text-gray-400 hover:text-red-500 transition opacity-100 md:opacity-0 md:group-hover:opacity-100 text-xl leading-none mt-0.5 p-1">
                     ×
                   </button>
                 )}

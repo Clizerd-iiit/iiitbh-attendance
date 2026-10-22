@@ -180,13 +180,13 @@ export function Navbar() {
   const navContent = (
     <div className="flex flex-col h-full">
       {/* Logo + collapse toggle */}
-      <div className={`flex items-center gap-3 px-4 py-5 border-b border-gray-100 ${collapsed ? 'justify-center' : 'justify-between'}`}>
+      <div className={`flex items-center gap-3 px-4 py-5 border-b border-gray-100 dark:border-[#3d3026] ${collapsed ? 'justify-center' : 'justify-between'}`}>
         {!collapsed && (
           <div className="flex items-center gap-2 min-w-0">
             <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 border border-blue-200 relative">
               <Image unoptimized={true} src="/iiitbh-logo.jpg" alt="IIIT Bhagalpur" fill className="object-cover"/>
             </div>
-            <span className="font-bold text-gray-800 text-sm leading-tight truncate">IIIT Bhagalpur AMS</span>
+            <span className="font-bold text-gray-800 dark:text-[#fcf7f2] text-sm leading-tight truncate">IIIT Bhagalpur AMS</span>
           </div>
         )}
         {collapsed && (
@@ -196,7 +196,7 @@ export function Navbar() {
         )}
         {/* Collapse button — desktop only */}
         <button onClick={() => setCollapsed(c => !c)}
-          className="hidden md:flex w-7 h-7 rounded-lg bg-gray-100 hover:bg-gray-200 items-center justify-center text-gray-700 flex-shrink-0 transition"
+          className="hidden md:flex w-7 h-7 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-[#2d221a] dark:hover:bg-[#3d3026] dark:text-[#fcf7f2] items-center justify-center text-gray-700 flex-shrink-0 transition"
           title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
           {collapsed ? '›' : '‹'}
         </button>
@@ -213,12 +213,18 @@ export function Navbar() {
           if (item.label === 'Announcements') badge = counts.announcements || 0;
           if (item.label === 'Contact Admin' || item.label === 'Inbox') badge = counts.messages || 0;
 
+          let tourId: string | undefined = undefined;
+          if (item.label === 'Take Attendance') tourId = 'tour-cr-nav';
+          if (item.label === 'Reports') tourId = 'tour-teacher-reports';
+          if (item.label === 'Appoint Position') tourId = 'tour-teacher-appoint';
+          if (item.label === 'Verify Users') tourId = 'tour-admin-verify';
+
           return (
-            <Link key={item.href} href={item.href}
+            <Link key={item.href} href={item.href} id={tourId}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition group relative
                 ${active
                   ? 'bg-blue-50 text-blue-700 font-bold dark:bg-[#3d2e23] dark:text-amber-400 dark:border dark:border-amber-500/25'
-                  : 'text-gray-800 hover:bg-gray-100 hover:text-gray-900 font-medium dark:text-[#d8c8ba] dark:hover:bg-[#34271e] dark:hover:text-[#ffffff]'
+                  : 'text-gray-800 hover:bg-gray-100 hover:text-gray-900 font-semibold dark:text-[#fcf7f2] dark:hover:bg-[#34271e] dark:hover:text-[#ffffff]'
                 }
                 ${collapsed ? 'justify-center' : ''}
               `}
@@ -269,7 +275,7 @@ export function Navbar() {
       </nav>
 
       {/* Divider */}
-      <div className="border-t border-gray-100 mx-3"/>
+      <div className="border-t border-gray-100 dark:border-[#3d3026] mx-3"/>
 
       {/* User info + logout */}
       <div className={`p-3 space-y-1 ${collapsed ? 'items-center flex flex-col' : ''}`}>
@@ -278,19 +284,19 @@ export function Navbar() {
             <PhotoZoom src={photo} alt={name} size={collapsed ? 36 : 32}
               className="border-2 border-blue-200 flex-shrink-0"/>
           ) : (
-            <div className={`${collapsed ? 'w-9 h-9' : 'w-8 h-8'} rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-sm flex-shrink-0`}>
+            <div className={`${collapsed ? 'w-9 h-9' : 'w-8 h-8'} rounded-full bg-blue-100 dark:bg-[#3d2e23] flex items-center justify-center text-blue-700 dark:text-amber-400 font-bold text-sm flex-shrink-0`}>
               {name.charAt(0)?.toUpperCase()}
             </div>
           )}
           {!collapsed && (
             <div className="min-w-0">
-              <p className="text-sm font-bold text-gray-900 truncate">{name}</p>
+              <p className="text-sm font-bold text-gray-900 dark:text-[#fcf7f2] truncate">{name}</p>
               {isPseudoadmin ? (
                 <span className="bg-gradient-to-r from-amber-500 to-amber-600 text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-sm flex items-center gap-1 w-fit mt-0.5">
                   <span>🛡️</span> Admin {pseudoadminBranch ? `(${pseudoadminBranch})` : ''}
                 </span>
               ) : (
-                <p className="text-xs text-gray-800 font-semibold truncate">{displayRole}</p>
+                <p className="text-xs text-gray-800 dark:text-amber-200/90 font-semibold truncate">{displayRole}</p>
               )}
             </div>
           )}
@@ -302,7 +308,7 @@ export function Navbar() {
         </div>
 
         <button onClick={() => { if(window.confirm('Are you sure you want to exit?')) signOut({ callbackUrl: '/auth/login' }) }}
-          className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-red-500 hover:bg-red-50 transition text-sm
+          className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition text-sm
             ${collapsed ? 'justify-center' : ''}`}
           title="Logout">
           <span className="text-base">🚪</span>
@@ -323,7 +329,7 @@ export function Navbar() {
               signOut({ callbackUrl: '/auth/login' });
             }
           }}
-            className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-orange-600 hover:bg-orange-50 transition text-sm font-medium
+            className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950/30 transition text-sm font-medium
               ${collapsed ? 'justify-center' : ''}`}
             title="Clear All Data">
             <span className="text-base">🧹</span>
@@ -337,16 +343,16 @@ export function Navbar() {
   return (
     <>
       {/* ── Mobile hamburger ── */}
-      <div className="md:hidden fixed top-0 left-0 right-0 z-40 bg-white border-b flex items-center px-4 py-3 gap-3 shadow-sm">
+      <div className="md:hidden fixed top-0 left-0 right-0 z-40 bg-white dark:bg-[#1a1410] border-b border-gray-100 dark:border-[#3d3026] flex items-center px-4 py-3 gap-3 shadow-sm">
         <button onClick={() => setOpen(o => !o)}
-          className="p-2 rounded-lg hover:bg-gray-100 text-gray-700 transition">
+          className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-[#2d221a] text-gray-700 dark:text-[#fcf7f2] transition">
           {open ? '✕' : '☰'}
         </button>
         <div className="flex items-center gap-2">
           <div className="w-7 h-7 rounded-full overflow-hidden border border-blue-200 relative">
             <Image unoptimized={true} src="/iiitbh-logo.jpg" alt="IIIT BH" fill className="object-cover"/>
           </div>
-          <span className="font-bold text-gray-800 text-sm">AMS</span>
+          <span className="font-bold text-gray-800 dark:text-[#fcf7f2] text-sm">AMS</span>
         </div>
         <div className="ml-auto">
           <ThemeToggle />
@@ -359,13 +365,13 @@ export function Navbar() {
       )}
 
       {/* ── Mobile drawer ── */}
-      <div className={`md:hidden fixed top-0 left-0 h-full w-64 bg-white z-50 shadow-2xl transform transition-transform duration-300
+      <div className={`md:hidden fixed top-0 left-0 h-full w-64 bg-white dark:bg-[#1a1410] border-r dark:border-[#3d3026] z-50 shadow-2xl transform transition-transform duration-300
         ${open ? 'translate-x-0' : '-translate-x-full'}`}>
         {navContent}
       </div>
 
       {/* ── Desktop sidebar (fixed) ── */}
-      <div className={`hidden md:flex flex-col fixed top-0 left-0 h-full bg-white border-r border-gray-100 shadow-sm z-30 transition-all duration-300 ${sidebarW}`}>
+      <div className={`hidden md:flex flex-col fixed top-0 left-0 h-full bg-white dark:bg-[#1a1410] border-r border-gray-100 dark:border-[#3d3026] shadow-sm z-30 transition-all duration-300 ${sidebarW}`}>
         {navContent}
       </div>
     </>
