@@ -116,12 +116,29 @@ const DEFAULT_STEPS: Record<string, TourStep[]> = {
 
 export function OnboardingTour({ role, customSteps }: OnboardingTourProps) {
   const effectiveRole = role === 'admin' ? 'superadmin' : role;
-  const steps = customSteps || DEFAULT_STEPS[effectiveRole] || [];
+  const initialSteps = customSteps || DEFAULT_STEPS[effectiveRole] || [];
   const storageKey = `ams_tour_completed_${effectiveRole}_v2`;
 
   const [active, setActive] = useState(false);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
+  const [steps, setSteps] = useState<TourStep[]>(initialSteps);
+
+  // Filter out steps if their target element is not present on the page (e.g. #tour-cr-nav for non-CR students)
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      const valid = initialSteps.filter(s => {
+        if (s.target.startsWith('#') || s.target.startsWith('.')) {
+          // If it's a conditional target like CR navigation, verify existence
+          if (s.target === '#tour-cr-nav') {
+            return !!document.querySelector(s.target);
+          }
+        }
+        return true;
+      });
+      setSteps(valid);
+    }
+  }, [initialSteps]);
 
   // Check if tour should auto-open on first visit
   useEffect(() => {

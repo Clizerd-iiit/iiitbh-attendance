@@ -11,6 +11,7 @@ declare module 'next-auth' {
       isActive?:           boolean;
       isPseudoadmin?:      boolean;
       pseudoadminBranch?:  string;
+      isCr?:               boolean;
     } & DefaultSession['user'];
   }
 }
@@ -25,5 +26,6 @@ declare module 'next-auth/jwt' {
     isActive?:           boolean;
     isPseudoadmin?:      boolean;
     pseudoadminBranch?:  string;
+    isCr?:               boolean;
   }
 }

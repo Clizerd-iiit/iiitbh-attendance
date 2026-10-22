@@ -20,8 +20,10 @@ export async function GET(req: NextRequest) {
   const role = session.user.role;
 
   if (role === 'student' && userId) {
+    const { data: user } = await supabaseAdmin.from('users').select('is_cr').eq('id', userId).single();
+    const is_cr = !!user?.is_cr;
     const delegations = await getActiveDelegationsForCR(userId);
-    return NextResponse.json({ delegations });
+    return NextResponse.json({ delegations, is_cr });
   }
 
   if ((role === 'teacher' || role === 'superadmin') && userId) {

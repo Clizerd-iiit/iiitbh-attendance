@@ -82,7 +82,7 @@ export const authOptions: NextAuthOptions = {
         }
 
         const { data } = await supabaseAdmin.from('users')
-          .select('id, role, name, profile_completed, verification_status, profile_photo_url, is_active, signup_info')
+          .select('id, role, name, profile_completed, verification_status, profile_photo_url, is_active, signup_info, is_cr')
           .eq('email', email).single();
 
         if (data) {
@@ -96,6 +96,7 @@ export const authOptions: NextAuthOptions = {
           token.isActive = data.is_active;
           token.isPseudoadmin = !!data.signup_info?.is_pseudoadmin;
           token.pseudoadminBranch = data.signup_info?.pseudoadmin_branch || null;
+          token.isCr = !!data.is_cr;
         }
       }
       return token;
@@ -112,6 +113,7 @@ export const authOptions: NextAuthOptions = {
         session.user.isActive           = token.isActive as boolean;
         session.user.isPseudoadmin      = token.isPseudoadmin as boolean;
         session.user.pseudoadminBranch  = token.pseudoadminBranch as string;
+        session.user.isCr               = token.isCr as boolean;
       }
       return session;
     },

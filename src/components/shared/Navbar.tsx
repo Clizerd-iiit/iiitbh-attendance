@@ -61,32 +61,20 @@ export function Navbar() {
   const isPseudoadmin = !!(session?.user as any)?.isPseudoadmin;
   const pseudoadminBranch = (session?.user as any)?.pseudoadminBranch;
 
-  // For pseudoadmin students, surface Admin tools prominently
-  let items = SIDEBAR_ITEMS[role] || [];
-  if (isPseudoadmin && role === 'student') {
-    items = [
-      { href: '/admin/dashboard', icon: '📊', label: 'Admin Dashboard' },
-      { href: '/admin/verify', icon: '⏳', label: 'Verify Users' },
-      { href: '/admin/announcements', icon: '📢', label: 'Announcements' },
-      { href: '/admin/users', icon: '👥', label: 'All Users' },
-      { href: '/admin/subjects', icon: '📚', label: 'Subjects' },
-      { href: '/student/dashboard', icon: '📱', label: 'Student Portal' },
-      { href: '/student/take-attendance', icon: '📋', label: 'Take Attendance' },
-      { href: '/student/history', icon: '📅', label: 'My Attendance' },
-      { href: '/admin/logs', icon: '🕵️', label: 'Audit Logs' },
-      { href: '/directory/teachers', icon: '🎓', label: 'Teachers' },
-      { href: '/directory/students', icon: '🧑‍🎓', label: 'Students' },
-      { href: '/profile', icon: '👤', label: 'My Profile' },
-      { href: '/student/contact', icon: '🎧', label: 'Contact Admin' },
-    ];
-  }
-
   const [open, setOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [counts, setCounts] = useState<any>({});
   const [activeClass, setActiveClass] = useState(false);
   const [showClearAllData, setShowClearAllData] = useState(false);
   const [hasCRDelegation, setHasCRDelegation] = useState(false);
+  const [isCR, setIsCR] = useState(!!(session?.user as any)?.isCr);
+
+  // Sync isCR from session whenever session updates
+  useEffect(() => {
+    if ((session?.user as any)?.isCr !== undefined) {
+      setIsCR(!!(session?.user as any)?.isCr);
+    }
+  }, [session]);
 
   const photo = session?.user?.profilePhotoUrl || '';
   const name  = session?.user?.name || '';
@@ -108,7 +96,7 @@ export function Navbar() {
     return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
-  // Check active CR delegation for student
+  // Check active CR delegation and is_cr status for student
   useEffect(() => {
     if (session?.user?.role === 'student') {
       const checkCR = async () => {
@@ -116,6 +104,9 @@ export function Navbar() {
           const res = await fetch('/api/cr-delegation');
           const data = await res.json();
           setHasCRDelegation((data.delegations || []).length > 0);
+          if (data.is_cr !== undefined) {
+            setIsCR(!!data.is_cr);
+          }
         } catch (e) {}
       };
       checkCR();
@@ -123,6 +114,36 @@ export function Navbar() {
       return () => clearInterval(id);
     }
   }, [session]);
+
+  const isCROrDelegated = isCR || hasCRDelegation || !!(session?.user as any)?.isCr;
+
+  // For pseudoadmin students, surface Admin tools prominently
+  // And STRICTLY filter 'Take Attendance' so it only appears for CRs!
+  let items = SIDEBAR_ITEMS[role] || [];
+  if (isPseudoadmin && role === 'student') {
+    items = [
+      { href: '/admin/dashboard', icon: '📊', label: 'Admin Dashboard' },
+      { href: '/admin/verify', icon: '⏳', label: 'Verify Users' },
+      { href: '/admin/announcements', icon: '📢', label: 'Announcements' },
+      { href: '/admin/users', icon: '👥', label: 'All Users' },
+      { href: '/admin/subjects', icon: '📚', label: 'Subjects' },
+      { href: '/student/dashboard', icon: '📱', label: 'Student Portal' },
+      ...(isCROrDelegated ? [{ href: '/student/take-attendance', icon: '📋', label: 'Take Attendance' }] : []),
+      { href: '/student/history', icon: '📅', label: 'My Attendance' },
+      { href: '/admin/logs', icon: '🕵️', label: 'Audit Logs' },
+      { href: '/directory/teachers', icon: '🎓', label: 'Teachers' },
+      { href: '/directory/students', icon: '🧑‍🎓', label: 'Students' },
+      { href: '/profile', icon: '👤', label: 'My Profile' },
+      { href: '/student/contact', icon: '🎧', label: 'Contact Admin' },
+    ];
+  } else if (role === 'student') {
+    items = items.filter(item => {
+      if (item.href === '/student/take-attendance') {
+        return isCROrDelegated;
+      }
+      return true;
+    });
+  }
 
   // Global Heartbeat — update online status every 60s across all pages
   useEffect(() => {

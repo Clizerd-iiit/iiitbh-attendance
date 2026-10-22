@@ -401,7 +401,7 @@ export default function CRTakeAttendancePage() {
             </div>
 
             <span className="inline-block px-3 py-1 bg-amber-100 text-amber-800 text-xs font-black rounded-full mb-3 uppercase tracking-wider border border-amber-300">
-              Access Restricted · Permission Required
+              Access Restricted · Delegation Required
             </span>
 
             <h1 className="text-2xl sm:text-3xl font-black text-gray-900 mb-3">
@@ -409,21 +409,21 @@ export default function CRTakeAttendancePage() {
             </h1>
 
             <p className="text-sm sm:text-base text-gray-800 font-bold max-w-lg mx-auto mb-6 leading-relaxed">
-              Aapke paas kisi bhi Professor/Teacher se active attendance lene ki permission nahi hai.
+              You do not currently have active attendance delegation from any course instructor or professor.
             </p>
 
             <div className="bg-gray-50 border border-gray-200 rounded-2xl p-5 text-left max-w-lg mx-auto space-y-3 mb-8">
               <h4 className="text-xs font-black text-gray-900 uppercase tracking-wider flex items-center gap-1.5">
-                <span>💡</span> Yeh Portal Kaise Unlock Hoga?
+                <span>💡</span> How Does This Portal Unlock?
               </h4>
               <p className="text-xs text-gray-800 font-medium leading-relaxed">
-                1. Jab kisi class me teacher ko urgent kaam ho, toh wo apne portal par jaakar <strong>"Delegate to CR"</strong> par tap karenge.
+                1. When a professor requires class attendance to be taken by the CR, they select <strong>"Delegate to CR"</strong> on their teacher dashboard.
               </p>
               <p className="text-xs text-gray-800 font-medium leading-relaxed">
-                2. Teacher aapko (CR) specific hours ya days ke liye subject ki permission assign karenge.
+                2. The teacher assigns access permissions to you (CR) for a specific duration in hours or days.
               </p>
               <p className="text-xs text-gray-800 font-medium leading-relaxed">
-                3. Jaise hi teacher permission denge, ye page <strong>automatically unlock</strong> ho jayega aur aap live QR, OTP, Face ID ya Bulk Attendance chala sakenge.
+                3. Once granted, this portal <strong>unlocks automatically</strong>, allowing you to run live Dynamic QR, OTP, Face Scanner, or Bulk Attendance sessions.
               </p>
             </div>
 
@@ -935,27 +935,27 @@ export default function CRTakeAttendancePage() {
                 <h3 className="text-lg font-black text-gray-900 leading-snug">
                   CR Attendance Caution & Responsibility Notice
                 </h3>
-                <p className="text-xs text-gray-600 font-bold">Kripya dhyan se padhein aur aage badhein</p>
+                <p className="text-xs text-gray-600 font-bold">Please review carefully before proceeding</p>
               </div>
             </div>
 
             <div className="space-y-3 text-xs sm:text-sm text-gray-800 leading-relaxed bg-amber-50/70 p-4 rounded-xl border border-amber-200">
               <p className="font-bold text-amber-950">
-                Aap Professor <strong>{activeDelegation?.teacher?.name || 'Subject Teacher'}</strong> ke bihalf par{' '}
-                <strong>{activeDelegation?.subjects?.name}</strong> ki attendance lene ja rahe hain.
+                You are conducting attendance for <strong>{activeDelegation?.subjects?.name}</strong> on behalf of Professor{' '}
+                <strong>{activeDelegation?.teacher?.name || 'Subject Instructor'}</strong>.
               </p>
               <ul className="space-y-1.5 list-disc pl-4 text-xs font-medium text-gray-800">
                 <li>
-                  Aap dwara mark kiya gaya har student ka status, exact timestamp, aur aapka IP address <strong>Audit Logs me cryptographically record</strong> ho raha hai.
+                  Every student status you mark, along with exact timestamps and your network IP, is <strong>cryptographically recorded in the Audit Logs</strong>.
                 </li>
                 <li>
-                  Kisi bhi tarah ki <strong>proxy, fake attendance, ya unauthorized marking</strong> strict disciplinary violation maani jayegi.
+                  Any form of <strong>proxy, fraudulent attendance, or unauthorized marking</strong> is strictly prohibited and constitutes a serious academic violation.
                 </li>
                 <li>
-                  Keval aur keval class me physically upasthit students ki hi attendance mark karein.
+                  Only mark attendance for students who are physically present in the classroom.
                 </li>
                 <li>
-                  Aap sirf vahi session edit kar sakte hain jo aapne khud shuru kiya hai.
+                  You can only modify or finalize attendance sessions initiated by you during this active delegation.
                 </li>
               </ul>
             </div>
@@ -969,7 +969,7 @@ export default function CRTakeAttendancePage() {
                 className="mt-0.5 w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500 cursor-pointer"
               />
               <label htmlFor="acceptCaution" className="text-xs font-bold text-gray-900 cursor-pointer select-none">
-                Maine upar diye gaye nirdesh dhyan se padh liye hain aur main is attendance session ki purn zimmedari leta/leti hoon.
+                I have read and understood the instructions above, and I accept full responsibility for the accuracy and integrity of this attendance session.
               </label>
             </div>
 
