@@ -50,30 +50,6 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen relative flex items-center justify-center p-4 overflow-hidden">
-      {/* ── Background Scenery Layer (IIIT Bhagalpur Campus) ── */}
-      <div className="absolute inset-0 pointer-events-none select-none z-0">
-        <Image
-          src="/iiitbh-campus.jpg"
-          alt="IIIT Bhagalpur Campus"
-          role="presentation"
-          fill
-          priority
-          className="object-cover object-center scale-105 filter contrast-125 brightness-90 dark:brightness-60 transition-all duration-700"
-        />
-
-        {/* Dynamic Architectural Frosted Gradient Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-blue-950/35 to-slate-900/50 dark:from-[#120e0b]/92 dark:via-[#1f1712]/75 dark:to-[#120e0b]/85 transition-colors duration-500" />
-
-        {/* Artistic line sketch overlay texture */}
-        <div
-          className="absolute inset-0 opacity-20 mix-blend-screen pointer-events-none bg-center bg-cover"
-          style={{
-            backgroundImage: 'radial-gradient(circle at center, rgba(255,255,255,0.22) 1px, transparent 1px)',
-            backgroundSize: '24px 24px',
-          }}
-        />
-      </div>
-
       {/* ── Top Bar with Theme Toggle ── */}
       <div className="absolute top-4 right-4 z-30">
         <ThemeToggle className="glass-panel" />

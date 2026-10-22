@@ -48,7 +48,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={inter.className}>
         <GlobalBackground />
         <AuthProvider>
-          {children}
+          <div className="relative z-10 min-h-screen">
+            {children}
+          </div>
           <PWARegister />
           <OfflineNotifier />
         </AuthProvider>
