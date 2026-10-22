@@ -9,6 +9,7 @@ export default function AdminUsers() {
   const [users, setUsers] = useState<User[]>([]);
   const [filter, setFilter] = useState<Role | 'all'>('all');
   const [branchFilter, setBranchFilter] = useState('');
+  const [mainGroup, setMainGroup] = useState('');
   const [groupFilter, setGroupFilter] = useState('');
   
   const [search, setSearch] = useState('');
@@ -63,6 +64,24 @@ export default function AdminUsers() {
   };
   
   const filteredUsers = users.filter(u => {
+    if (filter === 'student' || filter === 'all') {
+      const ub = ((u as any).signup_info?.branch || (u as any).branch || '').toUpperCase().trim();
+      const ug = ((u as any).signup_info?.group || (u as any).section || '').toUpperCase().trim();
+      const usg = ((u as any).signup_info?.sub_group || '').toUpperCase().trim();
+      if (branchFilter && ub !== branchFilter.toUpperCase().trim()) return false;
+      if (groupFilter) {
+        const target = groupFilter.toUpperCase().trim();
+        if (target === 'G1') {
+          if (!ug.startsWith('G1') && !usg.startsWith('G1')) return false;
+        } else if (target === 'G2') {
+          if (!ug.startsWith('G2') && !usg.startsWith('G2')) return false;
+        } else if (target === 'G1A' || target === 'G1B' || target === 'G2A' || target === 'G2B') {
+          if (usg !== target && ug !== target) return false;
+        } else {
+          if (!ug.includes(target) && !usg.includes(target)) return false;
+        }
+      }
+    }
     if (!search) return true;
     const q = search.toLowerCase();
     return u.name.toLowerCase().includes(q) || 
@@ -99,7 +118,10 @@ export default function AdminUsers() {
               <select value={branchFilter} onChange={e => {
                 const b = e.target.value;
                 setBranchFilter(b);
-                if (b !== 'CSE') setGroupFilter('');
+                if (b !== 'CSE') {
+                  setMainGroup('');
+                  setGroupFilter('');
+                }
               }} className="border border-gray-200 rounded-xl px-3 py-1.5 text-sm bg-white outline-none focus:border-blue-500 font-semibold">
                 <option value="">All Branches</option>
                 <option value="CSE">CSE</option>
@@ -113,11 +135,35 @@ export default function AdminUsers() {
                   <span className="text-[10px] bg-gray-200 px-1 py-0.2 rounded font-bold">Auto</span>
                 </div>
               ) : (
-                <select value={groupFilter} onChange={e => setGroupFilter(e.target.value)} className="border border-gray-200 rounded-xl px-3 py-1.5 text-sm bg-white outline-none focus:border-blue-500 font-semibold">
-                  <option value="">All Groups</option>
-                  <option value="G1">G1</option>
-                  <option value="G2">G2</option>
-                </select>
+                <div className="flex items-center gap-2">
+                  <select value={mainGroup} onChange={e => {
+                    const mg = e.target.value;
+                    setMainGroup(mg);
+                    setGroupFilter(mg);
+                  }} className="border border-gray-200 rounded-xl px-3 py-1.5 text-sm bg-white outline-none focus:border-blue-500 font-semibold">
+                    <option value="">All Groups</option>
+                    <option value="G1">Group 1 (G1)</option>
+                    <option value="G2">Group 2 (G2)</option>
+                  </select>
+
+                  {mainGroup === 'G1' && (
+                    <select value={groupFilter} onChange={e => setGroupFilter(e.target.value)}
+                      className="border border-blue-300 bg-blue-50/50 text-blue-900 rounded-xl px-2.5 py-1.5 text-xs font-bold outline-none focus:border-blue-500 shadow-sm animate-fadeIn">
+                      <option value="G1">All G1 (Both G1A & G1B)</option>
+                      <option value="G1A">↳ Sub-Group G1A</option>
+                      <option value="G1B">↳ Sub-Group G1B</option>
+                    </select>
+                  )}
+
+                  {mainGroup === 'G2' && (
+                    <select value={groupFilter} onChange={e => setGroupFilter(e.target.value)}
+                      className="border border-purple-300 bg-purple-50/50 text-purple-900 rounded-xl px-2.5 py-1.5 text-xs font-bold outline-none focus:border-purple-500 shadow-sm animate-fadeIn">
+                      <option value="G2">All G2 (Both G2A & G2B)</option>
+                      <option value="G2A">↳ Sub-Group G2A</option>
+                      <option value="G2B">↳ Sub-Group G2B</option>
+                    </select>
+                  )}
+                </div>
               )}
             </>
           )}

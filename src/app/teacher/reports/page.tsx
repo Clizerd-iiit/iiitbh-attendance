@@ -23,6 +23,7 @@ export default function TeacherReports() {
 
   // Branch and Group filters
   const [branchFilter, setBranchFilter] = useState('');
+  const [mainGroup, setMainGroup] = useState('');
   const [groupFilter, setGroupFilter] = useState('');
 
   const openStudentHistory = async (student: any) => {
@@ -172,7 +173,10 @@ export default function TeacherReports() {
                 onChange={e => {
                   const b = e.target.value;
                   setBranchFilter(b);
-                  if (b !== 'CSE') setGroupFilter('');
+                  if (b !== 'CSE') {
+                    setMainGroup('');
+                    setGroupFilter('');
+                  }
                 }}
                 className="border border-gray-300 rounded-xl px-3 py-1.5 text-xs font-bold text-gray-900 bg-white focus:outline-none focus:border-blue-500 shadow-sm"
               >
@@ -185,7 +189,7 @@ export default function TeacherReports() {
             </div>
 
             {/* Group Filter */}
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5 flex-wrap">
               <label className="text-xs font-bold text-gray-800">Group:</label>
               {branchFilter && branchFilter !== 'CSE' ? (
                 <div className="border border-dashed border-gray-300 rounded-xl px-2.5 py-1 text-xs font-semibold text-gray-600 bg-gray-50 flex items-center gap-1">
@@ -193,22 +197,52 @@ export default function TeacherReports() {
                   <span className="text-[10px] bg-gray-200 px-1 py-0.2 rounded font-bold">Auto</span>
                 </div>
               ) : (
-                <select 
-                  value={groupFilter} 
-                  onChange={e => setGroupFilter(e.target.value)}
-                  className="border border-gray-300 rounded-xl px-3 py-1.5 text-xs font-bold text-gray-900 bg-white focus:outline-none focus:border-blue-500 shadow-sm"
-                >
-                  <option value="">All Groups</option>
-                  <option value="G1">Group 1 (G1)</option>
-                  <option value="G2">Group 2 (G2)</option>
-                </select>
+                <div className="flex items-center gap-1.5">
+                  <select 
+                    value={mainGroup} 
+                    onChange={e => {
+                      const mg = e.target.value;
+                      setMainGroup(mg);
+                      setGroupFilter(mg);
+                    }}
+                    className="border border-gray-300 rounded-xl px-3 py-1.5 text-xs font-bold text-gray-900 bg-white focus:outline-none focus:border-blue-500 shadow-sm"
+                  >
+                    <option value="">All Groups</option>
+                    <option value="G1">Group 1 (G1)</option>
+                    <option value="G2">Group 2 (G2)</option>
+                  </select>
+
+                  {mainGroup === 'G1' && (
+                    <select
+                      value={groupFilter}
+                      onChange={e => setGroupFilter(e.target.value)}
+                      className="border border-blue-300 bg-blue-50/50 text-blue-900 rounded-xl px-2.5 py-1.5 text-xs font-bold focus:outline-none focus:border-blue-500 shadow-sm animate-fadeIn"
+                    >
+                      <option value="G1">All G1 (Both G1A & G1B)</option>
+                      <option value="G1A">↳ Sub-Group G1A</option>
+                      <option value="G1B">↳ Sub-Group G1B</option>
+                    </select>
+                  )}
+
+                  {mainGroup === 'G2' && (
+                    <select
+                      value={groupFilter}
+                      onChange={e => setGroupFilter(e.target.value)}
+                      className="border border-purple-300 bg-purple-50/50 text-purple-900 rounded-xl px-2.5 py-1.5 text-xs font-bold focus:outline-none focus:border-purple-500 shadow-sm animate-fadeIn"
+                    >
+                      <option value="G2">All G2 (Both G2A & G2B)</option>
+                      <option value="G2A">↳ Sub-Group G2A</option>
+                      <option value="G2B">↳ Sub-Group G2B</option>
+                    </select>
+                  )}
+                </div>
               )}
             </div>
 
             {/* Reset button */}
             {(branchFilter || groupFilter) && (
               <button 
-                onClick={() => { setBranchFilter(''); setGroupFilter(''); }}
+                onClick={() => { setBranchFilter(''); setMainGroup(''); setGroupFilter(''); }}
                 className="text-xs font-bold text-red-600 hover:text-red-800 hover:underline px-2 py-1"
               >
                 ✕ Reset Filters

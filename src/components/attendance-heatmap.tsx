@@ -27,13 +27,13 @@ export function AttendanceHeatmap() {
   }
 
   return (
-    <Card className="shadow-lg border-blue-100">
-      <CardHeader className="bg-gradient-to-r from-slate-50 to-blue-50 rounded-t-lg border-b border-blue-100 pb-6">
+    <Card className="shadow-lg border-blue-100 dark:border-[#3d3026]">
+      <CardHeader className="bg-gradient-to-r from-slate-50 to-blue-50 dark:from-[#2a2018] dark:to-[#221913] rounded-t-lg border-b border-blue-100 dark:border-[#3d3026] pb-6">
         <div className="flex items-center gap-2">
-          <MapPin className="h-6 w-6 text-blue-600" />
+          <MapPin className="h-6 w-6 text-blue-600 dark:text-blue-400" />
           <div>
-            <CardTitle className="text-2xl text-slate-900 font-bold">Campus Heatmap</CardTitle>
-            <CardDescription className="text-slate-700 font-medium mt-1">
+            <CardTitle className="text-2xl text-slate-900 dark:text-[#fcf7f2] font-bold">Campus Heatmap</CardTitle>
+            <CardDescription className="text-slate-700 dark:text-[#d8c8ba] font-medium mt-1">
               Live attendance density across academic blocks
             </CardDescription>
           </div>

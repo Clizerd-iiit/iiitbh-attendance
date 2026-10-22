@@ -153,16 +153,38 @@ export function AdminEditStudentModal({ student, onClose, onSaved }: { student: 
               <div className="grid grid-cols-3 gap-2">
                 <div><label className="block text-sm font-semibold text-gray-800 mb-1">Branch</label>
                   <select value={branch} onChange={e=>{setBranch(e.target.value); setGroup(''); setSubGroup('');}} className="w-full border border-gray-300 rounded-xl px-3 py-2 bg-white text-gray-900 focus:outline-none focus:border-blue-500">
-                    <option value="">Select</option><option value="CSE">CSE</option><option value="ECE">ECE</option><option value="MEA">MEA</option><option value="MNC">MNC</option>
+                    <option value="">Select</option>
+                    <option value="CSE">CSE</option>
+                    <option value="ECE">ECE</option>
+                    <option value="MAE">MAE</option>
+                    <option value="MNC">MNC</option>
                   </select></div>
                 <div><label className="block text-sm font-semibold text-gray-800 mb-1">Group</label>
-                  <select value={group} onChange={e=>{setGroup(e.target.value); setSubGroup('');}} className="w-full border border-gray-300 rounded-xl px-3 py-2 bg-white text-gray-900 focus:outline-none focus:border-blue-500">
-                    <option value="">Select</option><option value="G1">G1</option><option value="G2">G2</option>
-                  </select></div>
+                  {branch !== 'CSE' ? (
+                    <div className="w-full border border-dashed border-gray-300 rounded-xl px-3 py-2 bg-gray-50 text-gray-500 text-xs font-semibold flex items-center justify-between">
+                      <span>None</span>
+                    </div>
+                  ) : (
+                    <select value={group} onChange={e=>{setGroup(e.target.value); setSubGroup('');}} className="w-full border border-gray-300 rounded-xl px-3 py-2 bg-white text-gray-900 focus:outline-none focus:border-blue-500">
+                      <option value="">Select</option>
+                      <option value="G1">G1</option>
+                      <option value="G2">G2</option>
+                    </select>
+                  )}
+                </div>
                 <div><label className="block text-sm font-semibold text-gray-800 mb-1">Sub Group</label>
-                  <select value={subGroup} onChange={e=>setSubGroup(e.target.value)} className="w-full border border-gray-300 rounded-xl px-3 py-2 bg-white text-gray-900 focus:outline-none focus:border-blue-500">
-                    <option value="">Select</option><option value={`${group}A`}>{group}A</option><option value={`${group}B`}>{group}B</option>
-                  </select></div>
+                  {branch !== 'CSE' || !group ? (
+                    <div className="w-full border border-dashed border-gray-300 rounded-xl px-3 py-2 bg-gray-50 text-gray-500 text-xs font-semibold flex items-center justify-between">
+                      <span>None</span>
+                    </div>
+                  ) : (
+                    <select value={subGroup} onChange={e=>setSubGroup(e.target.value)} className="w-full border border-gray-300 rounded-xl px-3 py-2 bg-white text-gray-900 focus:outline-none focus:border-blue-500">
+                      <option value="">Select</option>
+                      <option value={`${group}A`}>{group}A</option>
+                      <option value={`${group}B`}>{group}B</option>
+                    </select>
+                  )}
+                </div>
               </div>
               <div className="pt-4">
                 <button onClick={saveDetails} disabled={saving} className="w-full py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition disabled:opacity-70">{saving?'Saving...':'Save Details'}</button>

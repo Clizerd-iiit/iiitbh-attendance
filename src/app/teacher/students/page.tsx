@@ -21,6 +21,7 @@ function StudentsContent() {
   const [searchQuery, setSearchQuery] = useState('');
   const [modalSearch, setModalSearch] = useState('');
   const [branchFilter, setBranchFilter] = useState('');
+  const [mainGroup, setMainGroup] = useState('');
   const [groupFilter, setGroupFilter] = useState('');
   const [modalBranchFilter, setModalBranchFilter] = useState('');
   const [modalGroupFilter, setModalGroupFilter] = useState('');
@@ -157,7 +158,10 @@ useEffect(() => {
               <select value={branchFilter} onChange={e=>{
                 const b = e.target.value;
                 setBranchFilter(b);
-                if (b !== 'CSE') setGroupFilter('');
+                if (b !== 'CSE') {
+                  setMainGroup('');
+                  setGroupFilter('');
+                }
               }} className="w-full sm:w-auto border border-gray-300 rounded-xl px-3 py-2 text-sm font-bold text-gray-900 focus:outline-none focus:border-blue-500 bg-white shadow-sm">
                 <option value="" className="text-gray-900 font-bold">All Branches</option>
                 <option value="CSE" className="text-gray-900 font-bold">CSE</option>
@@ -171,11 +175,33 @@ useEffect(() => {
                   <span className="text-[10px] bg-gray-200 px-1 py-0.2 rounded font-bold">Auto</span>
                 </div>
               ) : (
-                <select value={groupFilter} onChange={e=>setGroupFilter(e.target.value)} className="w-full sm:w-auto border border-gray-300 rounded-xl px-3 py-2 text-sm font-bold text-gray-900 focus:outline-none focus:border-blue-500 bg-white shadow-sm">
-                  <option value="" className="text-gray-900 font-bold">All Groups</option>
-                  <option value="G1" className="text-gray-900 font-bold">Group 1 (G1)</option>
-                  <option value="G2" className="text-gray-900 font-bold">Group 2 (G2)</option>
-                </select>
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <select value={mainGroup} onChange={e=>{
+                    const mg = e.target.value;
+                    setMainGroup(mg);
+                    setGroupFilter(mg);
+                  }} className="w-full sm:w-auto border border-gray-300 rounded-xl px-3 py-2 text-sm font-bold text-gray-900 focus:outline-none focus:border-blue-500 bg-white shadow-sm">
+                    <option value="" className="text-gray-900 font-bold">All Groups</option>
+                    <option value="G1" className="text-gray-900 font-bold">Group 1 (G1)</option>
+                    <option value="G2" className="text-gray-900 font-bold">Group 2 (G2)</option>
+                  </select>
+
+                  {mainGroup === 'G1' && (
+                    <select value={groupFilter} onChange={e=>setGroupFilter(e.target.value)} className="w-full sm:w-auto border border-blue-300 bg-blue-50/50 text-blue-900 rounded-xl px-2.5 py-2 text-xs font-bold focus:outline-none focus:border-blue-500 shadow-sm animate-fadeIn">
+                      <option value="G1">All G1 (Both G1A & G1B)</option>
+                      <option value="G1A">↳ Sub-Group G1A</option>
+                      <option value="G1B">↳ Sub-Group G1B</option>
+                    </select>
+                  )}
+
+                  {mainGroup === 'G2' && (
+                    <select value={groupFilter} onChange={e=>setGroupFilter(e.target.value)} className="w-full sm:w-auto border border-purple-300 bg-purple-50/50 text-purple-900 rounded-xl px-2.5 py-2 text-xs font-bold focus:outline-none focus:border-blue-500 shadow-sm animate-fadeIn">
+                      <option value="G2">All G2 (Both G2A & G2B)</option>
+                      <option value="G2A">↳ Sub-Group G2A</option>
+                      <option value="G2B">↳ Sub-Group G2B</option>
+                    </select>
+                  )}
+                </div>
               )}
               <input type="text" placeholder="Search by name or roll no..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
                 className="w-full sm:w-56 border border-gray-300 rounded-xl px-3 py-2 text-sm font-semibold text-gray-900 focus:outline-none focus:border-blue-500 bg-white shadow-sm placeholder:text-gray-500" />
@@ -200,10 +226,22 @@ useEffect(() => {
               {loading ? (
                 <tr><td colSpan={7} className="p-8 text-center text-gray-900 font-medium">Loading...</td></tr>
               ) : students.filter(s => {
-                  const br = s.signup_info?.branch || s.branch || '';
-                  const gr = s.signup_info?.group || s.section || '';
-                  if (branchFilter && br !== branchFilter) return false;
-                  if (groupFilter && !gr.includes(groupFilter)) return false;
+                  const br = (s.signup_info?.branch || s.branch || '').toUpperCase().trim();
+                  const gr = (s.signup_info?.group || s.section || '').toUpperCase().trim();
+                  const subgr = (s.signup_info?.sub_group || '').toUpperCase().trim();
+                  if (branchFilter && br !== branchFilter.toUpperCase().trim()) return false;
+                  if (groupFilter) {
+                    const target = groupFilter.toUpperCase().trim();
+                    if (target === 'G1') {
+                      if (!gr.startsWith('G1') && !subgr.startsWith('G1')) return false;
+                    } else if (target === 'G2') {
+                      if (!gr.startsWith('G2') && !subgr.startsWith('G2')) return false;
+                    } else if (target === 'G1A' || target === 'G1B' || target === 'G2A' || target === 'G2B') {
+                      if (subgr !== target && gr !== target) return false;
+                    } else {
+                      if (!gr.includes(target) && !subgr.includes(target)) return false;
+                    }
+                  }
                   if (searchQuery) {
                     const q = searchQuery.toLowerCase();
                     return s.name.toLowerCase().includes(q) || (s.roll_no || '').toLowerCase().includes(q);

@@ -17,6 +17,7 @@ export default function StudentDirectoryPage() {
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [branchFilter, setBranchFilter] = useState('');
+  const [mainGroup, setMainGroup] = useState('');
   const [groupFilter, setGroupFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   
@@ -46,11 +47,23 @@ export default function StudentDirectoryPage() {
   }, []);
 
   const filtered = students.filter(s => {
-    const sBranch = s.signup_info?.branch || s.branch || '';
-    const sGroup = s.signup_info?.group || s.section || '';
+    const sBranch = (s.signup_info?.branch || s.branch || '').toUpperCase().trim();
+    const sGroup = (s.signup_info?.group || s.section || '').toUpperCase().trim();
+    const sSubGroup = (s.signup_info?.sub_group || '').toUpperCase().trim();
     
-    if (branchFilter && sBranch !== branchFilter) return false;
-    if (groupFilter && !sGroup.includes(groupFilter)) return false;
+    if (branchFilter && sBranch !== branchFilter.toUpperCase().trim()) return false;
+    if (groupFilter) {
+      const target = groupFilter.toUpperCase().trim();
+      if (target === 'G1') {
+        if (!sGroup.startsWith('G1') && !sSubGroup.startsWith('G1')) return false;
+      } else if (target === 'G2') {
+        if (!sGroup.startsWith('G2') && !sSubGroup.startsWith('G2')) return false;
+      } else if (target === 'G1A' || target === 'G1B' || target === 'G2A' || target === 'G2B') {
+        if (sSubGroup !== target && sGroup !== target) return false;
+      } else {
+        if (!sGroup.includes(target) && !sSubGroup.includes(target)) return false;
+      }
+    }
     if (statusFilter === 'online' && !s.is_online) return false;
     if (statusFilter === 'offline' && s.is_online) return false;
     
@@ -77,7 +90,10 @@ export default function StudentDirectoryPage() {
           <select value={branchFilter} onChange={e => {
             const b = e.target.value;
             setBranchFilter(b);
-            if (b !== 'CSE') setGroupFilter('');
+            if (b !== 'CSE') {
+              setMainGroup('');
+              setGroupFilter('');
+            }
           }} className="bg-gray-50 text-gray-900 font-bold border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-blue-500 shadow-sm">
             <option value="">All Branches</option>
             <option value="CSE">CSE</option><option value="ECE">ECE</option><option value="MNC">MNC</option><option value="MAE">MAE</option>
@@ -88,11 +104,35 @@ export default function StudentDirectoryPage() {
               <span className="text-[10px] bg-gray-200 px-1 py-0.2 rounded font-bold">Auto</span>
             </div>
           ) : (
-            <select value={groupFilter} onChange={e => setGroupFilter(e.target.value)} className="bg-gray-50 text-gray-900 font-bold border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-blue-500 shadow-sm">
-              <option value="">All Groups</option>
-              <option value="G1">Group 1 (G1)</option>
-              <option value="G2">Group 2 (G2)</option>
-            </select>
+            <div className="flex items-center gap-2">
+              <select value={mainGroup} onChange={e => {
+                const mg = e.target.value;
+                setMainGroup(mg);
+                setGroupFilter(mg);
+              }} className="bg-gray-50 text-gray-900 font-bold border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-blue-500 shadow-sm">
+                <option value="">All Groups</option>
+                <option value="G1">Group 1 (G1)</option>
+                <option value="G2">Group 2 (G2)</option>
+              </select>
+
+              {mainGroup === 'G1' && (
+                <select value={groupFilter} onChange={e => setGroupFilter(e.target.value)}
+                  className="bg-blue-50 text-blue-900 font-bold border border-blue-200 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-blue-500 shadow-sm animate-fadeIn">
+                  <option value="G1">All G1 (Both G1A & G1B)</option>
+                  <option value="G1A">↳ Sub-Group G1A</option>
+                  <option value="G1B">↳ Sub-Group G1B</option>
+                </select>
+              )}
+
+              {mainGroup === 'G2' && (
+                <select value={groupFilter} onChange={e => setGroupFilter(e.target.value)}
+                  className="bg-purple-50 text-purple-900 font-bold border border-purple-200 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-purple-500 shadow-sm animate-fadeIn">
+                  <option value="G2">All G2 (Both G2A & G2B)</option>
+                  <option value="G2A">↳ Sub-Group G2A</option>
+                  <option value="G2B">↳ Sub-Group G2B</option>
+                </select>
+              )}
+            </div>
           )}
           <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="bg-gray-50 text-gray-900 font-bold border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-blue-500 shadow-sm">
             <option value="">Any Status</option>

@@ -132,16 +132,38 @@ export function EditStudentModal({ student, onClose, onSaved }: { student: any, 
               <div className="grid grid-cols-3 gap-2">
                 <div><label className="block text-sm font-bold text-gray-900 mb-1">Branch</label>
                   <select value={branch} onChange={e=>{setBranch(e.target.value); setGroup(''); setSubGroup('');}} className="w-full border border-gray-300 rounded-xl px-2.5 py-2 bg-white text-gray-900 font-bold focus:outline-none focus:border-blue-500 shadow-sm">
-                    <option value="" className="text-gray-900 font-bold">Select</option><option value="CSE" className="text-gray-900 font-bold">CSE</option><option value="ECE" className="text-gray-900 font-bold">ECE</option><option value="MEA" className="text-gray-900 font-bold">MEA</option><option value="MNC" className="text-gray-900 font-bold">MNC</option>
+                    <option value="" className="text-gray-900 font-bold">Select</option>
+                    <option value="CSE" className="text-gray-900 font-bold">CSE</option>
+                    <option value="ECE" className="text-gray-900 font-bold">ECE</option>
+                    <option value="MAE" className="text-gray-900 font-bold">MAE</option>
+                    <option value="MNC" className="text-gray-900 font-bold">MNC</option>
                   </select></div>
                 <div><label className="block text-sm font-bold text-gray-900 mb-1">Group</label>
-                  <select value={group} onChange={e=>{setGroup(e.target.value); setSubGroup('');}} className="w-full border border-gray-300 rounded-xl px-2.5 py-2 bg-white text-gray-900 font-bold focus:outline-none focus:border-blue-500 shadow-sm">
-                    <option value="" className="text-gray-900 font-bold">Select</option><option value="G1" className="text-gray-900 font-bold">G1</option><option value="G2" className="text-gray-900 font-bold">G2</option>
-                  </select></div>
+                  {branch !== 'CSE' ? (
+                    <div className="w-full border border-dashed border-gray-300 rounded-xl px-2.5 py-2 bg-gray-50 text-gray-500 text-xs font-semibold flex items-center justify-between">
+                      <span>None</span>
+                    </div>
+                  ) : (
+                    <select value={group} onChange={e=>{setGroup(e.target.value); setSubGroup('');}} className="w-full border border-gray-300 rounded-xl px-2.5 py-2 bg-white text-gray-900 font-bold focus:outline-none focus:border-blue-500 shadow-sm">
+                      <option value="" className="text-gray-900 font-bold">Select</option>
+                      <option value="G1" className="text-gray-900 font-bold">G1</option>
+                      <option value="G2" className="text-gray-900 font-bold">G2</option>
+                    </select>
+                  )}
+                </div>
                 <div><label className="block text-sm font-bold text-gray-900 mb-1">Sub Group</label>
-                  <select value={subGroup} onChange={e=>setSubGroup(e.target.value)} className="w-full border border-gray-300 rounded-xl px-2.5 py-2 bg-white text-gray-900 font-bold focus:outline-none focus:border-blue-500 shadow-sm">
-                    <option value="" className="text-gray-900 font-bold">Select</option><option value={`${group}A`} className="text-gray-900 font-bold">{group}A</option><option value={`${group}B`} className="text-gray-900 font-bold">{group}B</option>
-                  </select></div>
+                  {branch !== 'CSE' || !group ? (
+                    <div className="w-full border border-dashed border-gray-300 rounded-xl px-2.5 py-2 bg-gray-50 text-gray-500 text-xs font-semibold flex items-center justify-between">
+                      <span>None</span>
+                    </div>
+                  ) : (
+                    <select value={subGroup} onChange={e=>setSubGroup(e.target.value)} className="w-full border border-gray-300 rounded-xl px-2.5 py-2 bg-white text-gray-900 font-bold focus:outline-none focus:border-blue-500 shadow-sm">
+                      <option value="" className="text-gray-900 font-bold">Select</option>
+                      <option value={`${group}A`} className="text-gray-900 font-bold">{group}A</option>
+                      <option value={`${group}B`} className="text-gray-900 font-bold">{group}B</option>
+                    </select>
+                  )}
+                </div>
               </div>
               <div className="pt-4">
                 <button onClick={saveDetails} disabled={saving} className="w-full py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition disabled:opacity-70 shadow-sm">{saving?'Saving...':'Save Details'}</button>

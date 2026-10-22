@@ -36,10 +36,24 @@ export async function GET(req: NextRequest) {
   // Filter by branch / group if specified
   const students = (rawStudents || []).filter(enr => {
     const st = enr.student as any;
-    const sBranch = (st?.signup_info?.branch || st?.branch || '').trim();
-    const sGroup = (st?.signup_info?.group || st?.section || '').trim();
-    if (branch && sBranch.toUpperCase() !== branch.toUpperCase()) return false;
-    if (group && !sGroup.toUpperCase().includes(group.toUpperCase())) return false;
+    const sBranch = (st?.signup_info?.branch || st?.branch || '').toUpperCase().trim();
+    const sGroup = (st?.signup_info?.group || st?.section || '').toUpperCase().trim();
+    const sSubGroup = (st?.signup_info?.sub_group || '').toUpperCase().trim();
+    
+    if (branch && sBranch !== branch.toUpperCase().trim()) return false;
+    
+    if (group) {
+      const target = group.toUpperCase().trim();
+      if (target === 'G1') {
+        if (!sGroup.startsWith('G1') && !sSubGroup.startsWith('G1')) return false;
+      } else if (target === 'G2') {
+        if (!sGroup.startsWith('G2') && !sSubGroup.startsWith('G2')) return false;
+      } else if (target === 'G1A' || target === 'G1B' || target === 'G2A' || target === 'G2B') {
+        if (sSubGroup !== target && sGroup !== target) return false;
+      } else {
+        if (!sGroup.includes(target) && !sSubGroup.includes(target)) return false;
+      }
+    }
     return true;
   });
 

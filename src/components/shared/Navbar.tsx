@@ -217,8 +217,8 @@ export function Navbar() {
             <Link key={item.href} href={item.href}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition group relative
                 ${active
-                  ? 'bg-blue-50 text-blue-700 font-bold'
-                  : 'text-gray-800 hover:bg-gray-100 hover:text-gray-900 font-medium'
+                  ? 'bg-blue-50 text-blue-700 font-bold dark:bg-[#3d2e23] dark:text-amber-400 dark:border dark:border-amber-500/25'
+                  : 'text-gray-800 hover:bg-gray-100 hover:text-gray-900 font-medium dark:text-[#d8c8ba] dark:hover:bg-[#34271e] dark:hover:text-[#ffffff]'
                 }
                 ${collapsed ? 'justify-center' : ''}
               `}
@@ -257,9 +257,9 @@ export function Navbar() {
                 </span>
               )}
 
-              {active && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-blue-600 rounded-r-full"/>}
+              {active && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-blue-600 dark:bg-amber-400 rounded-r-full"/>}
               {collapsed && (
-                <span className="absolute left-full ml-2 px-2 py-1 bg-gray-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition pointer-events-none whitespace-nowrap z-50 flex items-center gap-2">
+                <span className="absolute left-full ml-2 px-2 py-1 bg-gray-800 text-white dark:bg-[#1a1410] dark:text-[#fcf7f2] dark:border dark:border-[#3d3026] text-xs rounded-lg opacity-0 group-hover:opacity-100 transition pointer-events-none whitespace-nowrap z-50 flex items-center gap-2">
                   {item.label} {item.label === 'Dashboard' && activeClass && '(LIVE CLASS)'} {badge > 0 && `(${badge})`}
                 </span>
               )}

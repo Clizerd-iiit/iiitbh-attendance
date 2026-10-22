@@ -23,30 +23,50 @@ export async function GET(req: NextRequest) {
     .order('created_at', { ascending: false });
 
   let is_cr = false;
+  let studentProfile: any = null;
   if (session.user.role === 'student') {
-    // Fetch student profile for branch/group/cr
-        let { data: profile, error: profileErr } = await supabaseAdmin.from('users').select('branch, section, is_cr').eq('id', session.user.userId).single();
-    if (profileErr && profileErr.message.includes('column users.branch does not exist')) {
-      const fallbackRes = await supabaseAdmin.from('users').select('section').eq('id', session.user.userId).single();
-      profile = fallbackRes.data as any;
-    }
+    const { data: profile } = await supabaseAdmin
+      .from('users')
+      .select('branch, section, is_cr, signup_info')
+      .eq('id', session.user.userId)
+      .single();
+    studentProfile = profile;
     if (profile) is_cr = profile.is_cr || false;
-    
-    const b = profile?.branch || 'none';
-    const s = profile?.section || 'none';
-    
-    // They see announcements if:
-    // 1. target_student_ids contains them
-    // 2. OR no target_student_ids AND (target_branch is null OR target_branch == their branch) AND (target_group is null OR target_group == their group)
-    // Supabase OR syntax is tricky. Let's just fetch all and filter in JS for safety, or use a complex OR.
-    // Let's use a simpler OR:
-        // Correct PostgREST syntax for (target_branch is null OR target_branch == b)
-    query = query.or(`target_student_ids.cs.[${JSON.stringify(session.user.userId)}],and(target_student_ids.is.null,or(target_branch.is.null,target_branch.eq.${b}),or(target_group.is.null,target_group.eq.${s}))`);
   }
 
-  const { data, error } = await query;
+  let { data, error } = await query;
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  if (session.user.role === 'student' && studentProfile) {
+    const sBranch = (studentProfile?.signup_info?.branch || studentProfile?.branch || '').toUpperCase().trim();
+    const sGroup = (studentProfile?.signup_info?.group || studentProfile?.section || '').toUpperCase().trim();
+    const sSubGroup = (studentProfile?.signup_info?.sub_group || '').toUpperCase().trim();
+
+    data = (data || []).filter(a => {
+      // 1. Explicitly targeted student ID
+      if (Array.isArray(a.target_student_ids) && a.target_student_ids.length > 0) {
+        return a.target_student_ids.includes(session.user.userId);
+      }
+      // 2. Branch match
+      if (a.target_branch && a.target_branch.toUpperCase().trim() !== sBranch) return false;
+      // 3. Group / Subgroup match
+      if (a.target_group) {
+        const tg = a.target_group.toUpperCase().trim();
+        if (tg === 'G1') {
+          if (!sGroup.startsWith('G1') && !sSubGroup.startsWith('G1')) return false;
+        } else if (tg === 'G2') {
+          if (!sGroup.startsWith('G2') && !sSubGroup.startsWith('G2')) return false;
+        } else if (tg === 'G1A' || tg === 'G1B' || tg === 'G2A' || tg === 'G2B') {
+          if (sSubGroup !== tg && sGroup !== tg) return false;
+        } else {
+          if (!sGroup.includes(tg) && !sSubGroup.includes(tg)) return false;
+        }
+      }
+      return true;
+    });
+  }
+
   return NextResponse.json({ announcements: data, is_cr, userId: session.user.userId });
 }
 

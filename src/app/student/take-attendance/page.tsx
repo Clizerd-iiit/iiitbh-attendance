@@ -338,14 +338,26 @@ export default function CRTakeAttendancePage() {
 
   // Filter students list
   const filteredStudents = students.filter(s => {
-    const sBranch = s.signup_info?.branch || s.branch || '';
-    const sGroup = s.signup_info?.group || s.section || '';
+    const sBranch = (s.signup_info?.branch || s.branch || '').toUpperCase().trim();
+    const sGroup = (s.signup_info?.group || s.section || '').toUpperCase().trim();
+    const sSubGroup = (s.signup_info?.sub_group || '').toUpperCase().trim();
     const name = (s.name || '').toLowerCase();
     const roll = (s.roll_no || '').toLowerCase();
     const q = searchStudent.toLowerCase().trim();
 
-    if (branchFilter && sBranch !== branchFilter) return false;
-    if (groupFilter && !sGroup.includes(groupFilter)) return false;
+    if (branchFilter && sBranch !== branchFilter.toUpperCase().trim()) return false;
+    if (groupFilter) {
+      const target = groupFilter.toUpperCase().trim();
+      if (target === 'G1') {
+        if (!sGroup.startsWith('G1') && !sSubGroup.startsWith('G1')) return false;
+      } else if (target === 'G2') {
+        if (!sGroup.startsWith('G2') && !sSubGroup.startsWith('G2')) return false;
+      } else if (target === 'G1A' || target === 'G1B' || target === 'G2A' || target === 'G2B') {
+        if (sSubGroup !== target && sGroup !== target) return false;
+      } else {
+        if (!sGroup.includes(target) && !sSubGroup.includes(target)) return false;
+      }
+    }
     if (q && !name.includes(q) && !roll.includes(q)) return false;
     return true;
   });

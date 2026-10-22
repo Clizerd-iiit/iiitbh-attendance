@@ -57,6 +57,46 @@ html.dark .border-gray-300 {
   border-color: #3f3126 !important;
 }
 
+/* Dark Theme Hover Overrides: ensures text never becomes invisible on hover */
+html.dark [class*="hover:bg-gray-50"]:hover,
+html.dark [class*="hover:bg-gray-100"]:hover,
+html.dark [class*="hover:bg-gray-200"]:hover,
+html.dark [class*="hover:bg-slate-50"]:hover,
+html.dark [class*="hover:bg-slate-100"]:hover,
+html.dark .hover\:bg-gray-50:hover,
+html.dark .hover\:bg-gray-100:hover,
+html.dark .hover\:bg-gray-200:hover,
+html.dark .hover\:bg-slate-50:hover,
+html.dark .hover\:bg-slate-100:hover {
+  background-color: #34271e !important;
+  color: #fcf7f2 !important;
+}
+
+html.dark [class*="hover:text-gray-900"]:hover,
+html.dark [class*="hover:text-gray-800"]:hover,
+html.dark .hover\:text-gray-900:hover,
+html.dark .hover\:text-gray-800:hover {
+  color: #ffffff !important;
+}
+
+/* Fix light gradients and headers in dark mode */
+html.dark .bg-gradient-to-r.from-slate-50,
+html.dark [class*="from-slate-50"],
+html.dark [class*="to-blue-50"] {
+  background-image: none !important;
+  background-color: #2b211a !important;
+}
+html.dark .border-blue-100 {
+  border-color: #3d3026 !important;
+}
+html.dark .text-slate-900,
+html.dark .text-slate-800 {
+  color: #fcf7f2 !important;
+}
+html.dark .text-slate-700 {
+  color: #d8c8ba !important;
+}
+
 html.dark input,
 html.dark select,
 html.dark textarea {

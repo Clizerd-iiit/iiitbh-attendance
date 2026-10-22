@@ -24,6 +24,7 @@ export default function AdminAnnouncementsPage() {
   const [userId, setUserId] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [annMainGroup, setAnnMainGroup] = useState('');
   const [form, setForm] = useState({ title: '', content: '', type: 'text', target_branch: '', target_group: '' });
 
   const isSuperAdmin = session?.user?.role === 'superadmin';
@@ -131,7 +132,10 @@ export default function AdminAnnouncementsPage() {
                     {(isSuperAdmin || a.teacher_id === userId) && (
                       <div className="flex gap-2">
                         <button onClick={() => {
-                          setForm({ title: a.title, content: a.content || '', type: a.type, target_branch: a.target_branch || '', target_group: a.target_group || '' });
+                          const tg = a.target_group || '';
+                          const mg = tg.startsWith('G1') ? 'G1' : (tg.startsWith('G2') ? 'G2' : '');
+                          setAnnMainGroup(mg);
+                          setForm({ title: a.title, content: a.content || '', type: a.type, target_branch: a.target_branch || '', target_group: tg });
                           setEditingId(a.id);
                           setShowModal(true);
                         }} className="text-xs text-blue-600 hover:bg-blue-50 px-2 py-1 rounded transition font-bold">Edit</button>
@@ -160,6 +164,7 @@ export default function AdminAnnouncementsPage() {
                   value={form.target_branch}
                   onChange={e => {
                     const b = e.target.value;
+                    if (b !== 'CSE') setAnnMainGroup('');
                     setForm(prev => ({
                       ...prev,
                       target_branch: b,
@@ -181,20 +186,50 @@ export default function AdminAnnouncementsPage() {
                     <span className="text-[10px] bg-gray-200 px-1.5 py-0.5 rounded font-bold">Auto</span>
                   </div>
                 ) : (
-                  <select
-                    value={form.target_group}
-                    onChange={e => setForm({ ...form, target_group: e.target.value })}
-                    className="border p-2 rounded text-sm bg-white font-medium"
-                  >
-                    <option value="">All Groups</option>
-                    <option value="G1">Group 1 (G1)</option>
-                    <option value="G2">Group 2 (G2)</option>
-                  </select>
+                  <div className="space-y-2">
+                    <select
+                      value={annMainGroup}
+                      onChange={e => {
+                        const mg = e.target.value;
+                        setAnnMainGroup(mg);
+                        setForm(prev => ({ ...prev, target_group: mg }));
+                      }}
+                      className="border p-2 rounded text-sm bg-white font-medium w-full"
+                    >
+                      <option value="">All Groups</option>
+                      <option value="G1">Group 1 (G1)</option>
+                      <option value="G2">Group 2 (G2)</option>
+                    </select>
+
+                    {annMainGroup === 'G1' && (
+                      <select
+                        value={form.target_group}
+                        onChange={e => setForm(prev => ({ ...prev, target_group: e.target.value }))}
+                        className="border border-purple-300 bg-purple-50/50 p-2 rounded text-xs font-bold text-purple-900 w-full animate-fadeIn"
+                      >
+                        <option value="G1">All G1 (Both G1A & G1B)</option>
+                        <option value="G1A">↳ Sub-Group G1A</option>
+                        <option value="G1B">↳ Sub-Group G1B</option>
+                      </select>
+                    )}
+
+                    {annMainGroup === 'G2' && (
+                      <select
+                        value={form.target_group}
+                        onChange={e => setForm(prev => ({ ...prev, target_group: e.target.value }))}
+                        className="border border-purple-300 bg-purple-50/50 p-2 rounded text-xs font-bold text-purple-900 w-full animate-fadeIn"
+                      >
+                        <option value="G2">All G2 (Both G2A & G2B)</option>
+                        <option value="G2A">↳ Sub-Group G2A</option>
+                        <option value="G2B">↳ Sub-Group G2B</option>
+                      </select>
+                    )}
+                  </div>
                 )}
               </div>
             </div>
             <div className="flex gap-3 mt-5">
-              <button onClick={() => { setShowModal(false); setEditingId(null); setForm({ title: '', content: '', type: 'text', target_branch: '', target_group: '' }); }} className="flex-1 py-2 bg-gray-100 rounded-lg">Cancel</button>
+              <button onClick={() => { setShowModal(false); setEditingId(null); setAnnMainGroup(''); setForm({ title: '', content: '', type: 'text', target_branch: '', target_group: '' }); }} className="flex-1 py-2 bg-gray-100 rounded-lg">Cancel</button>
               <button onClick={postAnnouncement} className="flex-1 py-2 bg-purple-600 text-white rounded-lg">Post</button>
             </div>
           </div>

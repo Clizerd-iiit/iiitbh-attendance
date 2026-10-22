@@ -44,7 +44,7 @@ export function ThemeToggle({ className = '' }: { className?: string }) {
           ? 'bg-[#2b211a] border-[#4a3a2e] text-amber-300 hover:bg-[#382b22]'
           : 'bg-white/90 hover:bg-white border-gray-200 text-amber-600'
       } ${className}`}
-      title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Brown Mode'}
+      title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Theme'}
     >
       {theme === 'dark' ? (
         <Sun className="w-4 h-4 text-amber-300 animate-spin-slow" />
@@ -52,7 +52,7 @@ export function ThemeToggle({ className = '' }: { className?: string }) {
         <Moon className="w-4 h-4 text-amber-600" />
       )}
       <span className="text-xs font-black hidden md:inline">
-        {theme === 'dark' ? 'Light' : 'Dark Brown'}
+        {theme === 'dark' ? 'Light' : 'Dark Theme'}
       </span>
     </button>
   );

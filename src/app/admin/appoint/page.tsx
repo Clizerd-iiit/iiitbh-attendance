@@ -20,6 +20,7 @@ export default function AppointPositionPage() {
   const [crStudentId, setCrStudentId] = useState('');
   const [crSearch, setCrSearch] = useState('');
   const [crBranch, setCrBranch] = useState('CSE');
+  const [crMainGroup, setCrMainGroup] = useState('');
   const [crGroup, setCrGroup] = useState('');
   const [crSubmitting, setCrSubmitting] = useState(false);
   const [crMessage, setCrMessage] = useState('');
@@ -516,7 +517,10 @@ export default function AppointPositionPage() {
                       onChange={e => {
                         const b = e.target.value;
                         setCrBranch(b);
-                        if (b !== 'CSE') setCrGroup('');
+                        if (b !== 'CSE') {
+                          setCrMainGroup('');
+                          setCrGroup('');
+                        }
                       }}
                       className="w-full border border-gray-300 p-2.5 rounded-xl bg-white text-gray-900 font-semibold focus:border-purple-500 outline-none text-sm shadow-sm"
                     >
@@ -529,7 +533,7 @@ export default function AppointPositionPage() {
 
                   <div>
                     <label className="block text-xs font-black text-gray-900 uppercase tracking-wider mb-1">
-                      Group {crBranch === 'CSE' ? '(CSE Groups)' : '(All Groups)'}
+                      Group {crBranch === 'CSE' ? '(CSE Groups & Sub-Groups)' : '(All Groups)'}
                     </label>
                     {crBranch !== 'CSE' ? (
                       <div className="w-full border border-dashed border-gray-300 p-2.5 rounded-xl bg-gray-50 text-gray-600 font-semibold text-xs flex items-center justify-between">
@@ -537,15 +541,45 @@ export default function AppointPositionPage() {
                         <span className="text-[10px] bg-gray-200 px-1.5 py-0.5 rounded font-bold">No groups</span>
                       </div>
                     ) : (
-                      <select
-                        value={crGroup}
-                        onChange={e => setCrGroup(e.target.value)}
-                        className="w-full border border-gray-300 p-2.5 rounded-xl bg-white text-gray-900 font-semibold focus:border-purple-500 outline-none text-sm shadow-sm"
-                      >
-                        <option value="">All Groups</option>
-                        <option value="G1">Group 1 (G1)</option>
-                        <option value="G2">Group 2 (G2)</option>
-                      </select>
+                      <div className="space-y-2">
+                        <select
+                          value={crMainGroup}
+                          onChange={e => {
+                            const mg = e.target.value;
+                            setCrMainGroup(mg);
+                            setCrGroup(mg);
+                          }}
+                          className="w-full border border-gray-300 p-2.5 rounded-xl bg-white text-gray-900 font-semibold focus:border-purple-500 outline-none text-sm shadow-sm"
+                        >
+                          <option value="">All Groups</option>
+                          <option value="G1">Group 1 (G1)</option>
+                          <option value="G2">Group 2 (G2)</option>
+                        </select>
+
+                        {crMainGroup === 'G1' && (
+                          <select
+                            value={crGroup}
+                            onChange={e => setCrGroup(e.target.value)}
+                            className="w-full border border-purple-300 bg-purple-50/50 p-2 rounded-xl text-xs font-bold text-purple-900 focus:border-purple-500 outline-none shadow-sm animate-fadeIn"
+                          >
+                            <option value="G1">All G1 (Both G1A & G1B)</option>
+                            <option value="G1A">↳ Sub-Group G1A</option>
+                            <option value="G1B">↳ Sub-Group G1B</option>
+                          </select>
+                        )}
+
+                        {crMainGroup === 'G2' && (
+                          <select
+                            value={crGroup}
+                            onChange={e => setCrGroup(e.target.value)}
+                            className="w-full border border-purple-300 bg-purple-50/50 p-2 rounded-xl text-xs font-bold text-purple-900 focus:border-purple-500 outline-none shadow-sm animate-fadeIn"
+                          >
+                            <option value="G2">All G2 (Both G2A & G2B)</option>
+                            <option value="G2A">↳ Sub-Group G2A</option>
+                            <option value="G2B">↳ Sub-Group G2B</option>
+                          </select>
+                        )}
+                      </div>
                     )}
                   </div>
                 </div>
