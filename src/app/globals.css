@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   --background: transparent;
   --foreground: #0f172a;
@@ -24,6 +26,39 @@ html.dark {
 html.dark body {
   background-color: transparent !important;
   color: #f6eee5 !important;
+}
+
+/* Sidebar & Navigation Frosted Glass */
+.sidebar-glass {
+  background-color: rgba(255, 255, 255, 0.75) !important;
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-right: 1px solid rgba(255, 255, 255, 0.45) !important;
+  box-shadow: 4px 0 25px rgba(15, 23, 42, 0.08);
+}
+
+html.dark .sidebar-glass {
+  background-color: rgba(26, 20, 16, 0.78) !important;
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-right: 1px solid rgba(85, 65, 50, 0.55) !important;
+  box-shadow: 4px 0 30px rgba(0, 0, 0, 0.5);
+}
+
+.navbar-top-glass {
+  background-color: rgba(255, 255, 255, 0.8) !important;
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.45) !important;
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.06);
+}
+
+html.dark .navbar-top-glass {
+  background-color: rgba(26, 20, 16, 0.82) !important;
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border-bottom: 1px solid rgba(85, 65, 50, 0.55) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.45);
 }
 
 /* Global Glassmorphic Card & Panel Overrides */
@@ -201,6 +236,28 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
   min-height: 100vh;
+}
+
+/* Sleek translucent scrollbars */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(156, 163, 175, 0.35);
+  border-radius: 9999px;
+}
+html.dark ::-webkit-scrollbar-thumb {
+  background: rgba(140, 110, 85, 0.45);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(156, 163, 175, 0.6);
+}
+html.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(175, 140, 110, 0.7);
 }
 
 /* Fix for iOS Safari fading out disabled inputs and texts */
