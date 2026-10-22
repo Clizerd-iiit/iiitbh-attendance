@@ -3,8 +3,8 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  --background: transparent;
-  --foreground: #0f172a;
+  --background: #ffffff;
+  --foreground: #171717;
 }
 
 @theme inline {
@@ -18,90 +18,29 @@
 /* DARK BROWNISH THEME (RICH ESPRESSO & WARM SAND)                    */
 /* ------------------------------------------------------------------ */
 html.dark {
-  --background: transparent;
+  --background: #17120e;
   --foreground: #f6eee5;
   color-scheme: dark;
 }
 
 html.dark body {
-  background-color: transparent !important;
+  background-color: #17120e !important;
   color: #f6eee5 !important;
-}
-
-/* Sidebar & Navigation Frosted Glass */
-.sidebar-glass {
-  background-color: rgba(255, 255, 255, 0.75) !important;
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border-right: 1px solid rgba(255, 255, 255, 0.45) !important;
-  box-shadow: 4px 0 25px rgba(15, 23, 42, 0.08);
-}
-
-html.dark .sidebar-glass {
-  background-color: rgba(26, 20, 16, 0.78) !important;
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border-right: 1px solid rgba(85, 65, 50, 0.55) !important;
-  box-shadow: 4px 0 30px rgba(0, 0, 0, 0.5);
-}
-
-.navbar-top-glass {
-  background-color: rgba(255, 255, 255, 0.8) !important;
-  backdrop-filter: blur(16px) saturate(180%);
-  -webkit-backdrop-filter: blur(16px) saturate(180%);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.45) !important;
-  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.06);
-}
-
-html.dark .navbar-top-glass {
-  background-color: rgba(26, 20, 16, 0.82) !important;
-  backdrop-filter: blur(16px) saturate(180%);
-  -webkit-backdrop-filter: blur(16px) saturate(180%);
-  border-bottom: 1px solid rgba(85, 65, 50, 0.55) !important;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.45);
-}
-
-/* Global Glassmorphic Card & Panel Overrides */
-.bg-white {
-  background-color: rgba(255, 255, 255, 0.76) !important;
-  backdrop-filter: blur(16px) saturate(170%);
-  -webkit-backdrop-filter: blur(16px) saturate(170%);
-  border-color: rgba(255, 255, 255, 0.45) !important;
-  box-shadow: 0 8px 30px rgba(15, 23, 42, 0.08);
 }
 
 html.dark .bg-white {
-  background-color: rgba(36, 28, 22, 0.78) !important;
-  backdrop-filter: blur(16px) saturate(170%);
-  -webkit-backdrop-filter: blur(16px) saturate(170%);
-  border-color: rgba(85, 65, 50, 0.5) !important;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+  background-color: #241c16 !important;
   color: #f6eee5 !important;
-}
-
-.bg-gray-50 {
-  background-color: rgba(248, 250, 252, 0.42) !important;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  border-color: #3d3026 !important;
 }
 
 html.dark .bg-gray-50 {
-  background-color: rgba(22, 17, 13, 0.55) !important;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background-color: #1a1410 !important;
   color: #f6eee5 !important;
 }
 
-.bg-gray-100 {
-  background-color: rgba(241, 245, 249, 0.65) !important;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-}
-
 html.dark .bg-gray-100 {
-  background-color: rgba(46, 36, 28, 0.72) !important;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  background-color: #2a2018 !important;
   color: #f6eee5 !important;
 }
 
@@ -170,9 +109,9 @@ html.dark textarea {
 }
 
 /* ------------------------------------------------------------------ */
-/* SNOWFALL LOOP ANIMATION                                            */
+/* SMOKE / SNOWFALL LOOP ANIMATION                                    */
 /* ------------------------------------------------------------------ */
-@keyframes snowfall {
+@keyframes smokeDrift {
   0% {
     transform: translateY(-10vh) translateX(0);
     opacity: 0;
@@ -189,29 +128,35 @@ html.dark textarea {
   }
 }
 
+.smoke-particle,
 .snow-flake {
   position: absolute;
   top: -20px;
-  background: white;
+  background: rgba(148, 163, 184, 0.45);
   border-radius: 50%;
   pointer-events: none;
-  filter: blur(0.5px);
-  animation: snowfall linear infinite;
+  filter: blur(0.7px);
+  animation: smokeDrift linear infinite;
+}
+
+html.dark .smoke-particle,
+html.dark .snow-flake {
+  background: rgba(254, 243, 199, 0.65);
 }
 
 /* Glassmorphism Classes */
 .glass-panel {
-  background: rgba(255, 255, 255, 0.72) !important;
-  backdrop-filter: blur(16px) saturate(170%);
-  -webkit-backdrop-filter: blur(16px) saturate(170%);
-  border: 1px solid rgba(255, 255, 255, 0.45);
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.35);
 }
 
 html.dark .glass-panel {
-  background: rgba(36, 28, 22, 0.76) !important;
-  backdrop-filter: blur(16px) saturate(170%);
-  -webkit-backdrop-filter: blur(16px) saturate(170%);
-  border: 1px solid rgba(82, 63, 48, 0.5);
+  background: rgba(36, 28, 22, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(82, 63, 48, 0.45);
 }
 
 /* Ultra-Glassmorphism for Login Card & Translucent Overlays */
@@ -232,10 +177,9 @@ html.dark .ultra-glass-card {
 }
 
 body {
-  background: transparent !important;
+  background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
-  min-height: 100vh;
 }
 
 /* Sleek translucent scrollbars */

@@ -201,7 +201,7 @@ export function Navbar() {
   const navContent = (
     <div className="flex flex-col h-full">
       {/* Logo + collapse toggle */}
-      <div className={`flex items-center gap-3 px-4 py-5 border-b border-gray-200/40 dark:border-[#3d3026] ${collapsed ? 'justify-center' : 'justify-between'}`}>
+      <div className={`flex items-center gap-3 px-4 py-5 border-b border-gray-100 dark:border-[#3d3026] ${collapsed ? 'justify-center' : 'justify-between'}`}>
         {!collapsed && (
           <div className="flex items-center gap-2 min-w-0">
             <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 border border-blue-200 relative">
@@ -217,7 +217,7 @@ export function Navbar() {
         )}
         {/* Collapse button — desktop only */}
         <button onClick={() => setCollapsed(c => !c)}
-          className="hidden md:flex w-7 h-7 rounded-lg bg-black/5 hover:bg-black/10 dark:bg-white/10 dark:hover:bg-white/15 dark:text-amber-200 items-center justify-center text-gray-700 flex-shrink-0 transition"
+          className="hidden md:flex w-7 h-7 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-[#2d221a] dark:hover:bg-[#3d3026] dark:text-[#fcf7f2] items-center justify-center text-gray-700 flex-shrink-0 transition"
           title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
           {collapsed ? '›' : '‹'}
         </button>
@@ -244,8 +244,8 @@ export function Navbar() {
             <Link key={item.href} href={item.href} id={tourId}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition group relative
                 ${active
-                  ? 'bg-blue-600/15 text-blue-700 font-bold border border-blue-500/30 dark:bg-[#433226] dark:text-amber-300 dark:border dark:border-amber-500/40 shadow-sm'
-                  : 'text-gray-800 hover:bg-black/5 hover:text-gray-900 font-semibold dark:text-amber-100/90 dark:hover:bg-[#34271e]/80 dark:hover:text-[#ffffff]'
+                  ? 'bg-blue-50 text-blue-700 font-bold dark:bg-[#3d2e23] dark:text-amber-400 dark:border dark:border-amber-500/25'
+                  : 'text-gray-800 hover:bg-gray-100 hover:text-gray-900 font-semibold dark:text-[#fcf7f2] dark:hover:bg-[#34271e] dark:hover:text-[#ffffff]'
                 }
                 ${collapsed ? 'justify-center' : ''}
               `}
@@ -284,7 +284,7 @@ export function Navbar() {
                 </span>
               )}
 
-              {active && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-blue-600 dark:bg-amber-400 rounded-r-full shadow-[0_0_8px_rgba(251,191,36,0.6)]"/>}
+              {active && <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-blue-600 dark:bg-amber-400 rounded-r-full"/>}
               {collapsed && (
                 <span className="absolute left-full ml-2 px-2 py-1 bg-gray-800 text-white dark:bg-[#1a1410] dark:text-[#fcf7f2] dark:border dark:border-[#3d3026] text-xs rounded-lg opacity-0 group-hover:opacity-100 transition pointer-events-none whitespace-nowrap z-50 flex items-center gap-2">
                   {item.label} {item.label === 'Dashboard' && activeClass && '(LIVE CLASS)'} {badge > 0 && `(${badge})`}
@@ -296,7 +296,7 @@ export function Navbar() {
       </nav>
 
       {/* Divider */}
-      <div className="border-t border-gray-200/40 dark:border-[#3d3026] mx-3"/>
+      <div className="border-t border-gray-100 dark:border-[#3d3026] mx-3"/>
 
       {/* User info + logout */}
       <div className={`p-3 space-y-1 ${collapsed ? 'items-center flex flex-col' : ''}`}>
@@ -329,7 +329,7 @@ export function Navbar() {
         </div>
 
         <button onClick={() => { if(window.confirm('Are you sure you want to exit?')) signOut({ callbackUrl: '/auth/login' }) }}
-          className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-red-500 hover:bg-red-500/10 dark:text-red-400 dark:hover:bg-red-950/40 transition text-sm
+          className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-red-500 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/30 transition text-sm
             ${collapsed ? 'justify-center' : ''}`}
           title="Logout">
           <span className="text-base">🚪</span>
@@ -364,9 +364,9 @@ export function Navbar() {
   return (
     <>
       {/* ── Mobile hamburger ── */}
-      <div className="md:hidden fixed top-0 left-0 right-0 z-40 navbar-top-glass flex items-center px-4 py-3 gap-3">
+      <div className="md:hidden fixed top-0 left-0 right-0 z-40 bg-white dark:bg-[#1a1410] border-b border-gray-100 dark:border-[#3d3026] flex items-center px-4 py-3 gap-3 shadow-sm">
         <button onClick={() => setOpen(o => !o)}
-          className="p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 text-gray-700 dark:text-[#fcf7f2] transition">
+          className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 text-gray-700 dark:text-[#fcf7f2] transition">
           {open ? '✕' : '☰'}
         </button>
         <div className="flex items-center gap-2">
@@ -386,13 +386,13 @@ export function Navbar() {
       )}
 
       {/* ── Mobile drawer ── */}
-      <div className={`md:hidden fixed top-0 left-0 h-full w-64 sidebar-glass z-50 shadow-2xl transform transition-transform duration-300
+      <div className={`md:hidden fixed top-0 left-0 h-full w-64 bg-white dark:bg-[#1a1410] border-r border-gray-100 dark:border-[#3d3026] z-50 shadow-2xl transform transition-transform duration-300
         ${open ? 'translate-x-0' : '-translate-x-full'}`}>
         {navContent}
       </div>
 
       {/* ── Desktop sidebar (fixed) ── */}
-      <div className={`hidden md:flex flex-col fixed top-0 left-0 h-full sidebar-glass z-30 transition-all duration-300 ${sidebarW}`}>
+      <div className={`hidden md:flex flex-col fixed top-0 left-0 h-full bg-white dark:bg-[#1a1410] border-r border-gray-100 dark:border-[#3d3026] z-30 transition-all duration-300 ${sidebarW}`}>
         {navContent}
       </div>
     </>
