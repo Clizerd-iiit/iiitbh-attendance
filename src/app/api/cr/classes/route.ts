@@ -184,3 +184,35 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json({ classes: data || [] });
 }
+
+// DELETE: CR can discard their own active testing session
+export async function DELETE(req: NextRequest) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user || session.user.role !== 'student')
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+
+  const { searchParams } = new URL(req.url);
+  const classId = searchParams.get('classId');
+  if (!classId) return NextResponse.json({ error: 'Missing classId' }, { status: 400 });
+
+  const userId = (session.user.userId || (session.user as any).id) as string;
+
+  const { data: cls } = await supabaseAdmin
+    .from('classes')
+    .select('id, created_by, status, subject_id, date')
+    .eq('id', classId)
+    .single();
+
+  if (!cls) return NextResponse.json({ error: 'Class not found' }, { status: 404 });
+  if (cls.created_by !== userId) return NextResponse.json({ error: 'Not your class session' }, { status: 403 });
+  if (cls.status !== 'active') return NextResponse.json({ error: 'Only active sessions can be discarded' }, { status: 400 });
+
+  // Delete attendance recorded so far for this testing session
+  await supabaseAdmin.from('attendance').delete().eq('class_id', classId);
+  await supabaseAdmin.from('system_settings').delete().eq('key', `class_cfg_${classId}`);
+
+  const { error } = await supabaseAdmin.from('classes').delete().eq('id', classId);
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  return NextResponse.json({ success: true });
+}

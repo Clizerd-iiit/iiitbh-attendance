@@ -288,6 +288,33 @@ export default function CRTakeAttendancePage() {
     }
   };
 
+  const discardSession = async () => {
+    if (!activeClass) return;
+    if (!confirm('Are you sure you want to discard and cancel this session? Any attendance recorded in this test will be permanently deleted and no absentees will be marked.')) return;
+
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/cr/classes?classId=${activeClass.id}`, {
+        method: 'DELETE',
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || 'Failed to discard session');
+        setLoading(false);
+        return;
+      }
+      setActiveClass(null);
+      setMarked({});
+      setShowKiosk(false);
+      setShowBulkSheet(false);
+      alert('Session discarded and deleted successfully.');
+    } catch {
+      alert('Network error while discarding session');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Single Manual Mark (Kiosk or list toggle)
   const markManual = async (studentId: string, status: AttendanceStatus) => {
     if (!activeClass) return;
@@ -562,9 +589,17 @@ export default function CRTakeAttendancePage() {
                   </button>
                 )}
                 <button
+                  onClick={discardSession}
+                  disabled={loading}
+                  className="py-2.5 px-3.5 bg-red-50 hover:bg-red-100 text-red-700 border border-red-300 rounded-xl font-bold text-xs sm:text-sm transition active:scale-95 disabled:opacity-50 cursor-pointer"
+                  title="Discard this test session without saving attendance"
+                >
+                  🗑️ Discard Session
+                </button>
+                <button
                   onClick={closeClass}
                   disabled={loading}
-                  className="py-2.5 px-4 bg-red-600 hover:bg-red-700 text-white rounded-xl font-black text-xs sm:text-sm shadow-sm transition active:scale-95 disabled:opacity-50"
+                  className="py-2.5 px-4 bg-red-600 hover:bg-red-700 text-white rounded-xl font-black text-xs sm:text-sm shadow-sm transition active:scale-95 disabled:opacity-50 cursor-pointer"
                 >
                   End & Close Session
                 </button>

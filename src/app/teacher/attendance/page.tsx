@@ -18,6 +18,10 @@ interface ClassSession {
   qr_code: string;
   otp: string;
   status: string;
+  created_by?: string;
+  creator_name?: string | null;
+  creator_role?: string | null;
+  is_cr_conducted?: boolean;
 }
 
 function AttendancePage() {
@@ -270,12 +274,47 @@ function AttendancePage() {
 
 
   const handleDeleteClass = async (classId: string) => {
-    if (!confirm('Are you sure you want to permanently delete this class and all its attendance data?')) return;
+    if (!confirm('Are you sure you want to permanently delete this class and all its attendance data? This action cannot be undone.')) return;
     setLoading(true);
-    await fetch(`/api/teacher/classes?classId=${classId}`, { method: 'DELETE' });
-    setClosedClasses(prev => prev.filter(c => c.id !== classId));
-    setLoading(false);
-    alert('Class deleted successfully.');
+    try {
+      const res = await fetch(`/api/teacher/classes?classId=${classId}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || 'Failed to delete class.');
+        setLoading(false);
+        return;
+      }
+      setClosedClasses(prev => prev.filter(c => c.id !== classId));
+      alert('Class session deleted permanently.');
+    } catch {
+      alert('Network error while deleting class.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const discardActiveClass = async () => {
+    if (!activeClass) return;
+    if (!confirm('Are you sure you want to discard and permanently delete this active session? All attendance marked in this session will be permanently deleted and no absentee records will be saved.')) return;
+    
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/teacher/classes?classId=${activeClass.id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || 'Failed to discard class session.');
+        setLoading(false);
+        return;
+      }
+      setActiveClass(null);
+      setMarked({});
+      setShowKiosk(false);
+      alert('Active class session discarded and deleted successfully.');
+    } catch {
+      alert('Network error while discarding session.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const closeClass = async () => {
@@ -680,12 +719,17 @@ function AttendancePage() {
                   {filteredClosedClasses.map(cls => (
                     <div key={cls.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100 gap-3">
                       <div>
-                        <p className="font-bold text-gray-800 flex items-center gap-2">
+                        <p className="font-bold text-gray-800 flex items-center gap-2 flex-wrap">
                           {cls.subjects?.name} ({cls.subjects?.code})
                           <span className="text-xs font-bold bg-blue-100 text-blue-800 px-2.5 py-1 rounded-full">Class No. {cls.classNo}</span>
+                          {cls.is_cr_conducted && (
+                            <span className="text-xs font-black bg-purple-100 text-purple-800 border border-purple-200 px-2.5 py-0.5 rounded-full inline-flex items-center gap-1">
+                              🎖️ Taken by CR: {cls.creator_name || 'CR'}
+                            </span>
+                          )}
                         </p>
                         <p className="text-sm text-gray-700 mt-1 font-medium">
-                          📅 {cls.date} • ⏰ {cls.start_time} • <span className="text-red-500">Closed</span>
+                          📅 {cls.date} • ⏰ {cls.start_time} • <span className="text-red-500 font-semibold">Closed</span>
                         </p>
                       </div>
                       <div className="flex gap-2 shrink-0">
@@ -694,7 +738,7 @@ function AttendancePage() {
                           ✏️ Edit
                         </a>
                         <button onClick={() => handleDeleteClass(cls.id)} disabled={loading}
-                          className="px-4 py-2 bg-red-100 text-red-700 font-medium rounded-lg text-sm hover:bg-red-200 transition text-center flex-1">
+                          className="px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 border border-red-200 font-medium rounded-lg text-sm transition text-center flex-1 cursor-pointer">
                           🗑️ Delete
                         </button>
                       </div>
@@ -708,15 +752,31 @@ function AttendancePage() {
           <div className="space-y-6">
             
             {/* Header for Active Class */}
-            <div className="bg-white p-6 rounded-2xl shadow-sm border flex justify-between items-center">
+            <div className="bg-white p-6 rounded-2xl shadow-sm border flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
-                <h2 className="text-xl font-bold text-gray-800">Class is Live! 🟢</h2>
-                <p className="text-sm text-gray-700 capitalize">{method === 'kiosk' ? 'Live Kiosk Mode' : method === 'otp' ? 'OTP Mode' : 'QR Scanner Mode'}</p>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h2 className="text-xl font-bold text-gray-800">Class is Live! 🟢</h2>
+                  {activeClass.is_cr_conducted && (
+                    <span className="bg-purple-100 text-purple-900 border border-purple-300 text-xs font-black px-2.5 py-0.5 rounded-full inline-flex items-center gap-1">
+                      🎖️ Started by CR: {activeClass.creator_name || 'CR'}
+                    </span>
+                  )}
+                </div>
+                <p className="text-sm text-gray-700 capitalize mt-0.5">
+                  {method === 'kiosk' ? 'Live Kiosk Mode' : method === 'otp' ? 'OTP Mode' : 'QR Scanner Mode'}
+                </p>
               </div>
-              <button onClick={closeClass} disabled={loading}
-                className="bg-red-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-red-700 transition shadow-sm">
-                🔒 Close Class
-              </button>
+              <div className="flex items-center gap-2 flex-wrap">
+                <button onClick={discardActiveClass} disabled={loading}
+                  className="bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 px-4 py-3 rounded-xl font-bold transition shadow-sm text-sm disabled:opacity-50 cursor-pointer"
+                  title="Discard this test session without marking any absentees">
+                  🗑️ Discard Session
+                </button>
+                <button onClick={closeClass} disabled={loading}
+                  className="bg-red-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-red-700 transition shadow-sm disabled:opacity-50 cursor-pointer">
+                  🔒 Close Class
+                </button>
+              </div>
             </div>
 
             {/* QR Display */}

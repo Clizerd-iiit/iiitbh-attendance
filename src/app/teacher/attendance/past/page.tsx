@@ -123,6 +123,27 @@ export default function PastAttendancePage() {
     }
   };
 
+  const deleteThisClass = async () => {
+    if (!classId) return;
+    if (!confirm('Are you sure you want to permanently delete this class session and all its attendance data? This action cannot be undone.')) return;
+    
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/teacher/classes?classId=${classId}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || 'Failed to delete class session.');
+        setSaving(false);
+        return;
+      }
+      alert('Class session deleted permanently.');
+      router.push('/teacher/attendance');
+    } catch {
+      alert('Network error while deleting class session.');
+      setSaving(false);
+    }
+  };
+
   const filteredStudents = students.filter(s => {
     const sBranch = s.signup_info?.branch || s.branch || '';
     const sGroup = s.signup_info?.group || s.section || '';
@@ -145,10 +166,28 @@ export default function PastAttendancePage() {
       <div className="max-w-4xl mx-auto px-4 py-8">
         
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
-          <h1 className="text-2xl font-bold text-gray-800">📝 Retroactive Attendance</h1>
-          <button onClick={() => window.history.back()} className="text-sm font-medium text-blue-600 hover:underline">
-            &larr; Back to Live Attendance
-          </button>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-800">📝 Retroactive Attendance</h1>
+            {classId && (
+              <p className="text-xs text-gray-500 font-medium mt-0.5">
+                Session ID: <code className="bg-gray-200 dark:bg-gray-800 px-1.5 py-0.5 rounded text-[11px] font-mono">{classId.slice(0, 8)}...</code>
+              </p>
+            )}
+          </div>
+          <div className="flex items-center gap-3">
+            {classId && (
+              <button
+                onClick={deleteThisClass}
+                disabled={saving}
+                className="px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 border border-red-300 font-bold rounded-xl text-sm transition shadow-sm disabled:opacity-50 cursor-pointer"
+              >
+                🗑️ Delete This Class Session
+              </button>
+            )}
+            <button onClick={() => window.history.back()} className="text-sm font-semibold text-blue-600 hover:underline">
+              &larr; Back to Live Attendance
+            </button>
+          </div>
         </div>
 
         {/* Top Controls */}

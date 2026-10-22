@@ -47,6 +47,10 @@ export interface ClassSession {
   otp?: string;
   otp_expires_at?: string;
   status: ClassStatus;
+  created_by?: string;
+  creator_name?: string | null;
+  creator_role?: string | null;
+  is_cr_conducted?: boolean;
 }
 
 export interface AttendanceRecord {
