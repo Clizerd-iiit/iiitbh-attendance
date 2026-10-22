@@ -3,7 +3,6 @@ import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { Navbar } from '@/components/shared/Navbar';
 import Link from 'next/link';
-import { AttendanceHeatmap } from '@/components/attendance-heatmap';
 import { OnboardingTour } from '@/components/shared/OnboardingTour';
 
 interface Stats {
@@ -99,11 +98,6 @@ export default function AdminDashboard() {
               </Link>
             );
           })}
-        </div>
-
-        {/* Phase 2: Heatmap */}
-        <div className="mt-8">
-          <AttendanceHeatmap />
         </div>
       </div>
 

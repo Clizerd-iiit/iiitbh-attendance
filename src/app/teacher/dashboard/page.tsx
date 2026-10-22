@@ -5,7 +5,6 @@ import { Navbar } from '@/components/shared/Navbar';
 import { WelcomeCard } from '@/components/shared/WelcomeCard';
 import Link from 'next/link';
 import { Subject } from '@/types';
-import { MakeupClassSuggester } from '@/components/makeup-class-suggester';
 import { CRDelegationModal } from '@/components/teacher/CRDelegationModal';
 import { ActiveCRDelegations } from '@/components/teacher/ActiveCRDelegations';
 import type { CRDelegation } from '@/lib/delegation';
@@ -123,11 +122,6 @@ export default function TeacherDashboard() {
               </div>
             ))}
           </div>
-        </div>
-
-        {/* Phase 2: Makeup Class Suggester */}
-        <div className="mt-8">
-          <MakeupClassSuggester />
         </div>
       </div>
 
