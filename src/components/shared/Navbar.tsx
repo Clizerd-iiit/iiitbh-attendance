@@ -364,7 +364,7 @@ export function Navbar() {
   return (
     <>
       {/* ── Mobile hamburger ── */}
-      <div className="md:hidden fixed top-0 left-0 right-0 z-40 bg-white dark:bg-[#1a1410] border-b border-gray-100 dark:border-[#3d3026] flex items-center px-4 py-3 gap-3 shadow-sm">
+      <div className="md:hidden fixed top-0 left-0 right-0 z-40 bg-white/85 dark:bg-[#1a1410]/85 backdrop-blur-xl border-b border-gray-200/50 dark:border-[#3d3026] flex items-center px-4 py-3 gap-3 shadow-sm">
         <button onClick={() => setOpen(o => !o)}
           className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-[#2d221a] text-gray-700 dark:text-[#fcf7f2] transition">
           {open ? '✕' : '☰'}
@@ -386,13 +386,13 @@ export function Navbar() {
       )}
 
       {/* ── Mobile drawer ── */}
-      <div className={`md:hidden fixed top-0 left-0 h-full w-64 bg-white dark:bg-[#1a1410] border-r dark:border-[#3d3026] z-50 shadow-2xl transform transition-transform duration-300
+      <div className={`md:hidden fixed top-0 left-0 h-full w-64 bg-white/90 dark:bg-[#1a1410]/90 backdrop-blur-2xl border-r border-gray-200/50 dark:border-[#3d3026] z-50 shadow-2xl transform transition-transform duration-300
         ${open ? 'translate-x-0' : '-translate-x-full'}`}>
         {navContent}
       </div>
 
       {/* ── Desktop sidebar (fixed) ── */}
-      <div className={`hidden md:flex flex-col fixed top-0 left-0 h-full bg-white dark:bg-[#1a1410] border-r border-gray-100 dark:border-[#3d3026] shadow-sm z-30 transition-all duration-300 ${sidebarW}`}>
+      <div className={`hidden md:flex flex-col fixed top-0 left-0 h-full bg-white/85 dark:bg-[#1a1410]/85 backdrop-blur-xl border-r border-gray-200/50 dark:border-[#3d3026] shadow-sm z-30 transition-all duration-300 ${sidebarW}`}>
         {navContent}
       </div>
     </>

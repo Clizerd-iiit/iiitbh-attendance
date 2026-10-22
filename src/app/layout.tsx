@@ -3,6 +3,7 @@ import './globals.css';
 import { AuthProvider } from '@/components/shared/AuthProvider';
 import PWARegister from '@/components/shared/PWARegister';
 import { OfflineNotifier } from '@/components/shared/OfflineNotifier';
+import { GlobalBackground } from '@/components/shared/GlobalBackground';
 
 const inter = { className: '' };
 
@@ -45,6 +46,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body className={inter.className}>
+        <GlobalBackground />
         <AuthProvider>
           {children}
           <PWARegister />

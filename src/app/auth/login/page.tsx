@@ -48,61 +48,8 @@ export default function LoginPage() {
     }
   };
 
-  // Generate lightweight looped snowfall particles
-  const snowflakes = useMemo(() => {
-    return Array.from({ length: 38 }).map((_, i) => ({
-      id: i,
-      left: `${(i * 2.7) % 100}%`,
-      size: `${(i % 5) + 3}px`,
-      duration: `${6 + (i % 6) * 1.2}s`,
-      delay: `${(i * 0.35) % 5}s`,
-      opacity: 0.35 + (i % 5) * 0.12,
-    }));
-  }, []);
-
   return (
-    <div className="min-h-screen relative flex items-center justify-center p-4 overflow-hidden bg-slate-950">
-      {/* ── Background Scenery Layer (IIIT Bhagalpur Campus) ── */}
-      <div className="absolute inset-0 z-0">
-        <Image
-          src="/iiitbh-campus.jpg"
-          alt="IIIT Bhagalpur Campus"
-          fill
-          priority
-          className="object-cover object-center scale-105 filter contrast-125 brightness-75 transition-all duration-700"
-        />
-
-        {/* White Architectural Sketch & Frosted Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-blue-950/60 to-slate-900/80 backdrop-blur-[2px]" />
-
-        {/* Artistic line sketch overlay texture */}
-        <div
-          className="absolute inset-0 opacity-25 mix-blend-screen pointer-events-none bg-center bg-cover"
-          style={{
-            backgroundImage: "radial-gradient(circle at center, rgba(255,255,255,0.2) 1px, transparent 1px)",
-            backgroundSize: "24px 24px",
-          }}
-        />
-      </div>
-
-      {/* ── Snowfall Loop Particles ── */}
-      <div className="absolute inset-0 pointer-events-none z-10 overflow-hidden">
-        {snowflakes.map(flake => (
-          <span
-            key={flake.id}
-            className="snow-flake"
-            style={{
-              left: flake.left,
-              width: flake.size,
-              height: flake.size,
-              animationDuration: flake.duration,
-              animationDelay: flake.delay,
-              opacity: flake.opacity,
-            }}
-          />
-        ))}
-      </div>
-
+    <div className="min-h-screen relative flex items-center justify-center p-4 overflow-hidden">
       {/* ── Top Bar with Theme Toggle ── */}
       <div className="absolute top-4 right-4 z-30">
         <ThemeToggle className="glass-panel" />
