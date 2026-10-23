@@ -239,7 +239,19 @@ export function Navbar() {
           if (item.label === 'Reports') tourId = 'tour-teacher-reports';
           if (item.label === 'Appoint Position') tourId = 'tour-teacher-appoint';
           if (item.label === 'Verify Users') tourId = 'tour-admin-verify';
-          if (item.label === 'Announcements') tourId = 'tour-admin-announcements';
+          if (item.label === 'Announcements') {
+            tourId = role === 'student' ? 'tour-student-announcements' : (role === 'teacher' ? 'tour-teacher-announcements' : 'tour-admin-announcements');
+          }
+          if (item.label === 'My Attendance') tourId = 'tour-student-history';
+          if (item.label === 'Notes Vault' || item.label === 'Study Material' || item.href === '/vault') tourId = 'tour-student-vault';
+          if (item.label === 'My Profile') tourId = 'tour-student-profile';
+          if (item.label === 'Contact Admin') tourId = 'tour-student-contact';
+          if (item.label === 'Student Portal') tourId = 'tour-student-switcher';
+          if (item.label === 'Audit Logs') tourId = 'tour-admin-logs';
+          if (item.label === 'Reported Issues') tourId = 'tour-admin-issues';
+          if (item.label === 'Settings') tourId = 'tour-admin-settings';
+          if (item.label === 'All Users' || item.label === 'Manage Users') tourId = 'tour-admin-users';
+          if (item.label === 'Subjects') tourId = role === 'teacher' ? 'tour-teacher-subjects-nav' : 'tour-admin-subjects';
 
           return (
             <Link key={item.href} href={item.href} id={tourId}

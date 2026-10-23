@@ -90,6 +90,9 @@ export default function AdminDashboard() {
             if (link.href === '/admin/subjects') linkId = 'tour-admin-subjects';
             if (link.href === '/admin/appoint') linkId = 'tour-admin-appoint';
             if (link.href === '/admin/announcements') linkId = 'tour-admin-announcements';
+            if (link.href === '/admin/logs') linkId = 'tour-admin-logs';
+            if (link.href === '/admin/issues') linkId = 'tour-admin-issues';
+            if (link.href === '/admin/settings') linkId = 'tour-admin-settings';
 
             return (
               <Link key={link.href} href={link.href} id={linkId}

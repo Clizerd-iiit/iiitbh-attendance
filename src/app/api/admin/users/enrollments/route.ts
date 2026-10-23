@@ -14,6 +14,16 @@ export async function GET(req: NextRequest) {
   const studentId = req.nextUrl.searchParams.get('studentId');
   if (!studentId) return NextResponse.json({ error: 'Missing studentId' }, { status: 400 });
 
+  if (isPseudoadmin) {
+    const { data: targetUser } = await supabaseAdmin.from('users').select('id, role, branch, signup_info').eq('id', studentId).single();
+    if (!targetUser || targetUser.role === 'superadmin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    const myBranch = ((session?.user as any)?.pseudoadminBranch || '').toUpperCase().trim();
+    const targetBranch = (targetUser.signup_info?.branch || targetUser.branch || '').toUpperCase().trim();
+    if (myBranch && targetBranch && myBranch !== targetBranch) {
+      return NextResponse.json({ error: `Forbidden: You can only view enrollments for your branch (${myBranch})` }, { status: 403 });
+    }
+  }
+
   const { data: enrollments, error: enrError } = await supabaseAdmin
     .from('enrollments')
     .select('id, subject_id, enrolled_at')
@@ -70,6 +80,19 @@ export async function DELETE(req: NextRequest) {
 
   const enrollmentId = req.nextUrl.searchParams.get('enrollmentId');
   if (!enrollmentId) return NextResponse.json({ error: 'Missing enrollmentId' }, { status: 400 });
+
+  if (isPseudoadmin) {
+    const { data: enr } = await supabaseAdmin.from('enrollments').select('student_id').eq('id', enrollmentId).single();
+    if (enr?.student_id) {
+      const { data: targetUser } = await supabaseAdmin.from('users').select('id, role, branch, signup_info').eq('id', enr.student_id).single();
+      if (!targetUser || targetUser.role === 'superadmin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      const myBranch = ((session?.user as any)?.pseudoadminBranch || '').toUpperCase().trim();
+      const targetBranch = (targetUser.signup_info?.branch || targetUser.branch || '').toUpperCase().trim();
+      if (myBranch && targetBranch && myBranch !== targetBranch) {
+        return NextResponse.json({ error: `Forbidden: You can only remove enrollments for your branch (${myBranch})` }, { status: 403 });
+      }
+    }
+  }
 
   await supabaseAdmin.from('enrollments').delete().eq('id', enrollmentId);
   return NextResponse.json({ success: true });

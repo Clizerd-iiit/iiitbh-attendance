@@ -44,6 +44,14 @@ export async function GET(req: NextRequest) {
   let query = supabaseAdmin.from('users').select('*').order('name');
   if (role) query = query.eq('role', role);
 
+  const isPseudoadmin = !!(session.user as any)?.isPseudoadmin;
+
+  if (isPseudoadmin) {
+    // Pseudoadmins should never see SuperAdmins
+    if (role === 'superadmin') return NextResponse.json({ users: [] });
+    query = query.neq('role', 'superadmin');
+  }
+
   if (subjectId) {
     const { data: enrollments } = await supabaseAdmin.from('enrollments')
       .select('student_id').eq('subject_id', subjectId);
@@ -52,7 +60,6 @@ export async function GET(req: NextRequest) {
     query = query.in('id', ids);
   }
 
-  const isPseudoadmin = !!(session.user as any)?.isPseudoadmin;
   if (!isPseudoadmin && (session.user.role === 'teacher' || session.user.role === 'student')) {
     // Re-apply the same query logic but with restricted select fields
     let safeQuery = supabaseAdmin.from('users')
@@ -123,6 +130,22 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid input data', details: e.errors }, { status: 400 });
   }
   const { id, ...updates } = body;
+
+  if (isPseudoadmin) {
+    const { data: targetUser } = await supabaseAdmin.from('users').select('id, role, branch, signup_info').eq('id', id).single();
+    if (!targetUser) return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    if (targetUser.role === 'superadmin') {
+      return NextResponse.json({ error: 'Forbidden: Cannot edit SuperAdmin' }, { status: 403 });
+    }
+    if (targetUser.role !== 'student') {
+      return NextResponse.json({ error: 'Forbidden: Pseudoadmins can only edit students' }, { status: 403 });
+    }
+    const myBranch = ((session.user as any)?.pseudoadminBranch || '').toUpperCase().trim();
+    const targetBranch = (targetUser.signup_info?.branch || targetUser.branch || '').toUpperCase().trim();
+    if (myBranch && targetBranch && myBranch !== targetBranch) {
+      return NextResponse.json({ error: `Forbidden: You can only edit students from your branch (${myBranch})` }, { status: 403 });
+    }
+  }
 
   if (session.user.role === 'teacher' || isPseudoadmin) {
     const safeKeys = ['name', 'roll_no', 'section', 'branch', 'group', 'sub_group', 'is_cr', 'is_active', 'bio', 'profile_photo_url', 'email'];

@@ -18,7 +18,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid input' }, { status: 400 });
   }
 
-  const { data: user } = await supabaseAdmin.from('users').select('signup_info').eq('id', student_id).single();
+  const { data: user } = await supabaseAdmin.from('users').select('signup_info, branch, role').eq('id', student_id).single();
+  if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
+  if (user.role === 'superadmin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+
+  if (isPseudoadmin) {
+    const myBranch = ((session?.user as any)?.pseudoadminBranch || '').toUpperCase().trim();
+    const targetBranch = (user.signup_info?.branch || user.branch || '').toUpperCase().trim();
+    if (myBranch && targetBranch && myBranch !== targetBranch) {
+      return NextResponse.json({ error: `Forbidden: You can only modify Face ID for students in your branch (${myBranch})` }, { status: 403 });
+    }
+  }
+
   const signupInfo = user?.signup_info || {};
   
   signupInfo.face_descriptor = descriptor;
@@ -50,7 +61,18 @@ export async function DELETE(req: NextRequest) {
   }
   if (!student_id) return NextResponse.json({ error: 'Missing student_id' }, { status: 400 });
 
-  const { data: user } = await supabaseAdmin.from('users').select('signup_info').eq('id', student_id).single();
+  const { data: user } = await supabaseAdmin.from('users').select('signup_info, branch, role').eq('id', student_id).single();
+  if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
+  if (user.role === 'superadmin') return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+
+  if (isPseudoadmin) {
+    const myBranch = ((session?.user as any)?.pseudoadminBranch || '').toUpperCase().trim();
+    const targetBranch = (user.signup_info?.branch || user.branch || '').toUpperCase().trim();
+    if (myBranch && targetBranch && myBranch !== targetBranch) {
+      return NextResponse.json({ error: `Forbidden: You can only modify Face ID for students in your branch (${myBranch})` }, { status: 403 });
+    }
+  }
+
   const signupInfo = user?.signup_info || {};
   
   delete signupInfo.last_face_update; // Remove the limit lock

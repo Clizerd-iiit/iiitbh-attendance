@@ -1,11 +1,17 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { useSession } from 'next-auth/react';
 import { Navbar } from '@/components/shared/Navbar';
 import { User, Role } from '@/types';
 import { PhotoZoom } from '@/components/shared/PhotoZoom';
 import { AdminEditStudentModal } from '@/components/admin/AdminEditStudentModal';
 
 export default function AdminUsers() {
+  const { data: session } = useSession();
+  const isSuperAdmin = session?.user?.role === 'superadmin';
+  const isPseudoadmin = !!(session?.user as any)?.isPseudoadmin;
+  const pseudoadminBranch = ((session?.user as any)?.pseudoadminBranch || '').toUpperCase().trim();
+
   const [users, setUsers] = useState<User[]>([]);
   const [filter, setFilter] = useState<Role | 'all'>('all');
   const [branchFilter, setBranchFilter] = useState('');
@@ -34,6 +40,12 @@ export default function AdminUsers() {
     fetchUsers();
     // Removed setInterval to prevent list from jumping while admin is working
   }, [filter]);
+
+  useEffect(() => {
+    if (isPseudoadmin && pseudoadminBranch && !branchFilter) {
+      setBranchFilter(pseudoadminBranch);
+    }
+  }, [isPseudoadmin, pseudoadminBranch]);
 
   const saveUser = async () => {
     const method = isEditing ? 'PATCH' : 'POST';
@@ -64,6 +76,9 @@ export default function AdminUsers() {
   };
   
   const filteredUsers = users.filter(u => {
+    // Pseudoadmin should never see SuperAdmin details
+    if (isPseudoadmin && u.role === 'superadmin') return false;
+
     if (filter === 'student' || filter === 'all') {
       const ub = ((u as any).signup_info?.branch || (u as any).branch || '').toUpperCase().trim();
       const ug = ((u as any).signup_info?.group || (u as any).section || '').toUpperCase().trim();
@@ -102,17 +117,26 @@ export default function AdminUsers() {
       <div className="max-w-6xl mx-auto px-4 py-8">
         
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-          <h1 className="text-2xl font-bold text-gray-800">👥 Users Management</h1>
-          <button onClick={() => { setForm(defaultForm); setIsEditing(false); setShowModal(true); }}
-            className="bg-blue-600 text-white px-5 py-2.5 rounded-xl font-medium hover:bg-blue-700 transition">
-            + Add User
-          </button>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-800">👥 Users Management</h1>
+            {isPseudoadmin && (
+              <p className="text-xs text-amber-700 font-medium mt-0.5">
+                🛡️ Branch Administrator • Editing authorized for <span className="font-bold">{pseudoadminBranch || 'your branch'}</span> students
+              </p>
+            )}
+          </div>
+          {isSuperAdmin && (
+            <button onClick={() => { setForm(defaultForm); setIsEditing(false); setShowModal(true); }}
+              className="bg-blue-600 text-white px-5 py-2.5 rounded-xl font-medium hover:bg-blue-700 transition">
+              + Add User
+            </button>
+          )}
         </div>
 
         <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 mb-6 flex flex-col md:flex-row gap-4 items-center justify-between">
           <div className="flex flex-wrap items-center gap-3">
           <div className="flex bg-gray-100 p-1 rounded-xl">
-            {['all', 'student', 'teacher', 'superadmin'].map(r => (
+            {(isPseudoadmin ? ['all', 'student', 'teacher'] : ['all', 'student', 'teacher', 'superadmin']).map(r => (
               <button key={r} onClick={() => setFilter(r as any)}
                 className={`px-4 py-1.5 rounded-lg text-sm font-medium capitalize transition ${filter === r ? 'bg-white shadow-sm text-blue-600' : 'text-gray-700 hover:text-gray-800'}`}>
                 {r}
@@ -244,31 +268,47 @@ export default function AdminUsers() {
                       ) : '—'}
                     </td>
                     <td className="p-4">
-                      <button onClick={() => toggleActive(u)}
-                        className={`text-xs px-2.5 py-1 rounded-full font-medium border ${
-                          u.is_active ? 'bg-green-50 text-green-700 border-green-200 hover:bg-green-100' : 
-                                        'bg-red-50 text-red-700 border-red-200 hover:bg-red-100'
+                      {isSuperAdmin || (isPseudoadmin && u.role === 'student' && (!pseudoadminBranch || ((u as any).signup_info?.branch || (u as any).branch || '').toUpperCase().trim() === pseudoadminBranch)) ? (
+                        <button onClick={() => toggleActive(u)}
+                          className={`text-xs px-2.5 py-1 rounded-full font-medium border ${
+                            u.is_active ? 'bg-green-50 text-green-700 border-green-200 hover:bg-green-100' : 
+                                          'bg-red-50 text-red-700 border-red-200 hover:bg-red-100'
+                          }`}>
+                          {u.is_active ? 'Active' : 'Suspended'}
+                        </button>
+                      ) : (
+                        <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${
+                          u.is_active ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
                         }`}>
-                        {u.is_active ? 'Active' : 'Suspended'}
-                      </button>
+                          {u.is_active ? 'Active' : 'Suspended'}
+                        </span>
+                      )}
                     </td>
                     <td className="p-4 text-right space-x-2">
-                      <button onClick={() => { 
-                          if (u.role === 'student') {
-                            setEditingStudent(u);
-                          } else {
-                            setForm({ id: u.id, name: u.name, email: u.email, role: u.role, roll_no: u.roll_no||'', section: u.section||'', branch: (u as any).signup_info?.branch || (u as any).branch || '', group: (u as any).signup_info?.group || '', sub_group: (u as any).signup_info?.sub_group || '', is_cr: (u as any).is_cr||false, semester: u.semester||1, bio: u.bio||'', profile_photo_url: u.profile_photo_url||'' });
-                            setIsEditing(true); 
-                            setShowModal(true); 
-                          }
-                        }} 
-                        className="text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg text-sm font-medium transition">
-                        Edit
-                      </button>
-                      <button onClick={() => setDeleting(u.id)} 
-                        className="text-red-600 hover:text-red-800 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg text-sm font-medium transition">
-                        Delete
-                      </button>
+                      {isSuperAdmin || (isPseudoadmin && u.role === 'student' && (!pseudoadminBranch || ((u as any).signup_info?.branch || (u as any).branch || '').toUpperCase().trim() === pseudoadminBranch)) ? (
+                        <button onClick={() => { 
+                            if (u.role === 'student') {
+                              setEditingStudent(u);
+                            } else {
+                              setForm({ id: u.id, name: u.name, email: u.email, role: u.role, roll_no: u.roll_no||'', section: u.section||'', branch: (u as any).signup_info?.branch || (u as any).branch || '', group: (u as any).signup_info?.group || '', sub_group: (u as any).signup_info?.sub_group || '', is_cr: (u as any).is_cr||false, semester: u.semester||1, bio: u.bio||'', profile_photo_url: u.profile_photo_url||'' });
+                              setIsEditing(true); 
+                              setShowModal(true); 
+                            }
+                          }} 
+                          className="text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg text-sm font-medium transition">
+                          Edit
+                        </button>
+                      ) : (
+                        <span className="text-gray-400 bg-gray-50 border border-gray-200 px-2.5 py-1.5 rounded-lg text-xs font-semibold cursor-not-allowed">
+                          View Only
+                        </span>
+                      )}
+                      {isSuperAdmin && (
+                        <button onClick={() => setDeleting(u.id)} 
+                          className="text-red-600 hover:text-red-800 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg text-sm font-medium transition">
+                          Delete
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}
