@@ -98,6 +98,7 @@ export async function backupClassAttendance(classId: string) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
+        redirect: 'follow',
       }).catch(err => {
         console.error('[Secondary Backup] Webhook Error:', err);
       });

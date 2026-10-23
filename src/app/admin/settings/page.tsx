@@ -34,6 +34,8 @@ export default function SettingsPage() {
   });
   const [saved, setSaved] = useState(false);
   const [cleaning, setCleaning] = useState(false);
+  const [testingWebhook, setTestingWebhook] = useState(false);
+  const [testResult, setTestResult] = useState<{ success: boolean; message?: string; error?: string } | null>(null);
 
   const [storage, setStorage] = useState<any>(null);
 
@@ -82,6 +84,28 @@ export default function SettingsPage() {
     }
     setSaved(true);
     setTimeout(() => setSaved(false), 3000);
+  };
+
+  const runTestWebhook = async () => {
+    if (!settings.secondary_backup_webhook_url) {
+      alert('Please enter a Webhook URL first.');
+      return;
+    }
+    setTestingWebhook(true);
+    setTestResult(null);
+    try {
+      const res = await fetch('/api/admin/backup/test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ webhookUrl: settings.secondary_backup_webhook_url }),
+      });
+      const d = await res.json();
+      setTestResult(d);
+    } catch (err: any) {
+      setTestResult({ success: false, error: err.message || 'Network error' });
+    } finally {
+      setTestingWebhook(false);
+    }
   };
 
   const fields = [
@@ -186,6 +210,32 @@ export default function SettingsPage() {
                 onChange={e => setSettings(s => ({ ...s, secondary_backup_webhook_url: e.target.value }))}
                 className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-500 font-mono text-gray-800 bg-gray-50 focus:bg-white transition"
               />
+              <div className="flex items-center gap-3 pt-1">
+                <button
+                  type="button"
+                  onClick={runTestWebhook}
+                  disabled={testingWebhook || !settings.secondary_backup_webhook_url}
+                  className="px-4 py-2 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded-xl text-xs font-bold transition flex items-center gap-1.5 disabled:opacity-50 cursor-pointer active:scale-95"
+                >
+                  {testingWebhook ? '⏳ Testing Connection...' : '🧪 Test Connection with Google Sheet'}
+                </button>
+              </div>
+
+              {testResult && (
+                <div className={`mt-3 p-3.5 rounded-xl border text-xs font-medium animate-fadeIn ${testResult.success ? 'bg-green-50 text-green-800 border-green-200' : 'bg-red-50 text-red-800 border-red-200'}`}>
+                  {testResult.success ? (
+                    <div className="flex items-center gap-2">
+                      <span className="text-base">✅</span>
+                      <span>{testResult.message || 'Connected successfully! 1 test row added to Google Sheet.'}</span>
+                    </div>
+                  ) : (
+                    <div>
+                      <p className="font-bold flex items-center gap-1 text-red-900"><span className="text-base">❌</span> Connection Error:</p>
+                      <p className="mt-1 font-mono text-[11px] bg-red-100/70 p-2 rounded-lg text-red-950 border border-red-200 break-all">{testResult.error}</p>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 
