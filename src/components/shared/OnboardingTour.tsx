@@ -11,7 +11,7 @@ export interface TourStep {
 }
 
 interface OnboardingTourProps {
-  role: 'student' | 'teacher' | 'superadmin' | 'admin';
+  role: 'student' | 'teacher' | 'superadmin' | 'admin' | 'pseudoadmin';
   customSteps?: TourStep[];
 }
 
@@ -102,13 +102,45 @@ const DEFAULT_STEPS: Record<string, TourStep[]> = {
     {
       target: '#tour-admin-appoint',
       title: 'Appoint Positions & Admins 🎖️',
-      description: 'Appoint Branch Admins (Pseudoadmins) with scoped administrative access and designate Class Representatives in isolated compartments.',
+      description: 'Appoint Branch Admins with scoped administrative access and designate Class Representatives in isolated compartments.',
       position: 'bottom',
     },
     {
       target: '#tour-admin-subjects',
       title: 'Course & Subject Directory 📚',
       description: 'Create semester subjects, assign faculty teachers, and configure departmental sections and batches.',
+      position: 'bottom',
+    },
+  ],
+  pseudoadmin: [
+    {
+      target: '#tour-admin-stats',
+      title: 'Branch Admin Control Center 🛡️',
+      description: 'Real-time overview of active students, verified faculty, registered subjects, and daily live sessions for your branch.',
+      position: 'bottom',
+    },
+    {
+      target: '#tour-admin-verify',
+      title: 'Verify Student Registrations ⏳',
+      description: 'Review pending student signups in your department. Approve credentials and face setup before granting system access.',
+      position: 'right',
+    },
+    {
+      target: '#tour-admin-users',
+      title: 'Manage Branch Users & Face IDs 👥',
+      description: 'Directory of students sorted by Roll Number. Edit details, update or reset 3D Face IDs, and manage enrolled subjects.',
+      position: 'bottom',
+    },
+    {
+      target: '#tour-admin-announcements',
+      title: 'Publish Branch Announcements 📢',
+      description: 'Broadcast urgent notices, circulars, and official updates to all students and faculty in your department.',
+      position: 'right',
+    },
+    {
+      target: '#tour-admin-subjects',
+      title: 'Course & Subject Directory 📚',
+      description: 'Inspect departmental subjects, syllabus codes, and faculty mappings configured for the semester.',
       position: 'bottom',
     },
   ],

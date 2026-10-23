@@ -356,8 +356,16 @@ export default function TeacherAnnouncementsPage() {
                                 {ann.teacher?.name?.charAt(0)?.toUpperCase() || '?'}
                               </div>
                             )}
-                            <p className={`text-[11px] ${ann.teacher?.role === 'superadmin' ? 'font-bold text-gray-900 text-[12px]' : 'font-medium text-gray-700'}`}>
-                              By {ann.teacher?.name || 'Unknown'} <span className="text-gray-700 font-normal">({ann.teacher?.role === 'superadmin' ? 'Administrator' : ann.teacher?.role === 'teacher' ? 'Professor' : 'Class Representative'})</span>
+                            <p className={`text-[11px] ${ann.teacher?.role === 'superadmin' || (ann.teacher as any)?.signup_info?.is_pseudoadmin ? 'font-bold text-gray-900 text-[12px]' : 'font-medium text-gray-700'}`}>
+                              {(ann.teacher as any)?.signup_info?.is_pseudoadmin ? (
+                                <>
+                                  By {ann.teacher?.name || 'Unknown'} - {(ann.teacher as any)?.signup_info?.pseudoadmin_branch || (ann.teacher as any)?.signup_info?.branch || (ann.teacher as any)?.branch || 'Branch'} - Admin
+                                </>
+                              ) : (
+                                <>
+                                  By {ann.teacher?.name || 'Unknown'} <span className="text-gray-700 font-normal">({ann.teacher?.role === 'superadmin' ? 'Administrator' : ann.teacher?.role === 'teacher' ? 'Professor' : 'Class Representative'})</span>
+                                </>
+                              )}
                             </p>
                           </div>
                         </div>

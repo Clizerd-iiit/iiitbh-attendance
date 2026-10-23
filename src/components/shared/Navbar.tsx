@@ -239,6 +239,7 @@ export function Navbar() {
           if (item.label === 'Reports') tourId = 'tour-teacher-reports';
           if (item.label === 'Appoint Position') tourId = 'tour-teacher-appoint';
           if (item.label === 'Verify Users') tourId = 'tour-admin-verify';
+          if (item.label === 'Announcements') tourId = 'tour-admin-announcements';
 
           return (
             <Link key={item.href} href={item.href} id={tourId}

@@ -7,7 +7,9 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
-  if (!session?.user || session.user.role !== 'superadmin')
+  const isSuperAdmin = session?.user?.role === 'superadmin';
+  const isPseudoadmin = !!(session?.user as any)?.isPseudoadmin;
+  if (!session?.user || (!isSuperAdmin && !isPseudoadmin))
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
   const today = new Date().toISOString().split('T')[0];

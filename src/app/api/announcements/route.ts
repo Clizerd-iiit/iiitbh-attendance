@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
   // Fetch non-expired (Fallback if expires_at is missing)
   let query = supabaseAdmin
     .from('announcements')
-    .select('*, teacher:users(name, role, is_cr, profile_photo_url), subject:subjects(name, code)')
+    .select('*, teacher:users(name, role, is_cr, profile_photo_url, branch, signup_info), subject:subjects(name, code)')
     .order('created_at', { ascending: false });
 
   let is_cr = false;

@@ -52,7 +52,8 @@ export async function GET(req: NextRequest) {
     query = query.in('id', ids);
   }
 
-  if (session.user.role === 'teacher' || session.user.role === 'student') {
+  const isPseudoadmin = !!(session.user as any)?.isPseudoadmin;
+  if (!isPseudoadmin && (session.user.role === 'teacher' || session.user.role === 'student')) {
     // Re-apply the same query logic but with restricted select fields
     let safeQuery = supabaseAdmin.from('users')
       .select('id, name, email, roll_no, section, semester, profile_photo_url, is_active, signup_info, branch')
@@ -107,6 +108,14 @@ export async function PATCH(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
+  const isSuperAdmin = session.user.role === 'superadmin';
+  const isTeacher = session.user.role === 'teacher';
+  const isPseudoadmin = !!(session.user as any)?.isPseudoadmin;
+
+  if (!isSuperAdmin && !isTeacher && !isPseudoadmin) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
+
   let body;
   try {
     body = userUpdateSchema.parse(await req.json());
@@ -115,7 +124,7 @@ export async function PATCH(req: NextRequest) {
   }
   const { id, ...updates } = body;
 
-  if (session.user.role === 'teacher') {
+  if (session.user.role === 'teacher' || isPseudoadmin) {
     const safeKeys = ['name', 'roll_no', 'section', 'branch', 'group', 'sub_group', 'is_cr', 'is_active', 'bio', 'profile_photo_url', 'email'];
     Object.keys(updates).forEach(k => { if (!safeKeys.includes(k)) delete updates[k]; });
   }

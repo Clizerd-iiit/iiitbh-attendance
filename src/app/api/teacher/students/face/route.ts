@@ -5,7 +5,11 @@ import { supabaseAdmin } from '@/lib/supabase';
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
-  if (!session?.user || (session.user.role !== 'teacher' && session.user.role !== 'superadmin')) {
+  const isSuperAdmin = session?.user?.role === 'superadmin';
+  const isTeacher = session?.user?.role === 'teacher';
+  const isPseudoadmin = !!(session?.user as any)?.isPseudoadmin;
+
+  if (!session?.user || (!isTeacher && !isSuperAdmin && !isPseudoadmin)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -28,12 +32,22 @@ export async function POST(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   const session = await getServerSession(authOptions);
-  if (!session?.user || (session.user.role !== 'teacher' && session.user.role !== 'superadmin')) {
+  const isSuperAdmin = session?.user?.role === 'superadmin';
+  const isTeacher = session?.user?.role === 'teacher';
+  const isPseudoadmin = !!(session?.user as any)?.isPseudoadmin;
+
+  if (!session?.user || (!isTeacher && !isSuperAdmin && !isPseudoadmin)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   const url = new URL(req.url);
-  const student_id = url.searchParams.get('student_id');
+  let student_id = url.searchParams.get('student_id');
+  if (!student_id) {
+    try {
+      const body = await req.json();
+      student_id = body?.student_id;
+    } catch {}
+  }
   if (!student_id) return NextResponse.json({ error: 'Missing student_id' }, { status: 400 });
 
   const { data: user } = await supabaseAdmin.from('users').select('signup_info').eq('id', student_id).single();

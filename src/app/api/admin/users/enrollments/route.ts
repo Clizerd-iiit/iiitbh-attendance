@@ -7,7 +7,9 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
-  if (!session?.user || session.user.role !== 'superadmin') return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const isSuperAdmin = session?.user?.role === 'superadmin';
+  const isPseudoadmin = !!(session?.user as any)?.isPseudoadmin;
+  if (!session?.user || (!isSuperAdmin && !isPseudoadmin)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const studentId = req.nextUrl.searchParams.get('studentId');
   if (!studentId) return NextResponse.json({ error: 'Missing studentId' }, { status: 400 });
@@ -62,7 +64,9 @@ export async function GET(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   const session = await getServerSession(authOptions);
-  if (!session?.user || session.user.role !== 'superadmin') return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const isSuperAdmin = session?.user?.role === 'superadmin';
+  const isPseudoadmin = !!(session?.user as any)?.isPseudoadmin;
+  if (!session?.user || (!isSuperAdmin && !isPseudoadmin)) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const enrollmentId = req.nextUrl.searchParams.get('enrollmentId');
   if (!enrollmentId) return NextResponse.json({ error: 'Missing enrollmentId' }, { status: 400 });

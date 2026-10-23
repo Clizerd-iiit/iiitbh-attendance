@@ -39,6 +39,7 @@ export default function AdminDashboard() {
   const pseudoAdminLinks = [
     { href: '/admin/users', icon: '👥', label: 'Manage Users', desc: 'View and manage student details' },
     { href: '/admin/subjects', icon: '📚', label: 'Subjects', desc: 'View subjects and course mappings' },
+    { href: '/admin/announcements', icon: '📢', label: 'Announcements', desc: 'Broadcast branch announcements' },
   ];
 
   const quickLinks = isSuperAdmin ? superAdminLinks : pseudoAdminLinks;
@@ -82,12 +83,13 @@ export default function AdminDashboard() {
         </div>
 
         {/* Quick Links */}
-        <div className={`grid gap-4 mb-8 ${isSuperAdmin ? 'md:grid-cols-3' : 'md:grid-cols-2'}`}>
+        <div className={`grid gap-4 mb-8 ${isSuperAdmin ? 'md:grid-cols-3' : 'md:grid-cols-3'}`}>
           {quickLinks.map(link => {
             let linkId: string | undefined = undefined;
             if (link.href === '/admin/users') linkId = 'tour-admin-users';
             if (link.href === '/admin/subjects') linkId = 'tour-admin-subjects';
             if (link.href === '/admin/appoint') linkId = 'tour-admin-appoint';
+            if (link.href === '/admin/announcements') linkId = 'tour-admin-announcements';
 
             return (
               <Link key={link.href} href={link.href} id={linkId}
@@ -102,7 +104,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Interactive Feature Tour */}
-      <OnboardingTour role="superadmin" />
+      <OnboardingTour role={isSuperAdmin ? 'superadmin' : 'pseudoadmin'} />
     </div>
   );
 }

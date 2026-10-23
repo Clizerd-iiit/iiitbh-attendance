@@ -82,7 +82,7 @@ export default function AnnouncementsPage() {
             {announcements.map(a => {
               const cfg = typeConfig[a.type] || typeConfig.text;
               const sub = a.subject as { name?: string; code?: string } | null;
-              const teacher = a.teacher as { name?: string; role?: string; profile_photo_url?: string } | null;
+              const teacher = a.teacher as { name?: string; role?: string; profile_photo_url?: string; branch?: string; signup_info?: any } | null;
               return (
                 <div key={a.id} className="bg-white rounded-xl shadow-sm p-5 border-l-4 border-blue-500">
                   <div className="flex items-start justify-between mb-2">
@@ -120,8 +120,17 @@ export default function AnnouncementsPage() {
                           {teacher?.name?.charAt(0)?.toUpperCase() || '?'}
                         </div>
                       )}
-                      <p className={`text-xs ${teacher?.role === 'superadmin' ? 'font-bold text-gray-900 text-[13px]' : 'font-medium text-gray-700'}`}>
-                        By {teacher?.name || 'Unknown'} <span className="text-gray-700 font-normal">({teacher?.role === 'superadmin' ? 'Administrator' : teacher?.role === 'teacher' ? 'Professor' : 'Class Representative'})</span> {a.teacher_id === userId ? ' (You)' : ''}
+                      <p className={`text-xs ${teacher?.role === 'superadmin' || teacher?.signup_info?.is_pseudoadmin ? 'font-bold text-gray-900 text-[13px]' : 'font-medium text-gray-700'}`}>
+                        {teacher?.signup_info?.is_pseudoadmin ? (
+                          <>
+                            By {teacher?.name || 'Unknown'} - {teacher?.signup_info?.pseudoadmin_branch || teacher?.signup_info?.branch || teacher?.branch || 'Branch'} - Admin
+                          </>
+                        ) : (
+                          <>
+                            By {teacher?.name || 'Unknown'} <span className="text-gray-700 font-normal">({teacher?.role === 'superadmin' ? 'Administrator' : teacher?.role === 'teacher' ? 'Professor' : 'Class Representative'})</span>
+                          </>
+                        )}
+                        {a.teacher_id === userId ? ' (You)' : ''}
                       </p>
                     </div>
                     {a.teacher_id === userId && (
