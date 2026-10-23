@@ -13,7 +13,7 @@ export default function AdminUsers() {
   const pseudoadminBranch = ((session?.user as any)?.pseudoadminBranch || '').toUpperCase().trim();
 
   const [users, setUsers] = useState<User[]>([]);
-  const [filter, setFilter] = useState<Role | 'all'>('all');
+  const [filter, setFilter] = useState<'all' | 'student' | 'teacher' | 'admin' | 'superadmin'>('all');
   const [branchFilter, setBranchFilter] = useState('');
   const [mainGroup, setMainGroup] = useState('');
   const [groupFilter, setGroupFilter] = useState('');
@@ -79,7 +79,17 @@ export default function AdminUsers() {
     // Pseudoadmin should never see SuperAdmin details
     if (isPseudoadmin && u.role === 'superadmin') return false;
 
-    if (filter === 'student' || filter === 'all') {
+    if (filter === 'admin') {
+      if (!u.signup_info?.is_pseudoadmin) return false;
+    } else if (filter === 'student') {
+      if (u.role !== 'student') return false;
+    } else if (filter === 'teacher') {
+      if (u.role !== 'teacher') return false;
+    } else if (filter === 'superadmin') {
+      if (u.role !== 'superadmin') return false;
+    }
+
+    if (filter === 'student' || filter === 'all' || filter === 'admin') {
       const ub = ((u as any).signup_info?.branch || (u as any).branch || '').toUpperCase().trim();
       const ug = ((u as any).signup_info?.group || (u as any).section || '').toUpperCase().trim();
       const usg = ((u as any).signup_info?.sub_group || '').toUpperCase().trim();
@@ -111,6 +121,21 @@ export default function AdminUsers() {
     return rA.localeCompare(rB, undefined, { numeric: true, sensitivity: 'base' });
   });
 
+  const availableFilters: { id: 'all' | 'student' | 'teacher' | 'admin' | 'superadmin'; label: string }[] = isPseudoadmin
+    ? [
+        { id: 'all', label: 'All' },
+        { id: 'student', label: 'Students' },
+        { id: 'teacher', label: 'Teachers' },
+        { id: 'admin', label: '🛡️ Admins' },
+      ]
+    : [
+        { id: 'all', label: 'All' },
+        { id: 'student', label: 'Students' },
+        { id: 'teacher', label: 'Teachers' },
+        { id: 'admin', label: '🛡️ Admins' },
+        { id: 'superadmin', label: 'SuperAdmin' },
+      ];
+
   return (
     <div className="min-h-screen bg-gray-50 md:pl-64 pt-14 md:pt-0">
       <Navbar />
@@ -136,15 +161,15 @@ export default function AdminUsers() {
         <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 mb-6 flex flex-col md:flex-row gap-4 items-center justify-between">
           <div className="flex flex-wrap items-center gap-3">
           <div className="flex bg-gray-100 p-1 rounded-xl">
-            {(isPseudoadmin ? ['all', 'student', 'teacher'] : ['all', 'student', 'teacher', 'superadmin']).map(r => (
-              <button key={r} onClick={() => setFilter(r as any)}
-                className={`px-4 py-1.5 rounded-lg text-sm font-medium capitalize transition ${filter === r ? 'bg-white shadow-sm text-blue-600' : 'text-gray-700 hover:text-gray-800'}`}>
-                {r}
+            {availableFilters.map(item => (
+              <button key={item.id} onClick={() => setFilter(item.id)}
+                className={`px-4 py-1.5 rounded-lg text-sm font-medium capitalize transition ${filter === item.id ? 'bg-white shadow-sm text-blue-600 font-bold' : 'text-gray-700 hover:text-gray-800'}`}>
+                {item.label}
               </button>
             ))}
           </div>
           
-          {(filter === 'student' || filter === 'all') && (
+          {(filter === 'student' || filter === 'all' || filter === 'admin') && (
             <>
               <select value={branchFilter} onChange={e => {
                 const b = e.target.value;

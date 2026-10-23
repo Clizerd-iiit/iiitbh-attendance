@@ -110,7 +110,7 @@ export function Navbar() {
         } catch (e) {}
       };
       checkCR();
-      const id = setInterval(checkCR, 30000);
+      const id = setInterval(checkCR, 60000);
       return () => clearInterval(id);
     }
   }, [session]);

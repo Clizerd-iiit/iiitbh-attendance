@@ -26,7 +26,8 @@ export default function PendingVerificationPage() {
       } catch (e) {}
     };
     
-    const interval = setInterval(checkStatus, 3000); // Check every 3 seconds
+    checkStatus();
+    const interval = setInterval(checkStatus, 20000); // Check every 20 seconds
     return () => clearInterval(interval);
   }, [update, router]);
 

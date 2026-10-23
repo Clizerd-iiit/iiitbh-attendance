@@ -6,6 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { autoCloseAbandonedClasses } from '@/lib/autoCloseClasses';
 import { setClassSettings } from '@/lib/classSettings';
 import { logAudit } from '@/lib/audit';
+import { backupClassAttendance } from '@/lib/secondaryBackup';
 
 export const dynamic = 'force-dynamic';
 
@@ -186,6 +187,10 @@ export async function PATCH(req: NextRequest) {
     const absentStudents = (enrolled||[]).filter(e => !markedIds.has(e.student_id))
       .map(e => ({ class_id: classId, student_id: e.student_id, status: 'A', method: 'auto' }));
     if (absentStudents.length > 0) await supabaseAdmin.from('attendance').insert(absentStudents);
+    
+    // Asynchronously trigger secondary append-only backup
+    backupClassAttendance(classId).catch(err => console.error('[Backup Error]:', err));
+
     return NextResponse.json({ success: true });
   }
 

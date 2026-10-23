@@ -28,7 +28,7 @@ export default function VerifyUsersPage() {
 
   useEffect(() => {
     fetchUsers();
-    const interval = setInterval(fetchUsers, 30000);
+    const interval = setInterval(fetchUsers, 60000);
     return () => clearInterval(interval);
   }, [filter]);
 

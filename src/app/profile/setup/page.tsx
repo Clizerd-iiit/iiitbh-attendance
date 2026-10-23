@@ -54,7 +54,8 @@ export default function ProfileSetupPage() {
         }
       } catch (e) {}
     };
-    const interval = setInterval(checkStatus, 3000);
+    checkStatus();
+    const interval = setInterval(checkStatus, 20000);
     return () => clearInterval(interval);
   }, [step, update, router]);
 

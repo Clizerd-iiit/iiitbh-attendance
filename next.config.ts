@@ -14,8 +14,8 @@ const nextConfig: NextConfig = {
         ],
       },
       {
-        // Cache images, logos, icons for 1 year
-        source: '/(.*).png',
+        // Cache all static images, logos, icons, fonts for 1 year
+        source: '/:path*.(png|jpg|jpeg|svg|webp|ico|woff|woff2)',
         headers: [
           {
             key: 'Cache-Control',

@@ -57,7 +57,7 @@ export default function AuditLogsPage() {
 
   useEffect(() => {
     fetchLogs();
-    const interval = setInterval(fetchLogs, 30000);
+    const interval = setInterval(fetchLogs, 60000);
     return () => clearInterval(interval);
   }, [offset]);
 

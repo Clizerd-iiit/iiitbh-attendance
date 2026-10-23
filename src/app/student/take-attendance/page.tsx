@@ -100,7 +100,7 @@ export default function CRTakeAttendancePage() {
 
   useEffect(() => {
     fetchDelegations();
-    const id = setInterval(fetchDelegations, 30000);
+    const id = setInterval(fetchDelegations, 60000);
     return () => clearInterval(id);
   }, [fetchDelegations]);
 

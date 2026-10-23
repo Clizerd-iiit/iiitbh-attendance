@@ -42,7 +42,13 @@ export async function GET(req: NextRequest) {
   if (!isAllowed) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
   let query = supabaseAdmin.from('users').select('*').order('name');
-  if (role) query = query.eq('role', role);
+  if (role) {
+    if (role === 'admin') {
+      query = query.filter('signup_info->>is_pseudoadmin', 'eq', 'true');
+    } else {
+      query = query.eq('role', role);
+    }
+  }
 
   const isPseudoadmin = !!(session.user as any)?.isPseudoadmin;
 

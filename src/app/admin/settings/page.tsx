@@ -15,6 +15,7 @@ interface Settings {
   qr_refresh_interval?: string;
   otp_refresh_interval?: string;
   show_clear_all_data?: string;
+  secondary_backup_webhook_url?: string;
 }
 
 export default function SettingsPage() {
@@ -165,6 +166,26 @@ export default function SettingsPage() {
                 </button>
               </div>
 
+            </div>
+          </div>
+
+          {/* Secondary Backup Section */}
+          <div className="mt-8 mb-6 border-t pt-6 border-gray-100">
+            <h2 className="text-lg font-bold text-gray-800 mb-2 flex items-center gap-2">
+              <span>🛡️</span> Immutable Secondary Attendance Backup
+            </h2>
+            <p className="text-xs text-gray-600 mb-4">
+              Enter a free Google Apps Script Webhook URL (linked to your private Google Sheet) or custom backup endpoint. Every time a class is closed, the complete attendance ledger is automatically appended outside of Supabase. Even if a rogue teacher or admin deletes data from Supabase, your Google Sheet backup remains 100% safe, tamper-proof, and append-only.
+            </p>
+            <div className="space-y-2">
+              <label className="block text-xs font-semibold text-gray-700">Backup Webhook URL (Google Apps Script / Webhook)</label>
+              <input
+                type="url"
+                placeholder="https://script.google.com/macros/s/.../exec"
+                value={settings.secondary_backup_webhook_url || ''}
+                onChange={e => setSettings(s => ({ ...s, secondary_backup_webhook_url: e.target.value }))}
+                className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-500 font-mono text-gray-800 bg-gray-50 focus:bg-white transition"
+              />
             </div>
           </div>
 

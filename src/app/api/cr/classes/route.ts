@@ -6,6 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { autoCloseAbandonedClasses } from '@/lib/autoCloseClasses';
 import { hasActiveDelegationForSubject } from '@/lib/delegation';
 import { setClassSettings } from '@/lib/classSettings';
+import { backupClassAttendance } from '@/lib/secondaryBackup';
 
 export const dynamic = 'force-dynamic';
 
@@ -145,6 +146,9 @@ export async function PATCH(req: NextRequest) {
 
     if (absentStudents.length > 0)
       await supabaseAdmin.from('attendance').insert(absentStudents);
+
+    // Asynchronously trigger secondary append-only backup
+    backupClassAttendance(classId).catch(err => console.error('[CR Backup Error]:', err));
 
     return NextResponse.json({ success: true });
   }
