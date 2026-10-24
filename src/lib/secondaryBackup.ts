@@ -61,10 +61,14 @@ export async function backupClassAttendance(classId: string) {
     if (!cls) return;
 
     // 3. Fetch all attendance entries with student info
-    const { data: attendance } = await supabaseAdmin
+    const { data: attendance, error: attError } = await supabaseAdmin
       .from('attendance')
-      .select('status, method, created_at, student:users(name, roll_no, branch, signup_info)')
+      .select('status, method, marked_at, student:users!attendance_student_id_fkey(name, roll_no, branch, signup_info)')
       .eq('class_id', classId);
+
+    if (attError) {
+      console.error('[Secondary Backup] Error fetching attendance:', attError);
+    }
 
     const records: AttendanceBackupRecord[] = (attendance || []).map((a: any) => ({
       rollNo: a.student?.roll_no || 'N/A',

@@ -1,4 +1,5 @@
 import { supabaseAdmin } from './supabase';
+import { backupClassAttendance } from './secondaryBackup';
 
 export async function autoCloseAbandonedClasses() {
   try {
@@ -31,6 +32,9 @@ export async function autoCloseAbandonedClasses() {
       if (absentStudents.length > 0) {
         await supabaseAdmin.from('attendance').insert(absentStudents);
       }
+
+      // Secondary backup for auto-closed class
+      backupClassAttendance(cls.id).catch(err => console.error('[AutoClose Backup Error]:', err));
     }
     
     console.log(`Auto-closed ${abandonedClasses.length} abandoned classes.`);
