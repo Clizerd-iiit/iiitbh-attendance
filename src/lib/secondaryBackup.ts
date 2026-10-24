@@ -94,14 +94,18 @@ export async function backupClassAttendance(classId: string) {
 
     // 4. Send to Webhook (e.g. Google Apps Script -> Google Sheet)
     if (webhookUrl) {
-      await fetch(webhookUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-        redirect: 'follow',
-      }).catch(err => {
+      try {
+        const res = await fetch(webhookUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+          redirect: 'follow',
+        });
+        const resText = await res.text().catch(() => '');
+        console.log('[Secondary Backup] Webhook Result:', res.status, resText.slice(0, 150));
+      } catch (err) {
         console.error('[Secondary Backup] Webhook Error:', err);
-      });
+      }
     }
 
     // 5. Send to GitHub Audit Repo (if configured)

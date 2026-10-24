@@ -63,10 +63,31 @@ export async function POST(req: NextRequest) {
 
     const text = await res.text();
 
-    // Check if Google returned an error page
-    if (text.includes('Error:')) {
-      const match = text.match(/Error:\s*([^<]+)/i);
-      const errorMsg = match ? match[1].trim() : 'Google Apps Script threw an execution error.';
+    // Try to parse JSON response from Apps Script
+    let json: any = null;
+    try {
+      json = JSON.parse(text);
+    } catch {}
+
+    if (json) {
+      if (json.status === 'success') {
+        return NextResponse.json({
+          success: true,
+          message: json.message || 'Successfully connected and verified! 1 test row added to Google Sheet.',
+        });
+      } else {
+        return NextResponse.json({
+          success: false,
+          statusCode: res.status,
+          error: json.error || 'Google Apps Script returned an error: ' + JSON.stringify(json),
+        });
+      }
+    }
+
+    // Check if Google returned an HTML error page or execution error
+    if (text.includes('Error:') || text.includes('Exception:')) {
+      const match = text.match(/(?:Error|Exception):\s*([^<\n]+)/i);
+      const errorMsg = match ? match[1].trim() : text.replace(/<[^>]+>/g, ' ').trim().slice(0, 300);
       return NextResponse.json({
         success: false,
         statusCode: res.status,
@@ -75,7 +96,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    if (text.includes('"status":"success"') || res.status === 200) {
+    if (res.status === 200 && text.toLowerCase().includes('success')) {
       return NextResponse.json({
         success: true,
         message: 'Successfully connected and verified! 1 test row added to Google Sheet.',
@@ -85,7 +106,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       success: false,
       statusCode: res.status,
-      error: 'Unexpected response from webhook: ' + text.slice(0, 200),
+      error: 'Unexpected response from webhook: ' + text.slice(0, 300),
     });
   } catch (err: any) {
     return NextResponse.json({
