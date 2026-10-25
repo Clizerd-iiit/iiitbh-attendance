@@ -24,6 +24,7 @@ export async function GET(req: NextRequest) {
     .order('created_at', { ascending: false });
 
   let is_cr = false;
+  let is_pseudoadmin = false;
   let studentProfile: any = null;
   if (session.user.role === 'student') {
     const { data: profile } = await supabaseAdmin
@@ -32,7 +33,10 @@ export async function GET(req: NextRequest) {
       .eq('id', session.user.userId)
       .single();
     studentProfile = profile;
-    if (profile) is_cr = profile.is_cr || false;
+    if (profile) {
+      is_cr = profile.is_cr || false;
+      is_pseudoadmin = !!profile.signup_info?.is_pseudoadmin;
+    }
   }
 
   let { data, error } = await query;
@@ -45,12 +49,17 @@ export async function GET(req: NextRequest) {
     const sSubGroup = (studentProfile?.signup_info?.sub_group || '').toUpperCase().trim();
 
     data = (data || []).filter(a => {
+      // If student is the author, always let them view their own announcement
+      if (a.teacher_id === session.user.userId) return true;
+
       // 1. Explicitly targeted student ID
       if (Array.isArray(a.target_student_ids) && a.target_student_ids.length > 0) {
         return a.target_student_ids.includes(session.user.userId);
       }
       // 2. Branch match
-      if (a.target_branch && a.target_branch.toUpperCase().trim() !== sBranch) return false;
+      if (a.target_branch && a.target_branch.toUpperCase().trim() !== 'ALL' && a.target_branch.toUpperCase().trim() !== sBranch) {
+        return false;
+      }
       // 3. Group / Subgroup match
       if (a.target_group) {
         const tg = a.target_group.toUpperCase().trim();
@@ -68,7 +77,7 @@ export async function GET(req: NextRequest) {
     });
   }
 
-  return NextResponse.json({ announcements: data, is_cr, userId: session.user.userId });
+  return NextResponse.json({ announcements: data, is_cr, is_pseudoadmin, userId: session.user.userId });
 }
 
 export async function POST(req: NextRequest) {
@@ -79,9 +88,9 @@ export async function POST(req: NextRequest) {
   let isCR = false;
   
   if (role === 'student') {
-    const { data: profile, error: profileErr } = await supabaseAdmin.from('users').select('is_cr, signup_info').eq('id', session.user.userId).single();
+    const { data: profile } = await supabaseAdmin.from('users').select('is_cr, signup_info').eq('id', session.user.userId).single();
     if (profile?.signup_info?.is_pseudoadmin) {
-      // Allowed! Pseudoadmin can create global announcements like admin
+      // Allowed! Pseudoadmin can create announcements
     } else if (profile?.is_cr) {
       isCR = true;
     } else {
@@ -117,11 +126,11 @@ export async function POST(req: NextRequest) {
   try {
     const posterName = session.user.name || (session.user.role === 'superadmin' ? 'SuperAdmin' : 'Teacher');
     const previewContent = (content || data?.content || '').slice(0, 110);
-    const notifTitle = `📢 [Updated] ${title || data?.title || 'Announcement'}`;
+    const notifTitle = `📢 Announcement: ${title || data?.title || 'Notice'}`;
     const notifBody = `${posterName}: ${previewContent}${previewContent.length >= 110 ? '...' : ''}`;
 
-    // Non-blocking async execution
-    broadcastPushNotification({
+    // Await ensures Vercel serverless functions do not freeze before FCM delivers
+    await broadcastPushNotification({
       title: notifTitle,
       body: notifBody,
       url: '/student/announcements',
@@ -129,7 +138,7 @@ export async function POST(req: NextRequest) {
       targetBranch: target_branch || undefined,
       targetGroup: target_group || undefined,
       targetUserIds: Array.isArray(target_student_ids) && target_student_ids.length > 0 ? target_student_ids : undefined,
-    }).catch(err => console.error('[PushNotification] Error broadcasting:', err));
+    });
   } catch (pushErr) {
     console.warn('[PushNotification] Trigger failed:', pushErr);
   }
@@ -183,8 +192,6 @@ export async function DELETE(req: NextRequest) {
   return NextResponse.json({ success: true });
 }
 
-
-
 export async function PATCH(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session?.user) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
@@ -233,8 +240,7 @@ export async function PATCH(req: NextRequest) {
     const notifTitle = `📢 [Updated] ${title || data?.title || 'Announcement'}`;
     const notifBody = `${posterName}: ${previewContent}${previewContent.length >= 110 ? '...' : ''}`;
 
-    // Non-blocking async execution
-    broadcastPushNotification({
+    await broadcastPushNotification({
       title: notifTitle,
       body: notifBody,
       url: '/student/announcements',
@@ -242,7 +248,7 @@ export async function PATCH(req: NextRequest) {
       targetBranch: target_branch || undefined,
       targetGroup: target_group || undefined,
       targetUserIds: Array.isArray(target_student_ids) && target_student_ids.length > 0 ? target_student_ids : undefined,
-    }).catch(err => console.error('[PushNotification] Error broadcasting:', err));
+    });
   } catch (pushErr) {
     console.warn('[PushNotification] Trigger failed:', pushErr);
   }

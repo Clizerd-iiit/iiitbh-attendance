@@ -77,7 +77,7 @@ export function Navbar() {
     }
   }, [session]);
 
-  const photo = session?.user?.profilePhotoUrl || '';
+  const photo = session?.user?.profilePhotoUrl || session?.user?.image || '';
   const name  = session?.user?.name || '';
   const displayRole = role === 'superadmin' ? 'Admin' : (role ? role.charAt(0).toUpperCase() + role.slice(1) : '');
 

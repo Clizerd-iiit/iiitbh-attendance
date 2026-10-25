@@ -350,7 +350,7 @@ export default function TeacherAnnouncementsPage() {
                           
                           <div className="flex items-center gap-2 mt-1 pt-2 border-t border-gray-100">
                             {ann.teacher?.profile_photo_url ? (
-                              <img src={ann.teacher.profile_photo_url} alt={ann.teacher.name} className="w-5 h-5 rounded-full object-cover border" />
+                              <img src={ann.teacher.profile_photo_url} alt={ann.teacher.name} referrerPolicy="no-referrer" className="w-5 h-5 rounded-full object-cover border" />
                             ) : (
                               <div className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 text-xs font-bold">
                                 {ann.teacher?.name?.charAt(0)?.toUpperCase() || '?'}

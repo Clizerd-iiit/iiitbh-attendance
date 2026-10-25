@@ -92,7 +92,12 @@ export const authOptions: NextAuthOptions = {
           token.profileCompleted = data.profile_completed;
           token.verificationStatus = data.verification_status;
           
-          token.profilePhotoUrl = data.profile_photo_url;
+          if (!data.profile_photo_url && user?.image) {
+            token.profilePhotoUrl = user.image;
+            supabaseAdmin.from('users').update({ profile_photo_url: user.image }).eq('id', data.id).then();
+          } else {
+            token.profilePhotoUrl = data.profile_photo_url || (token.picture as string) || null;
+          }
           token.isActive = data.is_active;
           token.isPseudoadmin = !!data.signup_info?.is_pseudoadmin;
           token.pseudoadminBranch = data.signup_info?.pseudoadmin_branch || null;

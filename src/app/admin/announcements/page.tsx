@@ -29,6 +29,15 @@ export default function AdminAnnouncementsPage() {
 
   const isSuperAdmin = session?.user?.role === 'superadmin';
   
+  const fetchData = () => {
+    fetch('/api/announcements').then(r => r.json()).then(d => {
+      setAnnouncements(d.announcements || []);
+      setIsCR(d.is_cr || false);
+      setUserId(d.userId || '');
+      setLoading(false);
+    });
+  };
+
   const postAnnouncement = async () => {
     if (!form.title) return alert('Title required');
     if (editingId) {
@@ -43,23 +52,16 @@ export default function AdminAnnouncementsPage() {
       });
     }
     setShowModal(false); setEditingId(null); setForm({ title: '', content: '', type: 'text', target_branch: '', target_group: '' });
+    fetchData();
   };
   
   const deleteAnnouncement = async (id: string) => {
     if (!window.confirm('Delete this announcement?')) return;
     await fetch(`/api/announcements?id=${id}`, { method: 'DELETE' });
+    fetchData();
   };
 
-
   useEffect(() => {
-    const fetchData = () => {
-      fetch('/api/announcements').then(r => r.json()).then(d => {
-      setAnnouncements(d.announcements || []);
-      setIsCR(d.is_cr || false);
-      setUserId(d.userId || '');
-      setLoading(false);
-    });
-    };
     fetchData();
     const interval = setInterval(fetchData, 60000);
     return () => clearInterval(interval);
@@ -120,7 +122,7 @@ export default function AdminAnnouncementsPage() {
                   <div className="flex justify-between items-end mt-3 pt-3 border-t border-gray-100">
                     <div className="flex items-center gap-2">
                       {teacher?.profile_photo_url ? (
-                        <img src={teacher.profile_photo_url} alt={teacher.name} className="w-6 h-6 rounded-full object-cover border" />
+                        <img src={teacher.profile_photo_url} alt={teacher.name} referrerPolicy="no-referrer" className="w-6 h-6 rounded-full object-cover border" />
                       ) : (
                         <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 text-xs font-bold">
                           {teacher?.name?.charAt(0)?.toUpperCase() || '?'}

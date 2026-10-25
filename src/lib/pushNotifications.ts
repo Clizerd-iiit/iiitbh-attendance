@@ -1,18 +1,84 @@
 import webpush from 'web-push';
 import { supabaseAdmin } from './supabase';
 
-export const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || '';
-export const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY || '';
-export const VAPID_SUBJECT = process.env.VAPID_SUBJECT || 'mailto:admin@iiitbh.ac.in';
+let vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || '';
+let vapidPrivateKey = process.env.VAPID_PRIVATE_KEY || '';
+let vapidSubject = process.env.VAPID_SUBJECT || 'mailto:admin@iiitbh.ac.in';
+
+export const VAPID_PUBLIC_KEY = vapidPublicKey;
+export const VAPID_PRIVATE_KEY = vapidPrivateKey;
+export const VAPID_SUBJECT = vapidSubject;
 
 let isVapidConfigured = false;
-if (VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY) {
-  try {
-    webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
-    isVapidConfigured = true;
-  } catch (e) {
-    console.warn('[WebPush] Error configuring VAPID:', e);
+
+/**
+ * Ensures VAPID keys are loaded and registered with webpush.
+ * Priority:
+ * 1. Environment variables (process.env.VAPID_PRIVATE_KEY)
+ * 2. Supabase `system_settings` table (key: 'vapid_config')
+ */
+export async function ensureVapidConfigured(): Promise<boolean> {
+  if (isVapidConfigured) return true;
+
+  // 1. Check process.env
+  const envPub = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || vapidPublicKey;
+  const envPriv = process.env.VAPID_PRIVATE_KEY || vapidPrivateKey;
+  const envSub = process.env.VAPID_SUBJECT || vapidSubject;
+
+  if (envPub && envPriv) {
+    try {
+      webpush.setVapidDetails(envSub, envPub, envPriv);
+      vapidPublicKey = envPub;
+      vapidPrivateKey = envPriv;
+      vapidSubject = envSub;
+      isVapidConfigured = true;
+      return true;
+    } catch (e) {
+      console.warn('[WebPush] Error configuring VAPID from env:', e);
+    }
   }
+
+  // 2. Fallback to Supabase system_settings
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('system_settings')
+      .select('value')
+      .eq('key', 'vapid_config')
+      .single();
+
+    if (!error && data?.value) {
+      const cfg = typeof data.value === 'string' ? JSON.parse(data.value) : data.value;
+      if (cfg?.publicKey && cfg?.privateKey) {
+        vapidPublicKey = cfg.publicKey;
+        vapidPrivateKey = cfg.privateKey;
+        vapidSubject = cfg.subject || envSub;
+        webpush.setVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey);
+        isVapidConfigured = true;
+        return true;
+      }
+    }
+  } catch (err) {
+    console.warn('[WebPush] Error fetching VAPID config from Supabase:', err);
+  }
+
+  return false;
+}
+
+/**
+ * Returns the active VAPID public key for client subscription.
+ */
+export async function getVapidPublicKey(): Promise<string> {
+  if (vapidPublicKey) return vapidPublicKey;
+  await ensureVapidConfigured();
+  return vapidPublicKey;
+}
+
+// Initial sync attempt if keys are in environment
+if (vapidPublicKey && vapidPrivateKey) {
+  try {
+    webpush.setVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey);
+    isVapidConfigured = true;
+  } catch {}
 }
 
 export interface PushSubscriptionKeys {
@@ -166,7 +232,7 @@ export async function getAllPushSubscriptions(): Promise<PushSubscriptionItem[]>
     if (Array.isArray(data)) {
       for (const row of data) {
         try {
-          const parsed = JSON.parse(row.value);
+          const parsed = typeof row.value === 'string' ? JSON.parse(row.value) : row.value;
           if (parsed && parsed.endpoint && parsed.keys) {
             items.push(parsed);
           }
@@ -185,23 +251,10 @@ export async function sendPushNotification(
   subscription: { endpoint: string; keys: { p256dh: string; auth: string } },
   payload: { title: string; body: string; url?: string; tag?: string; icon?: string }
 ): Promise<boolean> {
-  if (!isVapidConfigured) {
-    const pub = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
-    const priv = process.env.VAPID_PRIVATE_KEY;
-    if (pub && priv) {
-      try {
-        webpush.setVapidDetails(
-          process.env.VAPID_SUBJECT || 'mailto:admin@iiitbh.ac.in',
-          pub,
-          priv
-        );
-        isVapidConfigured = true;
-      } catch {}
-    }
-  }
+  const ready = await ensureVapidConfigured();
 
-  if (!isVapidConfigured) {
-    console.warn('[WebPush] VAPID keys not configured in environment variables.');
+  if (!ready) {
+    console.warn('[WebPush] VAPID keys not configured or cannot be loaded.');
     return false;
   }
 
@@ -243,6 +296,7 @@ export async function sendPushNotification(
  */
 export async function broadcastPushNotification(options: BroadcastNotificationOptions): Promise<{ sent: number; total: number }> {
   try {
+    await ensureVapidConfigured();
     const allSubs = await getAllPushSubscriptions();
     if (!allSubs || allSubs.length === 0) {
       return { sent: 0, total: 0 };
@@ -262,8 +316,8 @@ export async function broadcastPushNotification(options: BroadcastNotificationOp
         }
       }
 
-      // 3. Filter by branch if specified
-      if (options.targetBranch && sub.branch) {
+      // 3. Filter by branch if specified (skip filter if 'ALL' or empty)
+      if (options.targetBranch && options.targetBranch.toUpperCase().trim() !== 'ALL' && sub.branch) {
         if (options.targetBranch.toUpperCase().trim() !== sub.branch.toUpperCase().trim()) {
           return false;
         }

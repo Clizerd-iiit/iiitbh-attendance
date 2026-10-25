@@ -5,14 +5,15 @@ import { supabaseAdmin } from '@/lib/supabase';
 import {
   savePushSubscription,
   deletePushSubscription,
-  VAPID_PUBLIC_KEY,
+  getVapidPublicKey,
 } from '@/lib/pushNotifications';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
+  const publicKey = await getVapidPublicKey();
   return NextResponse.json({
-    publicKey: VAPID_PUBLIC_KEY,
+    publicKey,
   });
 }
 
