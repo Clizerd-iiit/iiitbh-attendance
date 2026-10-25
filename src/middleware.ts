@@ -130,20 +130,22 @@ export default withAuth(
     callbacks: {
       authorized: ({ req, token }) => {
         const pathname = req.nextUrl.pathname;
-        // Public, auth, API and static routes don't require session token at gateway
-        if (
-          pathname === '/' ||
-          pathname.startsWith('/api/') ||
-          pathname.startsWith('/auth/') ||
-          pathname.startsWith('/_next/') ||
-          pathname.startsWith('/favicon') ||
-          pathname === '/manifest.json' ||
-          pathname === '/robots.txt' ||
-          pathname === '/sitemap.xml'
-        ) {
-          return true;
+        // Only private portal routes require session authentication at gateway
+        const isProtectedRoute = [
+          '/student',
+          '/teacher',
+          '/admin',
+          '/profile',
+          '/pending-verification',
+          '/directory'
+        ].some(prefix => pathname.startsWith(prefix));
+
+        if (isProtectedRoute) {
+          return !!token;
         }
-        return !!token;
+
+        // Public pages, auth flows, API handlers and unmatched paths (404) pass through
+        return true;
       },
     },
   }
