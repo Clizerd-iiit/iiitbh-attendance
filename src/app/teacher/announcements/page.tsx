@@ -69,7 +69,7 @@ export default function TeacherAnnouncementsPage() {
   }, [form.subject_id]);
 
   const post = async () => {
-    if (!form.title.trim()) return;
+    if (!form.title.trim()) return alert('Title required');
     setPosting(true);
     const bodyObj = { 
         ...form, 
@@ -77,23 +77,35 @@ export default function TeacherAnnouncementsPage() {
         expiry_hours: totalHours(),
         target_student_ids: targetStudentIds.size > 0 ? Array.from(targetStudentIds) : null
     };
-    if (editingId) {
-      await fetch('/api/announcements', {
-        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...bodyObj, id: editingId })
-      });
-    } else {
-      await fetch('/api/announcements', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(bodyObj)
-      });
+    try {
+      let res;
+      if (editingId) {
+        res = await fetch('/api/announcements', {
+          method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...bodyObj, id: editingId })
+        });
+      } else {
+        res = await fetch('/api/announcements', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(bodyObj)
+        });
+      }
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || 'Failed to post announcement');
+        setPosting(false);
+        return;
+      }
+      setShowForm(false);
+      setEditingId(null);
+      setForm({ subject_id: '', type: 'text', title: '', content: '', link_url: '' });
+      setExpiryDays(2); setExpiryHours(0); setTargetStudentIds(new Set());
+      fetchAll();
+    } catch (e: any) {
+      alert(e?.message || 'Network error');
+    } finally {
+      setPosting(false);
     }
-    setPosting(false);
-    setShowForm(false);
-    setEditingId(null);
-    setForm({ subject_id: '', type: 'text', title: '', content: '', link_url: '' });
-    setExpiryDays(2); setExpiryHours(0); setTargetStudentIds(new Set());
-    fetchAll();
   };
 
   const deleteAnn = async (id: string) => {

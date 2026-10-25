@@ -52,18 +52,24 @@ export default function AnnouncementsPage() {
     if (!form.title.trim()) return alert('Title required');
     setPosting(true);
     try {
+      let res;
       if (editingId) {
-        await fetch('/api/announcements', {
+        res = await fetch('/api/announcements', {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ ...form, id: editingId }),
         });
       } else {
-        await fetch('/api/announcements', {
+        res = await fetch('/api/announcements', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(form),
         });
+      }
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || 'Failed to post announcement');
+        return;
       }
       setShowModal(false);
       setEditingId(null);

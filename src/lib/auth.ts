@@ -54,9 +54,10 @@ export const authOptions: NextAuthOptions = {
     },
 
     async jwt({ token, user, trigger }) {
-      if (user?.email || trigger === 'update') {
-        const email = (user?.email || token.email || '').toLowerCase();
-        if (!email) return token;
+      const email = (user?.email || token.email || '').toLowerCase();
+      if (!email) return token;
+
+      if (user?.email || trigger === 'update' || !token.userId || !token.role) {
 
         if (email === SUPERADMIN_EMAIL) {
           // Ensure admin exists in DB

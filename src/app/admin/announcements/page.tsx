@@ -40,19 +40,29 @@ export default function AdminAnnouncementsPage() {
 
   const postAnnouncement = async () => {
     if (!form.title) return alert('Title required');
-    if (editingId) {
-      await fetch('/api/announcements', {
-        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, id: editingId })
-      });
-    } else {
-      await fetch('/api/announcements', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form)
-      });
+    try {
+      let res;
+      if (editingId) {
+        res = await fetch('/api/announcements', {
+          method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...form, id: editingId })
+        });
+      } else {
+        res = await fetch('/api/announcements', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(form)
+        });
+      }
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || 'Failed to post announcement');
+        return;
+      }
+      setShowModal(false); setEditingId(null); setForm({ title: '', content: '', type: 'text', target_branch: '', target_group: '' });
+      fetchData();
+    } catch (e: any) {
+      alert(e?.message || 'Network error');
     }
-    setShowModal(false); setEditingId(null); setForm({ title: '', content: '', type: 'text', target_branch: '', target_group: '' });
-    fetchData();
   };
   
   const deleteAnnouncement = async (id: string) => {

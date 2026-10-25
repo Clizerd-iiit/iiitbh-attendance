@@ -8,7 +8,14 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
-  if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!session?.user?.email) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  const email = session.user.email.toLowerCase();
+  const { data: dbUser } = await supabaseAdmin
+    .from('users')
+    .select('id, role, branch, section, is_cr, signup_info')
+    .eq('email', email)
+    .single();
 
   const now = new Date().toISOString();
 
@@ -17,46 +24,33 @@ export async function GET(req: NextRequest) {
     .delete()
     .lt('expires_at', now);
 
-  // Fetch non-expired (Fallback if expires_at is missing)
+  // Fetch non-expired announcements
   let query = supabaseAdmin
     .from('announcements')
     .select('*, teacher:users(name, role, is_cr, profile_photo_url, branch, signup_info), subject:subjects(name, code)')
     .order('created_at', { ascending: false });
 
-  let is_cr = false;
-  let is_pseudoadmin = false;
-  let studentProfile: any = null;
-  if (session.user.role === 'student') {
-    const { data: profile } = await supabaseAdmin
-      .from('users')
-      .select('branch, section, is_cr, signup_info')
-      .eq('id', session.user.userId)
-      .single();
-    studentProfile = profile;
-    if (profile) {
-      is_cr = profile.is_cr || false;
-      is_pseudoadmin = !!profile.signup_info?.is_pseudoadmin;
-    }
-  }
-
   let { data, error } = await query;
-
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  if (session.user.role === 'student' && studentProfile) {
-    const sBranch = (studentProfile?.signup_info?.branch || studentProfile?.branch || '').toUpperCase().trim();
-    const sGroup = (studentProfile?.signup_info?.group || studentProfile?.section || '').toUpperCase().trim();
-    const sSubGroup = (studentProfile?.signup_info?.sub_group || '').toUpperCase().trim();
+  const isCR = !!dbUser?.is_cr;
+  const isPseudoadmin = !!dbUser?.signup_info?.is_pseudoadmin;
+  const currentUserId = dbUser?.id || session.user.userId;
+
+  if (dbUser?.role === 'student') {
+    const sBranch = (dbUser?.signup_info?.branch || dbUser?.branch || '').toUpperCase().trim();
+    const sGroup = (dbUser?.signup_info?.group || dbUser?.section || '').toUpperCase().trim();
+    const sSubGroup = (dbUser?.signup_info?.sub_group || '').toUpperCase().trim();
 
     data = (data || []).filter(a => {
-      // If student is the author, always let them view their own announcement
-      if (a.teacher_id === session.user.userId) return true;
+      // If student is author, always show their own announcement
+      if (a.teacher_id === currentUserId) return true;
 
       // 1. Explicitly targeted student ID
       if (Array.isArray(a.target_student_ids) && a.target_student_ids.length > 0) {
-        return a.target_student_ids.includes(session.user.userId);
+        return a.target_student_ids.includes(currentUserId);
       }
-      // 2. Branch match
+      // 2. Branch match (skip filter if 'ALL' or empty)
       if (a.target_branch && a.target_branch.toUpperCase().trim() !== 'ALL' && a.target_branch.toUpperCase().trim() !== sBranch) {
         return false;
       }
@@ -77,60 +71,90 @@ export async function GET(req: NextRequest) {
     });
   }
 
-  return NextResponse.json({ announcements: data, is_cr, is_pseudoadmin, userId: session.user.userId });
+  return NextResponse.json({
+    announcements: data || [],
+    is_cr: isCR,
+    is_pseudoadmin: isPseudoadmin,
+    userId: currentUserId,
+  });
 }
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
-  if (!session?.user) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  if (!session?.user?.email) return NextResponse.json({ error: 'Unauthorized: Session missing' }, { status: 401 });
 
-  const role = session.user.role as string;
-  let isCR = false;
-  
-  if (role === 'student') {
-    const { data: profile } = await supabaseAdmin.from('users').select('is_cr, signup_info').eq('id', session.user.userId).single();
-    if (profile?.signup_info?.is_pseudoadmin) {
-      // Allowed! Pseudoadmin can create announcements
-    } else if (profile?.is_cr) {
-      isCR = true;
-    } else {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
-  } else if (!['teacher','superadmin'].includes(role)) {
+  const email = session.user.email.toLowerCase();
+
+  // Always resolve user record from DB by email
+  const { data: dbUser, error: userFetchErr } = await supabaseAdmin
+    .from('users')
+    .select('id, name, role, is_cr, signup_info, branch')
+    .eq('email', email)
+    .single();
+
+  if (userFetchErr || !dbUser) {
+    console.error('[Announcements POST] User lookup failed for:', email, userFetchErr);
+    return NextResponse.json({ error: 'User account not found' }, { status: 403 });
+  }
+
+  const role = dbUser.role;
+  const userId = dbUser.id;
+  const isCR = !!dbUser.is_cr;
+  const isPseudoadmin = !!dbUser.signup_info?.is_pseudoadmin;
+
+  if (role === 'student' && !isCR && !isPseudoadmin) {
+    return NextResponse.json({ error: 'Forbidden: Only Class Representatives, Admins, or Faculty can broadcast notices' }, { status: 403 });
+  }
+  if (!['student', 'teacher', 'superadmin'].includes(role)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
   const body = await req.json();
   const { title, content, type, subject_id, link_url, file_url, expiry_hours, target_student_ids, target_branch, target_group } = body;
 
+  if (!title || !title.trim()) {
+    return NextResponse.json({ error: 'Announcement title is required' }, { status: 400 });
+  }
+
   // Default 48 hours; max 15 days (360 hours)
   let hours = Number(expiry_hours) || 48;
   if (hours > 360) hours = 360;
   const expires_at = new Date(Date.now() + hours * 60 * 60 * 1000).toISOString();
 
-  const { data, error } = await supabaseAdmin.from('announcements').insert({
-    teacher_id: session.user.userId,
-    title, content, type,
+  const insertPayload = {
+    teacher_id: userId,
+    title: title.trim(),
+    content: content?.trim() || null,
+    type: type || 'text',
     subject_id: subject_id || null,
-    link_url:   link_url || null,
-    file_url:   file_url || null,
+    link_url: link_url || null,
+    file_url: file_url || null,
     expires_at: expires_at,
     target_student_ids: target_student_ids || null,
     target_branch: target_branch || null,
     target_group: target_group || null,
-  }).select().single();
+  };
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  const { data, error } = await supabaseAdmin
+    .from('announcements')
+    .insert(insertPayload)
+    .select()
+    .single();
 
-  // Trigger Instant Web Push Notification to all subscribed devices
+  if (error) {
+    console.error('[Announcements POST] Insert failed:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  // Broadcast Web Push Notification to all subscribed devices
+  let pushResult = { sent: 0, total: 0 };
   try {
-    const posterName = session.user.name || (session.user.role === 'superadmin' ? 'SuperAdmin' : 'Teacher');
+    const posterName = dbUser.name || (role === 'superadmin' ? 'SuperAdmin' : 'Faculty');
     const previewContent = (content || data?.content || '').slice(0, 110);
-    const notifTitle = `📢 Announcement: ${title || data?.title || 'Notice'}`;
+    const notifTitle = `📢 Announcement: ${title.trim()}`;
     const notifBody = `${posterName}: ${previewContent}${previewContent.length >= 110 ? '...' : ''}`;
 
-    // Await ensures Vercel serverless functions do not freeze before FCM delivers
-    await broadcastPushNotification({
+    pushResult = await broadcastPushNotification({
       title: notifTitle,
       body: notifBody,
       url: '/student/announcements',
@@ -139,50 +163,43 @@ export async function POST(req: NextRequest) {
       targetGroup: target_group || undefined,
       targetUserIds: Array.isArray(target_student_ids) && target_student_ids.length > 0 ? target_student_ids : undefined,
     });
+    console.log('[Announcements POST] Push broadcast complete:', pushResult);
   } catch (pushErr) {
-    console.warn('[PushNotification] Trigger failed:', pushErr);
+    console.error('[Announcements POST] Push broadcast error:', pushErr);
   }
 
-  return NextResponse.json({ announcement: data });
+  return NextResponse.json({ announcement: data, pushResult, success: true });
 }
 
 export async function DELETE(req: NextRequest) {
   const session = await getServerSession(authOptions);
-  if (!session?.user) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  if (!session?.user?.email) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
   const { searchParams } = new URL(req.url);
   const id = searchParams.get('id');
   if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 });
 
-  const role = session.user.role as string;
-  let canDelete = false;
+  const email = session.user.email.toLowerCase();
+  const { data: dbUser } = await supabaseAdmin.from('users').select('id, role, is_cr, signup_info').eq('email', email).single();
+  if (!dbUser) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
-  const isPseudoadmin = !!(session.user as any).isPseudoadmin;
+  const role = dbUser.role;
+  const userId = dbUser.id;
+  const isPseudoadmin = !!dbUser.signup_info?.is_pseudoadmin;
+
+  let canDelete = false;
 
   if (role === 'superadmin') {
     canDelete = true;
-  } else if (isPseudoadmin) {
-    // Pseudoadmin can only delete their own announcements
+  } else {
+    // Pseudoadmins, Teachers and CRs can delete their own announcements
     const { data: ann } = await supabaseAdmin.from('announcements').select('teacher_id').eq('id', id).single();
-    if (ann && ann.teacher_id === session.user.userId) {
+    if (ann && ann.teacher_id === userId) {
       canDelete = true;
-    } else {
-      return NextResponse.json({ error: 'Pseudoadmins cannot delete announcements posted by others' }, { status: 403 });
-    }
-  } else if (role === 'teacher') {
-    // Check if creator is me, or a CR
-    const { data: ann } = await supabaseAdmin.from('announcements').select('teacher_id').eq('id', id).single();
-    if (!ann) return NextResponse.json({ error: 'Not found' }, { status: 404 });
-    if (ann.teacher_id === session.user.userId) {
-      canDelete = true;
-    } else {
-      const { data: author } = await supabaseAdmin.from('users').select('is_cr, role').eq('id', ann.teacher_id).single();
+    } else if (role === 'teacher') {
+      const { data: author } = await supabaseAdmin.from('users').select('is_cr, role').eq('id', ann?.teacher_id).single();
       if (author?.is_cr || author?.role === 'student') canDelete = true;
     }
-  } else {
-    // CRs only delete their own
-    const { data: ann } = await supabaseAdmin.from('announcements').select('teacher_id').eq('id', id).single();
-    if (ann && ann.teacher_id === session.user.userId) canDelete = true;
   }
 
   if (!canDelete) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
@@ -194,30 +211,26 @@ export async function DELETE(req: NextRequest) {
 
 export async function PATCH(req: NextRequest) {
   const session = await getServerSession(authOptions);
-  if (!session?.user) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  if (!session?.user?.email) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
   const body = await req.json();
   const { id, title, content, type, subject_id, link_url, file_url, target_student_ids, target_branch, target_group } = body;
   if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 });
 
-  const role = session.user.role as string;
+  const email = session.user.email.toLowerCase();
+  const { data: dbUser } = await supabaseAdmin.from('users').select('id, name, role, is_cr, signup_info').eq('email', email).single();
+  if (!dbUser) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+
+  const role = dbUser.role;
+  const userId = dbUser.id;
+
   let canEdit = false;
 
   if (role === 'superadmin') {
     canEdit = true;
-  } else if (role === 'teacher') {
-    const { data: ann } = await supabaseAdmin.from('announcements').select('teacher_id').eq('id', id).single();
-    if (!ann) return NextResponse.json({ error: 'Not found' }, { status: 404 });
-    if (ann.teacher_id === session.user.userId) {
-      canEdit = true;
-    } else {
-      const { data: author } = await supabaseAdmin.from('users').select('is_cr, role').eq('id', ann.teacher_id).single();
-      if (author?.is_cr || author?.role === 'student') canEdit = true;
-    }
   } else {
-    // CRs only edit their own
     const { data: ann } = await supabaseAdmin.from('announcements').select('teacher_id').eq('id', id).single();
-    if (ann && ann.teacher_id === session.user.userId) canEdit = true;
+    if (ann && ann.teacher_id === userId) canEdit = true;
   }
 
   if (!canEdit) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
@@ -235,7 +248,7 @@ export async function PATCH(req: NextRequest) {
 
   // Trigger Instant Web Push Notification to all subscribed devices
   try {
-    const posterName = session.user.name || (session.user.role === 'superadmin' ? 'SuperAdmin' : 'Teacher');
+    const posterName = dbUser.name || (role === 'superadmin' ? 'SuperAdmin' : 'Faculty');
     const previewContent = (content || data?.content || '').slice(0, 110);
     const notifTitle = `📢 [Updated] ${title || data?.title || 'Announcement'}`;
     const notifBody = `${posterName}: ${previewContent}${previewContent.length >= 110 ? '...' : ''}`;
@@ -253,5 +266,5 @@ export async function PATCH(req: NextRequest) {
     console.warn('[PushNotification] Trigger failed:', pushErr);
   }
 
-  return NextResponse.json({ announcement: data });
+  return NextResponse.json({ announcement: data, success: true });
 }
