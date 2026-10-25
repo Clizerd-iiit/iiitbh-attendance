@@ -53,7 +53,7 @@ export function recordFailedOtpAttempt(studentId: string, classId: string): { is
     record.count += 1;
   }
 
-  const MAX_ATTEMPTS = 3;
+  const MAX_ATTEMPTS = 8;
   if (record.count >= MAX_ATTEMPTS) {
     record.lockedUntil = now + 10 * 60 * 1000; // 10 minutes lockout
     otpFailedAttempts.set(key, record);
@@ -106,7 +106,7 @@ export function validateCoordinates(lat?: number, lon?: number, accuracy?: numbe
 
 /**
  * Anti-Proxy Device Sharing Check:
- * Ensures a single phone/device isn't used to mark attendance for more than 2 distinct students in the same class.
+ * Ensures a single phone/device isn't used to mark attendance for more than 4 distinct students in the same class.
  */
 export function trackDeviceAttendance(
   classId: string,
@@ -131,9 +131,11 @@ export function trackDeviceAttendance(
 
   studentsOnDevice.add(studentId);
 
-  // If 3 or more distinct students marked attendance from the exact same device fingerprint for this class:
-  if (studentsOnDevice.size >= 3) {
-    return { isProxyDetected: true, otherStudentsCount: studentsOnDevice.size - 1 };
+  // Allow up to 4 distinct students on the same device. If 5 or more students try, block as proxy fraud.
+  const MAX_STUDENTS_PER_DEVICE = 4;
+  if (studentsOnDevice.size > MAX_STUDENTS_PER_DEVICE) {
+    studentsOnDevice.delete(studentId); // Do not lock student to this device if rejected
+    return { isProxyDetected: true, otherStudentsCount: studentsOnDevice.size };
   }
 
   return { isProxyDetected: false, otherStudentsCount: studentsOnDevice.size - 1 };
