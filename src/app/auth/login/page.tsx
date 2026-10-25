@@ -13,6 +13,7 @@ export default function LoginPage() {
   const [issueName, setIssueName] = useState('');
   const [issueDetails, setIssueDetails] = useState('');
   const [issueStatus, setIssueStatus] = useState('');
+  const [hpField, setHpField] = useState('');
 
   useEffect(() => {
     if (session?.user?.role) {
@@ -34,7 +35,7 @@ export default function LoginPage() {
       await fetch('/api/public-issue', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: issueName, details: issueDetails }),
+        body: JSON.stringify({ name: issueName, details: issueDetails, hp_field: hpField }),
       });
       setIssueStatus('success');
       setTimeout(() => {
@@ -42,6 +43,7 @@ export default function LoginPage() {
         setIssueStatus('');
         setIssueName('');
         setIssueDetails('');
+        setHpField('');
       }, 3000);
     } catch {
       setIssueStatus('error');
@@ -113,8 +115,27 @@ export default function LoginPage() {
           <span className="text-sm sm:text-base tracking-wide">Sign in with Google</span>
         </button>
 
+        {/* Quick App Install Button */}
+        <div className="mt-4 pt-3 flex items-center justify-center">
+          <button
+            type="button"
+            onClick={() => {
+              const prompt = (window as any).deferredPwaPrompt;
+              if (prompt) {
+                prompt.prompt();
+              } else {
+                alert('📱 Install IIIT AMS App:\n\n• Android / Chrome: Tap browser menu (⋮) -> "Install App"\n• iPhone / iPad: Tap Share icon -> "Add to Home Screen"');
+              }
+            }}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/20 hover:bg-white/30 dark:bg-amber-950/40 dark:hover:bg-amber-900/50 text-white dark:text-amber-200 text-xs font-bold transition backdrop-blur-sm border border-white/30 dark:border-amber-700/50 cursor-pointer active:scale-95 shadow-sm"
+          >
+            <span>📱</span>
+            <span>Install IIIT AMS App</span>
+          </button>
+        </div>
+
         {/* Help Link */}
-        <p className="text-xs sm:text-sm text-white/90 dark:text-amber-200/90 font-bold mt-6 drop-shadow-sm">
+        <p className="text-xs sm:text-sm text-white/90 dark:text-amber-200/90 font-bold mt-4 drop-shadow-sm">
           Having trouble signing in?{' '}
           <button
             onClick={() => setShowIssueModal(true)}
@@ -149,6 +170,17 @@ export default function LoginPage() {
               </div>
             ) : (
               <form onSubmit={submitIssue} className="flex flex-col gap-3.5 text-left">
+                {/* Honeypot field for bot protection */}
+                <input
+                  type="text"
+                  name="website"
+                  tabIndex={-1}
+                  value={hpField}
+                  onChange={e => setHpField(e.target.value)}
+                  className="hidden"
+                  aria-hidden="true"
+                  autoComplete="off"
+                />
                 <div>
                   <label className="block text-xs font-black text-gray-900 dark:text-gray-200 uppercase tracking-wider mb-1">
                     Your Name / Roll No

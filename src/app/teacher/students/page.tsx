@@ -151,10 +151,10 @@ useEffect(() => {
           ))}
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200 flex flex-col sm:flex-row justify-between items-center gap-4">
+        <div className="bg-white dark:bg-[#231b16] rounded-2xl shadow-sm overflow-hidden border border-gray-200 dark:border-[#3d3026]">
+          <div className="px-6 py-4 border-b border-gray-200 dark:border-[#3d3026] flex flex-col sm:flex-row justify-between items-center gap-4">
             <div className="flex flex-col sm:flex-row items-center gap-3 w-full lg:w-auto">
-              <span className="font-bold text-gray-900 whitespace-nowrap">{students.length} enrolled</span>
+              <span className="font-bold text-gray-900 dark:text-white whitespace-nowrap">{students.length} enrolled</span>
               <select value={branchFilter} onChange={e=>{
                 const b = e.target.value;
                 setBranchFilter(b);
@@ -162,7 +162,7 @@ useEffect(() => {
                   setMainGroup('');
                   setGroupFilter('');
                 }
-              }} className="w-full sm:w-auto border border-gray-300 rounded-xl px-3 py-2 text-sm font-bold text-gray-900 focus:outline-none focus:border-blue-500 bg-white shadow-sm">
+              }} className="w-full sm:w-auto border border-gray-300 dark:border-gray-700 rounded-xl px-3 py-2 text-sm font-bold text-gray-900 dark:text-white focus:outline-none focus:border-blue-500 bg-white dark:bg-gray-800 shadow-sm">
                 <option value="" className="text-gray-900 font-bold">All Branches</option>
                 <option value="CSE" className="text-gray-900 font-bold">CSE</option>
                 <option value="ECE" className="text-gray-900 font-bold">ECE</option>
@@ -170,9 +170,9 @@ useEffect(() => {
                 <option value="MNC" className="text-gray-900 font-bold">MNC</option>
               </select>
               {branchFilter && branchFilter !== 'CSE' ? (
-                <div className="border border-dashed border-gray-300 rounded-xl px-3 py-2 text-xs font-semibold text-gray-600 bg-gray-50 flex items-center gap-1">
+                <div className="border border-dashed border-gray-300 dark:border-gray-700 rounded-xl px-3 py-2 text-xs font-semibold text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-800 flex items-center gap-1">
                   <span>All Groups</span>
-                  <span className="text-[10px] bg-gray-200 px-1 py-0.2 rounded font-bold">Auto</span>
+                  <span className="text-[10px] bg-gray-200 dark:bg-gray-700 px-1 py-0.2 rounded font-bold">Auto</span>
                 </div>
               ) : (
                 <div className="flex items-center gap-2 w-full sm:w-auto">
@@ -180,14 +180,14 @@ useEffect(() => {
                     const mg = e.target.value;
                     setMainGroup(mg);
                     setGroupFilter(mg);
-                  }} className="w-full sm:w-auto border border-gray-300 rounded-xl px-3 py-2 text-sm font-bold text-gray-900 focus:outline-none focus:border-blue-500 bg-white shadow-sm">
+                  }} className="w-full sm:w-auto border border-gray-300 dark:border-gray-700 rounded-xl px-3 py-2 text-sm font-bold text-gray-900 dark:text-white focus:outline-none focus:border-blue-500 bg-white dark:bg-gray-800 shadow-sm">
                     <option value="" className="text-gray-900 font-bold">All Groups</option>
                     <option value="G1" className="text-gray-900 font-bold">Group 1 (G1)</option>
                     <option value="G2" className="text-gray-900 font-bold">Group 2 (G2)</option>
                   </select>
 
                   {mainGroup === 'G1' && (
-                    <select value={groupFilter} onChange={e=>setGroupFilter(e.target.value)} className="w-full sm:w-auto border border-blue-300 bg-blue-50/50 text-blue-900 rounded-xl px-2.5 py-2 text-xs font-bold focus:outline-none focus:border-blue-500 shadow-sm animate-fadeIn">
+                    <select value={groupFilter} onChange={e=>setGroupFilter(e.target.value)} className="w-full sm:w-auto border border-blue-300 dark:border-blue-700 bg-blue-50/50 dark:bg-blue-950/40 text-blue-900 dark:text-blue-200 rounded-xl px-2.5 py-2 text-xs font-bold focus:outline-none focus:border-blue-500 shadow-sm animate-fadeIn">
                       <option value="G1">All G1 (Both G1A & G1B)</option>
                       <option value="G1A">↳ Sub-Group G1A</option>
                       <option value="G1B">↳ Sub-Group G1B</option>
@@ -195,7 +195,7 @@ useEffect(() => {
                   )}
 
                   {mainGroup === 'G2' && (
-                    <select value={groupFilter} onChange={e=>setGroupFilter(e.target.value)} className="w-full sm:w-auto border border-purple-300 bg-purple-50/50 text-purple-900 rounded-xl px-2.5 py-2 text-xs font-bold focus:outline-none focus:border-blue-500 shadow-sm animate-fadeIn">
+                    <select value={groupFilter} onChange={e=>setGroupFilter(e.target.value)} className="w-full sm:w-auto border border-purple-300 dark:border-purple-700 bg-purple-50/50 dark:bg-purple-950/40 text-purple-900 dark:text-purple-200 rounded-xl px-2.5 py-2 text-xs font-bold focus:outline-none focus:border-blue-500 shadow-sm animate-fadeIn">
                       <option value="G2">All G2 (Both G2A & G2B)</option>
                       <option value="G2A">↳ Sub-Group G2A</option>
                       <option value="G2B">↳ Sub-Group G2B</option>
@@ -204,25 +204,25 @@ useEffect(() => {
                 </div>
               )}
               <input type="text" placeholder="Search by name or roll no..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
-                className="w-full sm:w-56 border border-gray-300 rounded-xl px-3 py-2 text-sm font-semibold text-gray-900 focus:outline-none focus:border-blue-500 bg-white shadow-sm placeholder:text-gray-500" />
+                className="w-full sm:w-56 border border-gray-300 dark:border-gray-700 rounded-xl px-3 py-2 text-sm font-semibold text-gray-900 dark:text-white focus:outline-none focus:border-blue-500 bg-white dark:bg-gray-800 shadow-sm placeholder:text-gray-400" />
             </div>
-            <span className="text-sm font-bold text-red-600">
+            <span className="text-sm font-bold text-red-600 dark:text-red-400">
               ⚠️ Low (&lt;75%): {students.filter(s => (summary[s.id]||0) < 75).length}
             </span>
           </div>
           <table className="w-full">
-            <thead className="bg-gray-100 border-b border-gray-200">
+            <thead className="bg-gray-100 dark:bg-[#1a1410] border-b border-gray-200 dark:border-[#3d3026]">
               <tr>
-                <th className="text-left p-4 text-sm font-bold text-gray-900">Roll No</th>
-                <th className="text-left p-4 text-sm font-bold text-gray-900">Name</th>
-                <th className="text-left p-4 text-sm font-bold text-gray-900">Face ID</th>
-                <th className="text-left p-4 text-sm font-bold text-gray-900">Section</th>
-                <th className="text-left p-4 text-sm font-bold text-gray-900">Attendance</th>
-                <th className="text-left p-4 text-sm font-bold text-gray-900">Status</th>
-                <th className="text-right p-4 text-sm font-bold text-gray-900">Actions</th>
+                <th className="text-left p-4 text-sm font-bold text-gray-900 dark:text-gray-200">Roll No</th>
+                <th className="text-left p-4 text-sm font-bold text-gray-900 dark:text-gray-200">Name</th>
+                <th className="text-left p-4 text-sm font-bold text-gray-900 dark:text-gray-200">Face ID</th>
+                <th className="text-left p-4 text-sm font-bold text-gray-900 dark:text-gray-200">Section</th>
+                <th className="text-left p-4 text-sm font-bold text-gray-900 dark:text-gray-200">Attendance</th>
+                <th className="text-left p-4 text-sm font-bold text-gray-900 dark:text-gray-200">Status</th>
+                <th className="text-right p-4 text-sm font-bold text-gray-900 dark:text-gray-200">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-gray-100 dark:divide-[#3d3026]">
               {loading ? (
                 <tr><td colSpan={7} className="p-8 text-center text-gray-900 font-medium">Loading...</td></tr>
               ) : students.filter(s => {
@@ -313,9 +313,9 @@ useEffect(() => {
   };
 
   return (
-                  <tr key={s.id} className={`hover:bg-gray-50 ${pct !== null && pct < 75 ? 'bg-red-50' : ''}`}>
-                    <td className="p-4 text-sm font-mono font-bold text-gray-900">{s.roll_no || '—'}</td>
-                    <td className="p-4 font-bold text-gray-900 flex items-center gap-2">
+                  <tr key={s.id} className={`hover:bg-gray-50 dark:hover:bg-gray-800/60 transition ${pct !== null && pct < 75 ? 'bg-red-50/80 dark:bg-red-950/30 border-l-4 border-l-red-500' : ''}`}>
+                    <td className="p-4 text-sm font-mono font-bold text-gray-900 dark:text-gray-100">{s.roll_no || '—'}</td>
+                    <td className="p-4 font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
                       {s.name}
                       {s.signup_info?.is_pseudoadmin && (
                         <span className="bg-gradient-to-r from-amber-500 to-amber-600 text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-sm flex items-center gap-1">
@@ -326,12 +326,12 @@ useEffect(() => {
                     </td>
                     <td className="p-4 text-sm">
                       {s.signup_info?.last_face_update || s.signup_info?.face_descriptor ? (
-                        <span className="text-green-700 font-bold flex items-center gap-1"><span className="text-xs">📸</span> Done</span>
+                        <span className="text-green-700 dark:text-green-400 font-bold flex items-center gap-1"><span className="text-xs">📸</span> Done</span>
                       ) : (
-                        <span className="text-red-600 font-bold flex items-center gap-1"><span className="text-xs">❌</span> Missing</span>
+                        <span className="text-red-600 dark:text-red-400 font-bold flex items-center gap-1"><span className="text-xs">❌</span> Missing</span>
                       )}
                     </td>
-                    <td className="p-4 text-sm font-bold text-blue-700">
+                    <td className="p-4 text-sm font-bold text-blue-700 dark:text-blue-300">
                       {s.signup_info?.branch || s.branch || '—'}
                       {s.signup_info?.group ? ` - ${s.signup_info.group}` : ''}
                       {s.signup_info?.sub_group ? ` (${s.signup_info.sub_group})` : ''}
@@ -339,15 +339,15 @@ useEffect(() => {
                     <td className={`p-4 font-bold ${color}`}>{pct !== null ? `${pct}%` : '—'}</td>
                     <td className="p-4">
                       {pct !== null && pct < 75 && (
-                        <span className="text-xs bg-red-100 text-red-700 font-bold px-2 py-1 rounded">⚠️ Low</span>
+                        <span className="text-xs bg-red-100 dark:bg-red-950/70 text-red-700 dark:text-red-300 border border-red-300 dark:border-red-800 font-bold px-2 py-1 rounded">⚠️ Low</span>
                       )}
                       {pct !== null && pct >= 75 && (
-                        <span className="text-xs bg-green-100 text-green-700 font-bold px-2 py-1 rounded">✅ Safe</span>
+                        <span className="text-xs bg-green-100 dark:bg-green-950/70 text-green-700 dark:text-green-300 border border-green-300 dark:border-green-800 font-bold px-2 py-1 rounded">✅ Safe</span>
                       )}
                     </td>
                     <td className="p-4 text-right">
-                      <button onClick={() => setEditingStudent(s)} className="text-blue-700 hover:text-blue-900 text-sm font-bold mr-3">Edit</button>
-                      <button onClick={() => unenroll(s.id)} className="text-red-600 hover:text-red-800 text-sm font-bold">Remove</button>
+                      <button onClick={() => setEditingStudent(s)} className="text-blue-700 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-200 text-sm font-bold mr-3">Edit</button>
+                      <button onClick={() => unenroll(s.id)} className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 text-sm font-bold">Remove</button>
                     </td>
                   </tr>
                 );

@@ -13,18 +13,18 @@ function AttendanceCard({ subject, showPercentage }: { subject: StudentAttendanc
   const pct = subject.percentage === null ? 100 : subject.percentage;
   const color = pct >= 85 ? 'green' : pct >= 75 ? 'yellow' : 'red';
   const colorMap = {
-    green:  'bg-green-50 border-green-200 text-green-700',
-    yellow: 'bg-yellow-50 border-yellow-200 text-yellow-700',
-    red:    'bg-red-50 border-red-200 text-red-700',
+    green:  'bg-green-50 border-green-200 text-green-800 dark:bg-green-950/30 dark:border-green-800/60 dark:text-green-300',
+    yellow: 'bg-yellow-50 border-yellow-200 text-yellow-800 dark:bg-yellow-950/30 dark:border-yellow-800/60 dark:text-yellow-300',
+    red:    'bg-red-50 border-red-200 text-red-800 dark:bg-red-950/30 dark:border-red-800/60 dark:text-red-300',
   };
   const barMap = { green: 'bg-green-500', yellow: 'bg-yellow-400', red: 'bg-red-500' };
 
   return (
-    <div className={`border-2 rounded-xl p-5 ${colorMap[color]}`}>
+    <div className={`border-2 rounded-xl p-5 transition-all shadow-sm ${colorMap[color]}`}>
       <div className="flex justify-between items-start mb-3">
         <div>
-          <h3 className="font-semibold text-gray-800">{subject.subject_name}</h3>
-          <p className="text-sm text-gray-700">{subject.subject_code}</p>
+          <h3 className="font-bold text-gray-900 dark:text-white text-base sm:text-lg">{subject.subject_name}</h3>
+          <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">{subject.subject_code}</p>
         </div>
         {showPercentage ? (
           <span className="text-2xl font-bold">{pct}%</span>
@@ -33,19 +33,19 @@ function AttendanceCard({ subject, showPercentage }: { subject: StudentAttendanc
         )}
       </div>
       {showPercentage && (
-        <div className="w-full bg-white rounded-full h-2 mb-3">
-          <div className={`${barMap[color]} h-2 rounded-full transition-all`}
+        <div className="w-full bg-white/80 dark:bg-gray-800 rounded-full h-2.5 mb-3 border border-gray-200/50 dark:border-gray-700">
+          <div className={`${barMap[color]} h-2.5 rounded-full transition-all`}
             style={{ width: `${Math.min(pct, 100)}%` }} />
         </div>
       )}
-      <div className="flex justify-between text-sm">
-        <span>{subject.attended}/{subject.total_classes} classes</span>
+      <div className="flex justify-between items-center text-xs sm:text-sm font-semibold">
+        <span className="text-gray-700 dark:text-gray-300">{subject.attended}/{subject.total_classes} classes</span>
         {subject.total_classes === 0 ? (
-          <span className="text-gray-700">No classes yet</span>
+          <span className="text-gray-500 dark:text-gray-400">No classes yet</span>
         ) : pct >= 75 ? (
-          <span className="text-green-700">✅ Can miss {subject.safe_to_miss} more</span>
+          <span className="text-green-700 dark:text-green-400 font-bold">✅ On track (≥75%)</span>
         ) : (
-          <span className="text-red-600">⚠️ Attend {subject.classes_to_attend} more</span>
+          <span className="text-red-600 dark:text-red-400 font-bold">⚠️ Attend {subject.classes_to_attend} more</span>
         )}
       </div>
 
@@ -555,13 +555,13 @@ export default function StudentDashboard() {
 
         {/* Subject-wise */}
         <div id="tour-subject-breakdown">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4">Subject-wise Breakdown</h2>
+          <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Subject-wise Breakdown</h2>
           {loading ? (
             <div className="grid gap-4 md:grid-cols-2">
-              {[1,2,3,4].map(i => <div key={i} className="h-36 bg-gray-200 rounded-xl animate-pulse"/>)}
+              {[1,2,3,4].map(i => <div key={i} className="h-36 bg-gray-200 dark:bg-gray-800 rounded-xl animate-pulse"/>)}
             </div>
           ) : summary.length === 0 ? (
-            <div className="text-center text-gray-700 py-12 bg-white rounded-xl">
+            <div className="text-center text-gray-700 dark:text-gray-300 py-12 bg-white dark:bg-[#231b16] rounded-xl border border-gray-100 dark:border-[#3d3026]">
               <p className="text-4xl mb-2">📚</p>
               <p>No subjects enrolled yet</p>
             </div>

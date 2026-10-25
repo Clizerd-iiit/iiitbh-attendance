@@ -19,6 +19,16 @@ export async function GET(req: NextRequest) {
   const userId = (session.user.userId || (session.user as any).id) as string;
   const role = session.user.role;
 
+  // Auto-delete expired delegations from database so they are never retained
+  try {
+    await supabaseAdmin
+      .from('cr_delegations')
+      .delete()
+      .lt('expires_at', new Date().toISOString());
+  } catch (err) {
+    console.error('Error auto-cleaning expired CR delegations:', err);
+  }
+
   if (role === 'student' && userId) {
     const { data: user } = await supabaseAdmin.from('users').select('is_cr').eq('id', userId).single();
     const is_cr = !!user?.is_cr;
@@ -129,7 +139,7 @@ export async function PATCH(req: NextRequest) {
   }
 }
 
-// DELETE: Teacher revokes a delegation by setting is_active=false
+// DELETE: Teacher revokes a delegation by setting is_active=false, or permanently purges it
 export async function DELETE(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session?.user || !['teacher', 'superadmin'].includes(session.user.role as string))
@@ -139,18 +149,29 @@ export async function DELETE(req: NextRequest) {
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const body = await req.json();
-  const { delegationId } = body;
+  const { delegationId, permanent = false } = body;
 
   if (!delegationId) return NextResponse.json({ error: 'delegationId required' }, { status: 400 });
 
   try {
+    if (permanent) {
+      // Permanently remove the delegation entry from database
+      await supabaseAdmin
+        .from('cr_delegations')
+        .delete()
+        .eq('id', delegationId);
+
+      return NextResponse.json({ success: true, deleted: true });
+    }
+
+    // Revoke delegation
     await updateCRDelegation({
       delegationId,
       teacherId: userId,
       isActive: false,
     });
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, revoked: true });
   } catch (error: any) {
-    return NextResponse.json({ error: error.message || 'Failed to revoke delegation' }, { status: 500 });
+    return NextResponse.json({ error: error.message || 'Failed to revoke/delete delegation' }, { status: 500 });
   }
 }

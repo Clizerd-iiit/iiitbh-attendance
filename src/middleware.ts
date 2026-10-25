@@ -7,6 +7,17 @@ export default withAuth(
     const pathname = req.nextUrl.pathname;
     const role     = token?.role as string;
 
+    // 1. Bot & Malicious Scraper Protection
+    const userAgent = (req.headers.get('user-agent') || '').toLowerCase();
+    const isMaliciousBot = [
+      'sqlmap', 'nikto', 'dirbuster', 'masscan', 'nmap', 'wprecon', 'havij', 'acunetix',
+      'nessus', 'zgrab', 'censys'
+    ].some(bot => userAgent.includes(bot));
+
+    if (isMaliciousBot) {
+      return new NextResponse('Access Denied: Automated Scan Detected', { status: 403 });
+    }
+
     const skip = [
       '/api/', '/auth/', '/profile/', '/pending-verification', '/_next/', '/directory/'
     ];

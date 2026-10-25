@@ -75,9 +75,9 @@ export default function AdminDashboard() {
             { label: 'Subjects', value: stats.totalSubjects, color: 'purple' },
             { label: 'Classes Today', value: stats.classesToday, color: 'orange' },
           ].map(s => (
-            <div key={s.label} className="bg-white rounded-xl p-5 shadow-sm">
-              <p className="text-gray-700 text-sm">{s.label}</p>
-              <p className="text-3xl font-bold text-gray-800">{s.value}</p>
+            <div key={s.label} className="bg-white dark:bg-[#231b16] border border-gray-100 dark:border-[#3d3026] rounded-xl p-5 shadow-sm">
+              <p className="text-gray-600 dark:text-gray-300 text-sm font-semibold">{s.label}</p>
+              <p className="text-3xl font-bold text-gray-900 dark:text-white mt-1">{s.value}</p>
             </div>
           ))}
         </div>
@@ -96,10 +96,10 @@ export default function AdminDashboard() {
 
             return (
               <Link key={link.href} href={link.href} id={linkId}
-                className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition border hover:border-blue-300">
+                className="bg-white dark:bg-[#231b16] rounded-xl p-6 shadow-sm hover:shadow-md transition border border-gray-100 dark:border-[#3d3026] hover:border-blue-300 dark:hover:border-blue-500/50">
                 <div className="text-3xl mb-2">{link.icon}</div>
-                <h3 className="font-semibold text-gray-800">{link.label}</h3>
-                <p className="text-gray-700 text-sm mt-1">{link.desc}</p>
+                <h3 className="font-bold text-gray-900 dark:text-white text-base">{link.label}</h3>
+                <p className="text-gray-600 dark:text-gray-300 text-sm mt-1">{link.desc}</p>
               </Link>
             );
           })}

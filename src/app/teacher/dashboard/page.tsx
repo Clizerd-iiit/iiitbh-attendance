@@ -67,14 +67,14 @@ export default function TeacherDashboard() {
 
         <div id="tour-teacher-subjects">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold text-gray-900">Your Subjects</h2>
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white">Your Subjects</h2>
             {subjects.length > 0 && (
               <button
                 onClick={() => {
                   setSelectedSubjectId(subjects[0]?.id || '');
                   setShowCRModal(true);
                 }}
-                className="bg-purple-100 hover:bg-purple-200 text-purple-900 border-2 border-purple-300 px-3.5 py-1.5 rounded-xl font-black text-xs flex items-center gap-1.5 shadow-sm transition active:scale-95"
+                className="bg-purple-100 hover:bg-purple-200 dark:bg-purple-950/40 dark:hover:bg-purple-900/50 text-purple-900 dark:text-purple-200 border-2 border-purple-300 dark:border-purple-700/60 px-3.5 py-1.5 rounded-xl font-black text-xs flex items-center gap-1.5 shadow-sm transition active:scale-95"
               >
                 <span>🎖️</span>
                 <span>Delegate to CR</span>
@@ -84,24 +84,24 @@ export default function TeacherDashboard() {
 
           <div className="grid md:grid-cols-2 gap-6 mb-8">
             {loading ? (
-              [1,2,3].map(i => <div key={i} className="h-40 bg-gray-200 rounded-xl animate-pulse"/>)
+              [1,2,3].map(i => <div key={i} className="h-40 bg-gray-200 dark:bg-gray-800 rounded-xl animate-pulse"/>)
             ) : subjects.length === 0 ? (
-              <div className="col-span-2 text-center text-gray-900 font-semibold py-12 bg-white rounded-xl border border-gray-200">
+              <div className="col-span-2 text-center text-gray-900 dark:text-gray-100 font-semibold py-12 bg-white dark:bg-[#231b16] rounded-xl border border-gray-200 dark:border-[#3d3026]">
                 <p className="text-4xl mb-2">📚</p>
                 <p>No subjects assigned yet. Contact administrator.</p>
               </div>
             ) : subjects.map(subject => (
-              <div key={subject.id} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition">
+              <div key={subject.id} className="bg-white dark:bg-[#231b16] rounded-xl shadow-sm border border-gray-200 dark:border-[#3d3026] p-6 hover:shadow-md transition">
                 <div className="flex justify-between items-start mb-4">
                   <div>
-                    <h3 className="font-bold text-gray-900 text-lg">{subject.name}</h3>
-                    <p className="text-gray-900 font-semibold text-sm mt-0.5">{subject.code} · Section {subject.section} · Sem {subject.semester}</p>
+                    <h3 className="font-bold text-gray-900 dark:text-white text-lg">{subject.name}</h3>
+                    <p className="text-gray-700 dark:text-gray-300 font-semibold text-sm mt-0.5">{subject.code} · Section {subject.section} · Sem {subject.semester}</p>
                   </div>
-                  <span className="bg-blue-100 text-blue-800 text-xs px-2.5 py-1 rounded-full font-bold">Active</span>
+                  <span className="bg-blue-100 dark:bg-blue-950/50 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-800/50 text-xs px-2.5 py-1 rounded-full font-bold">Active</span>
                 </div>
                 <div className="flex items-center gap-2 mt-4 flex-wrap">
                   <Link href={`/teacher/attendance?subject=${subject.id}`}
-                    className="flex-1 min-w-[120px] text-center bg-blue-600 text-white font-bold text-sm py-2 rounded-lg hover:bg-blue-700 transition shadow-sm">
+                    className="flex-1 min-w-[120px] text-center bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm py-2 rounded-lg transition shadow-sm">
                     ✅ Attendance
                   </Link>
                   <button
@@ -110,12 +110,12 @@ export default function TeacherDashboard() {
                       setSelectedSubjectId(subject.id);
                       setShowCRModal(true);
                     }}
-                    className="flex-1 min-w-[120px] text-center bg-purple-100 hover:bg-purple-200 text-purple-900 border border-purple-300 font-black text-sm py-2 rounded-lg transition shadow-sm"
+                    className="flex-1 min-w-[120px] text-center bg-purple-100 hover:bg-purple-200 dark:bg-purple-950/40 dark:hover:bg-purple-900/50 text-purple-900 dark:text-purple-200 border border-purple-300 dark:border-purple-700/60 font-black text-sm py-2 rounded-lg transition shadow-sm"
                   >
                     🎖️ CR Access
                   </button>
                   <Link href={`/teacher/students?subject=${subject.id}`}
-                    className="px-3 text-center bg-gray-100 text-gray-900 font-bold text-sm py-2 rounded-lg hover:bg-gray-200 transition">
+                    className="px-3 text-center bg-gray-100 dark:bg-[#34271e] text-gray-900 dark:text-white font-bold text-sm py-2 rounded-lg hover:bg-gray-200 dark:hover:bg-[#433227] transition border border-gray-200 dark:border-[#3d3026]">
                     👥 Students
                   </Link>
                 </div>
