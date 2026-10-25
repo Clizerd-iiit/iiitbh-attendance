@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { supabaseAdmin } from '@/lib/supabase';
+import { sanitizeInput } from '@/lib/security';
 
 
 export const dynamic = 'force-dynamic';
@@ -101,7 +102,7 @@ export async function POST(req: NextRequest) {
   if (!session?.user?.userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const body = await req.json();
-  const content = body.content;
+  const content = sanitizeInput(body.content);
   if (!content?.trim()) return NextResponse.json({ error: 'Empty message' }, { status: 400 });
 
   const role = session.user.role;

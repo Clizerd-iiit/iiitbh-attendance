@@ -8,15 +8,23 @@ import type { AttendanceStatus } from '@/types';
 
 import { rateLimit, getIp } from '@/lib/rate-limit';
 import { getClassSettings } from '@/lib/classSettings';
+import {
+  checkOtpLockout,
+  recordFailedOtpAttempt,
+  clearOtpAttempts,
+  validateCoordinates,
+  trackDeviceAttendance
+} from '@/lib/security';
+
 export async function POST(req: NextRequest) {
   const ip = getIp(req);
-  if (!rateLimit(ip, 10, 60000)) return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
+  if (!rateLimit(ip, 12, 60000)) return NextResponse.json({ error: 'Too many requests. Please wait a moment.' }, { status: 429 });
 
   const session = await getServerSession(authOptions);
   if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const body = await req.json();
-  let { studentId, status, method, qrToken, otp, latitude, longitude, recordId, classId } = body;
+  let { studentId, status, method, qrToken, otp, latitude, longitude, recordId, classId, accuracy, deviceFingerprint } = body;
   
   // Workaround for DB constraint missing kiosk/ai_vision
 
@@ -29,6 +37,12 @@ export async function POST(req: NextRequest) {
 
   let dbMethod = method;
   if (method === 'kiosk' || method === 'ai_vision') dbMethod = 'manual';
+
+  // Device Token Identification for Proxy Prevention
+  const deviceToken = String(
+    deviceFingerprint ||
+    `${req.headers.get('user-agent') || ''}:${req.headers.get('accept-language') || ''}:${ip}`
+  ).slice(0, 150);
 
 
   // If recordId is provided (e.g. from Admin editor), fetch classId and studentId from DB
@@ -55,6 +69,40 @@ export async function POST(req: NextRequest) {
 
   if (!classId) return NextResponse.json({ error: 'Class not found or inactive. Please ask teacher to refresh.' }, { status: 404 });
 
+  // SECURITY: Determine acting user vs target student
+  const currentUserId = (session.user.userId || (session.user as any).id) as string;
+  let canManageAttendance = ['teacher', 'superadmin'].includes(session.user.role as string);
+  if (!canManageAttendance && session.user.role === 'student' && classId && currentUserId) {
+    const { canCREditClass } = await import('@/lib/delegation');
+    canManageAttendance = await canCREditClass(currentUserId, classId);
+  }
+
+  if (['manual', 'kiosk'].includes(method) && !canManageAttendance) {
+    return NextResponse.json({ error: 'Students can only mark via QR or OTP' }, { status: 403 });
+  }
+
+  let targetStudentId = currentUserId;
+  if (canManageAttendance) {
+    targetStudentId = studentId || currentUserId;
+  }
+
+  // Device Sharing Proxy Detection (Stop one device marking for multiple different students)
+  if (!canManageAttendance && (method === 'qr' || method === 'otp')) {
+    const devCheck = trackDeviceAttendance(classId, deviceToken, targetStudentId);
+    if (devCheck.isProxyDetected) {
+      await logAudit({
+        userId: targetStudentId,
+        action: 'MULTI_ACCOUNT_DEVICE_PROXY_FLAGGED',
+        tableName: 'attendance',
+        recordId: classId,
+        newValue: { otherStudentsCount: devCheck.otherStudentsCount, ip },
+        ipAddress: ip,
+      });
+      return NextResponse.json({
+        error: 'Multiple accounts detected using this device for attendance. Proxy attendance is strictly prohibited.',
+      }, { status: 403 });
+    }
+  }
 
   // Helper for GPS distance (Haversine in meters)
   const getDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
@@ -67,7 +115,6 @@ export async function POST(req: NextRequest) {
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
     return R * c;
   };
-
 
   if (method === 'qr') {
     const { data: cls } = await supabaseAdmin
@@ -82,6 +129,12 @@ export async function POST(req: NextRequest) {
     // Anti-Proxy Check (only if require_geofence is enabled)
     if (classSettings.require_geofence && cls.latitude && cls.longitude) {
       if (!latitude || !longitude) return NextResponse.json({ error: 'Location required to mark attendance (Anti-Proxy enabled)' }, { status: 400 });
+      
+      const geoCheck = validateCoordinates(latitude, longitude, accuracy);
+      if (!geoCheck.isValid) {
+        return NextResponse.json({ error: geoCheck.error }, { status: 400 });
+      }
+
       const dist = getDistance(cls.latitude, cls.longitude, latitude, longitude);
       const allowedRadius = cls.geofence_radius || 150;
       if (dist > allowedRadius) {
@@ -91,18 +144,51 @@ export async function POST(req: NextRequest) {
   }
 
   if (method === 'otp') {
+    // 1. Anti-Brute-Force Check
+    const otpLock = checkOtpLockout(targetStudentId, classId);
+    if (otpLock.isLocked) {
+      return NextResponse.json({
+        error: `Too many failed OTP attempts. You are locked out of OTP entry for ${otpLock.remainingMinutes} more minute(s). Please use QR Code or contact teacher.`,
+      }, { status: 429 });
+    }
+
     const { data: cls } = await supabaseAdmin
       .from('classes').select('otp, otp_expires_at, latitude, longitude, geofence_radius').eq('id', classId).single();
-    if (!cls || cls.otp !== otp)
-      return NextResponse.json({ error: 'Invalid OTP' }, { status: 400 });
+    if (!cls || cls.otp !== otp) {
+      const { isNowLocked, attemptsLeft } = recordFailedOtpAttempt(targetStudentId, classId);
+      await logAudit({
+        userId: targetStudentId,
+        action: isNowLocked ? 'OTP_BRUTE_FORCE_LOCKOUT' : 'FAILED_OTP_ATTEMPT',
+        tableName: 'attendance',
+        recordId: classId,
+        newValue: { attemptsLeft, isNowLocked },
+        ipAddress: ip,
+      });
+
+      return NextResponse.json({
+        error: isNowLocked
+          ? 'Too many incorrect OTP attempts! You are locked out of OTP for 10 minutes.'
+          : `Invalid OTP. ${attemptsLeft} attempt(s) remaining before lockout.`
+      }, { status: 400 });
+    }
+
     if (new Date(cls.otp_expires_at) < new Date())
       return NextResponse.json({ error: 'OTP expired' }, { status: 400 });
-      
+
+    // Success -> clear OTP attempts
+    clearOtpAttempts(targetStudentId, classId);
+
     const classSettings = await getClassSettings(classId);
 
     // Anti-Proxy Check (only if require_geofence is enabled)
     if (classSettings.require_geofence && cls.latitude && cls.longitude) {
       if (!latitude || !longitude) return NextResponse.json({ error: 'Location required to mark attendance (Anti-Proxy enabled)' }, { status: 400 });
+      
+      const geoCheck = validateCoordinates(latitude, longitude, accuracy);
+      if (!geoCheck.isValid) {
+        return NextResponse.json({ error: geoCheck.error }, { status: 400 });
+      }
+
       const dist = getDistance(cls.latitude, cls.longitude, latitude, longitude);
       const allowedRadius = cls.geofence_radius || 150;
       if (dist > allowedRadius) {
@@ -130,23 +216,6 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: `Cannot edit attendance older than ${windowDays} days` }, { status: 400 });
       }
     }
-  }
-
-  // SECURITY: Only teachers/admins or authorized delegated CR can mark for others or use kiosk/manual methods
-  const currentUserId = (session.user.userId || (session.user as any).id) as string;
-  let canManageAttendance = ['teacher', 'superadmin'].includes(session.user.role as string);
-  if (!canManageAttendance && session.user.role === 'student' && classId && currentUserId) {
-    const { canCREditClass } = await import('@/lib/delegation');
-    canManageAttendance = await canCREditClass(currentUserId, classId);
-  }
-
-  if (['manual', 'kiosk'].includes(method) && !canManageAttendance) {
-    return NextResponse.json({ error: 'Students can only mark via QR or OTP' }, { status: 403 });
-  }
-
-  let targetStudentId = currentUserId;
-  if (canManageAttendance) {
-    targetStudentId = studentId || session.user.userId;
   }
   const markStatus: AttendanceStatus = status || 'P';
 

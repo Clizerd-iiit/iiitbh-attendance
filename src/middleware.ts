@@ -7,23 +7,75 @@ export default withAuth(
     const pathname = req.nextUrl.pathname;
     const role     = token?.role as string;
 
-    // 1. Bot & Malicious Scraper Protection
+    // 1. Malicious Bot & Vulnerability Scanner Protection
     const userAgent = (req.headers.get('user-agent') || '').toLowerCase();
     const isMaliciousBot = [
       'sqlmap', 'nikto', 'dirbuster', 'masscan', 'nmap', 'wprecon', 'havij', 'acunetix',
-      'nessus', 'zgrab', 'censys'
+      'nessus', 'zgrab', 'censys', 'gobuster', 'dirb', 'wfuzz', 'hydra'
     ].some(bot => userAgent.includes(bot));
 
     if (isMaliciousBot) {
       return new NextResponse('Access Denied: Automated Scan Detected', { status: 403 });
     }
 
+    // 2. Path Traversal & Exploit Probe Blocker
+    try {
+      const decodedUrl = decodeURIComponent(req.url).toLowerCase();
+      const isPathTraversalOrProbe = [
+        '..',
+        '%2e%2e',
+        '.env',
+        'wp-config',
+        'wp-admin',
+        'wp-login',
+        '/etc/passwd',
+        '/proc/',
+        '/.git/',
+        'phpinfo',
+        '<script',
+        '%3cscript'
+      ].some(pattern => decodedUrl.includes(pattern));
+
+      if (isPathTraversalOrProbe) {
+        return new NextResponse('Access Denied: Malicious Request Pattern Detected', { status: 400 });
+      }
+    } catch {
+      // If decoding fails, reject malformed URI
+      return new NextResponse('Access Denied: Malformed URL', { status: 400 });
+    }
+
+    // 3. Cross-Origin Request Forgery (CSRF) Guard on Mutating API Requests
+    if (
+      pathname.startsWith('/api/') &&
+      !pathname.startsWith('/api/auth') &&
+      ['POST', 'PUT', 'DELETE', 'PATCH'].includes(req.method)
+    ) {
+      const origin = req.headers.get('origin');
+      if (origin) {
+        try {
+          const originHost = new URL(origin).host;
+          const requestHost = req.headers.get('host') || req.nextUrl.host;
+          if (originHost !== requestHost) {
+            return new NextResponse(
+              JSON.stringify({ error: 'CSRF Protection: Cross-origin request rejected' }),
+              { status: 403, headers: { 'Content-Type': 'application/json' } }
+            );
+          }
+        } catch {
+          return new NextResponse('Invalid Origin Header', { status: 400 });
+        }
+      }
+    }
+
+    // 4. Public and API routes skip portal page-auth & profile completion checks
     const skip = [
       '/api/', '/auth/', '/profile/', '/pending-verification', '/_next/', '/directory/'
     ];
-    if (skip.some(p => pathname.startsWith(p))) return NextResponse.next();
+    if (pathname === '/' || skip.some(p => pathname.startsWith(p))) {
+      return NextResponse.next();
+    }
 
-    
+    // 5. Account active & verification status checks for portal users
     if (token?.isActive === false && role !== 'superadmin') {
       return NextResponse.redirect(new URL('/auth/error?error=account_deactivated', req.url));
     }
@@ -37,7 +89,7 @@ export default withAuth(
       return NextResponse.redirect(new URL('/auth/error?error=account_rejected', req.url));
     }
 
-    // Role-based route protection
+    // 6. Role-based portal route protection
     const isPseudoadmin = !!token?.isPseudoadmin;
 
     // Pseudoadmin allowed routes
@@ -75,13 +127,33 @@ export default withAuth(
     return NextResponse.next();
   },
   {
-    callbacks: { authorized: ({ token }) => !!token },
+    callbacks: {
+      authorized: ({ req, token }) => {
+        const pathname = req.nextUrl.pathname;
+        // Public, auth, API and static routes don't require session token at gateway
+        if (
+          pathname === '/' ||
+          pathname.startsWith('/api/') ||
+          pathname.startsWith('/auth/') ||
+          pathname.startsWith('/_next/') ||
+          pathname.startsWith('/favicon') ||
+          pathname === '/manifest.json' ||
+          pathname === '/robots.txt' ||
+          pathname === '/sitemap.xml'
+        ) {
+          return true;
+        }
+        return !!token;
+      },
+    },
   }
 );
 
 export const config = {
   matcher: [
-    '/student/:path*', '/teacher/:path*', '/admin/:path*',
-    '/profile/:path*', '/pending-verification', '/directory/:path*'
+    /*
+     * Match all request paths except static files, images, sounds, models, service workers:
+     */
+    '/((?!_next/static|_next/image|favicon.ico|manifest.json|robots.txt|sitemap.xml|models/|sw.js|workbox-.*\\.js|.*\\.(?:svg|png|jpg|jpeg|webp|ico|woff|woff2)$).*)',
   ],
 };

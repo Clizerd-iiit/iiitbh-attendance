@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { v4 as uuidv4 } from 'uuid';
+import { sanitizeInput } from '@/lib/security';
 
 // In-memory IP rate limiter for spam protection
 const ipRequests = new Map<string, { count: number; resetAt: number }>();
@@ -44,9 +45,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Missing name or details' }, { status: 400 });
     }
 
-    // Clean inputs
-    const cleanName = String(name).trim().slice(0, 100);
-    const cleanDetails = String(details).trim().slice(0, 1000);
+    // Clean and sanitize inputs against XSS/HTML injection
+    const cleanName = sanitizeInput(String(name).trim().slice(0, 100));
+    const cleanDetails = sanitizeInput(String(details).trim().slice(0, 1000));
 
     const payload = {
       id: uuidv4(),

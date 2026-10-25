@@ -209,16 +209,45 @@ export default function StudentDashboard() {
     return () => clearInterval(interval);
   }, []);
 
-  const executeAttendance = async (lat: number|null, lon: number|null) => {
+  const getClientDeviceFingerprint = (): string => {
+    if (typeof window === 'undefined') return '';
+    try {
+      let id = localStorage.getItem('ams_device_id');
+      if (!id) {
+        const raw = `${navigator.userAgent}|${screen.width}x${screen.height}|${screen.colorDepth}|${new Intl.DateTimeFormat().resolvedOptions().timeZone}|${Math.random().toString(36).substring(2)}`;
+        let hash = 0;
+        for (let i = 0; i < raw.length; i++) {
+          hash = ((hash << 5) - hash) + raw.charCodeAt(i);
+          hash |= 0;
+        }
+        id = `dev_${Math.abs(hash).toString(36)}_${Date.now().toString(36)}`;
+        localStorage.setItem('ams_device_id', id);
+      }
+      return id;
+    } catch {
+      return 'unknown_device';
+    }
+  };
+
+  const executeAttendance = async (lat: number|null, lon: number|null, accuracy?: number) => {
     const isOtp = markForm.code.length <= 6;
     const method = isOtp ? 'otp' : 'qr';
-    const body: any = { method };
-    if (lat && lon) { body.latitude = lat; body.longitude = lon; }
+    const deviceFingerprint = getClientDeviceFingerprint();
+    const body: any = { method, deviceFingerprint };
+    if (lat && lon) {
+      body.latitude = lat;
+      body.longitude = lon;
+      if (typeof accuracy === 'number') body.accuracy = accuracy;
+    }
     if (isOtp) body.otp = markForm.code;
     else body.qrToken = markForm.code;
 
     const res = await fetch('/api/attendance/mark', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-device-id': deviceFingerprint
+      },
       body: JSON.stringify(body)
     });
     
@@ -266,7 +295,7 @@ export default function StudentDashboard() {
       setRetryingGps(false);
       if (markForm.code) {
         setMarking(true);
-        await executeAttendance(pos.coords.latitude, pos.coords.longitude);
+        await executeAttendance(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy);
       }
     } catch (e: any) {
       setRetryingGps(false);
@@ -331,6 +360,7 @@ export default function StudentDashboard() {
         const studentName = session?.user?.name || 'Student';
         const startTime = Date.now();
         let matched = false;
+        let consecutiveMatches = 0;
 
         // Realtime detection loop: scans face, draws square frame & name badge
         while (Date.now() - startTime < 15000 && !matched) {
@@ -374,14 +404,21 @@ export default function StudentDashboard() {
               }
 
               if (dist <= 0.54) {
-                // Verified! Draw Green Square with Verified Name Badge
-                if (ctx) drawSquareFaceBox(ctx, box, studentName, 'verified');
-                matched = true;
-                setFaceCheckState('success');
-                // Hold for 1.2s so student clearly sees their square face and verified name badge
-                await new Promise(r => setTimeout(r, 1200));
-                break;
+                consecutiveMatches++;
+                // Anti-Spoof Liveness: require 2 consecutive live frames (~240ms) to ensure continuous live presence
+                if (consecutiveMatches >= 2) {
+                  // Verified! Draw Green Square with Verified Name Badge
+                  if (ctx) drawSquareFaceBox(ctx, box, studentName, 'verified');
+                  matched = true;
+                  setFaceCheckState('success');
+                  // Hold for 1.2s so student clearly sees their square face and verified name badge
+                  await new Promise(r => setTimeout(r, 1200));
+                  break;
+                } else {
+                  if (ctx) drawSquareFaceBox(ctx, box, studentName, 'scanning');
+                }
               } else {
+                consecutiveMatches = 0;
                 // Still scanning / matching face
                 if (ctx) drawSquareFaceBox(ctx, box, studentName, 'scanning');
               }
@@ -406,7 +443,7 @@ export default function StudentDashboard() {
     }
 
     // 3. Geofence Location check (only if teacher enabled Geofence)
-    let lat = null, lon = null;
+    let lat = null, lon = null, accuracy = null;
     if (reqs.requireGeofence) {
       try {
         const isMobile = typeof navigator !== 'undefined' && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
@@ -435,6 +472,7 @@ export default function StudentDashboard() {
         
         lat = pos.coords.latitude;
         lon = pos.coords.longitude;
+        accuracy = pos.coords.accuracy;
       } catch (err: any) {
         console.warn("Could not get GPS:", err);
         if (err?.code === 1) { // PERMISSION_DENIED
@@ -458,7 +496,7 @@ export default function StudentDashboard() {
     }
 
     // 4. Submit attendance directly
-    await executeAttendance(lat, lon);
+    await executeAttendance(lat, lon, accuracy ?? undefined);
   };
 
   const submitVote = async (index: number) => {
@@ -848,7 +886,7 @@ export default function StudentDashboard() {
                     setShowLocationHelp(false);
                     if (locationHelpDetails.coords) {
                       setMarking(true);
-                      executeAttendance(locationHelpDetails.coords.lat, locationHelpDetails.coords.lon);
+                      executeAttendance(locationHelpDetails.coords.lat, locationHelpDetails.coords.lon, locationHelpDetails.accuracy);
                     }
                   }}
                   className="w-full py-2 px-4 bg-gray-100 hover:bg-gray-200 text-gray-900 text-xs font-bold rounded-xl transition"
