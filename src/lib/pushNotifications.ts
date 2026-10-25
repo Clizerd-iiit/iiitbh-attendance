@@ -1,21 +1,18 @@
 import webpush from 'web-push';
 import { supabaseAdmin } from './supabase';
 
-export const VAPID_PUBLIC_KEY =
-  process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ||
-  'BLpAGr9mCroTXJt9mnDLae0lmIVsOli2zRwpxZSd0_XzCpEpdnn6AwdjzNfyGdjFajVJ2Pj5MSDR6zfwxs4k5iY';
+export const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || '';
+export const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY || '';
+export const VAPID_SUBJECT = process.env.VAPID_SUBJECT || 'mailto:admin@iiitbh.ac.in';
 
-export const VAPID_PRIVATE_KEY =
-  process.env.VAPID_PRIVATE_KEY ||
-  '0npedx9cYTXG4wLh1bVRo7z3T6YkCLvyohHvzSM69BY';
-
-export const VAPID_SUBJECT =
-  process.env.VAPID_SUBJECT || 'mailto:admin@iiitbh.ac.in';
-
-try {
-  webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
-} catch (e) {
-  console.warn('[WebPush] Error configuring VAPID:', e);
+let isVapidConfigured = false;
+if (VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY) {
+  try {
+    webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
+    isVapidConfigured = true;
+  } catch (e) {
+    console.warn('[WebPush] Error configuring VAPID:', e);
+  }
 }
 
 export interface PushSubscriptionKeys {
@@ -188,6 +185,26 @@ export async function sendPushNotification(
   subscription: { endpoint: string; keys: { p256dh: string; auth: string } },
   payload: { title: string; body: string; url?: string; tag?: string; icon?: string }
 ): Promise<boolean> {
+  if (!isVapidConfigured) {
+    const pub = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+    const priv = process.env.VAPID_PRIVATE_KEY;
+    if (pub && priv) {
+      try {
+        webpush.setVapidDetails(
+          process.env.VAPID_SUBJECT || 'mailto:admin@iiitbh.ac.in',
+          pub,
+          priv
+        );
+        isVapidConfigured = true;
+      } catch {}
+    }
+  }
+
+  if (!isVapidConfigured) {
+    console.warn('[WebPush] VAPID keys not configured in environment variables.');
+    return false;
+  }
+
   try {
     const pushPayload = JSON.stringify({
       title: payload.title,
