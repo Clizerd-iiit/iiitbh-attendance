@@ -8,7 +8,7 @@ import { StudentAttendanceSummary } from '@/types';
 import * as faceapi from 'face-api.js';
 import { MapPin, Laptop, Smartphone, RefreshCw, X, AlertTriangle, HelpCircle } from 'lucide-react';
 import { OnboardingTour } from '@/components/shared/OnboardingTour';
-import { NotificationPrompt } from '@/components/notifications/NotificationPrompt';
+
 
 function AttendanceCard({ subject, showPercentage }: { subject: StudentAttendanceSummary & { safe_to_miss: number; classes_to_attend: number }, showPercentage: boolean }) {
   const pct = subject.percentage === null ? 100 : subject.percentage;
@@ -206,8 +206,16 @@ export default function StudentDashboard() {
       }
     });
 
-    const interval = setInterval(fetchData, 60000);
-    return () => clearInterval(interval);
+    const interval = setInterval(() => {
+      if (document.hidden) return;
+      fetchData();
+    }, 90000);
+    const onVis = () => { if (!document.hidden) fetchData(); };
+    document.addEventListener('visibilitychange', onVis);
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', onVis);
+    };
   }, []);
 
   const getClientDeviceFingerprint = (): string => {
@@ -910,9 +918,6 @@ export default function StudentDashboard() {
 
       {/* Interactive Feature Tour */}
       <OnboardingTour role="student" />
-
-      {/* Push Notification Prompt */}
-      <NotificationPrompt />
     </div>
   );
 }

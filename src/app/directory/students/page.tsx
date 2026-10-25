@@ -42,8 +42,16 @@ export default function StudentDirectoryPage() {
 
   useEffect(() => {
     fetchData();
-    const interval = setInterval(fetchData, 60000);
-    return () => clearInterval(interval);
+    const interval = setInterval(() => {
+      if (document.hidden) return;
+      fetchData();
+    }, 120_000);
+    const onVis = () => { if (!document.hidden) fetchData(); };
+    document.addEventListener('visibilitychange', onVis);
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', onVis);
+    };
   }, []);
 
   const filtered = students.filter(s => {

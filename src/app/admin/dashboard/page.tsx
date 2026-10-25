@@ -4,7 +4,7 @@ import { useSession } from 'next-auth/react';
 import { Navbar } from '@/components/shared/Navbar';
 import Link from 'next/link';
 import { OnboardingTour } from '@/components/shared/OnboardingTour';
-import { NotificationPrompt } from '@/components/notifications/NotificationPrompt';
+
 
 interface Stats {
   totalStudents: number;
@@ -25,8 +25,16 @@ export default function AdminDashboard() {
       fetch('/api/admin/stats').then(r => r.json()).then(d => setStats(d));
     };
     fetchData();
-    const interval = setInterval(fetchData, 60000);
-    return () => clearInterval(interval);
+    const interval = setInterval(() => {
+      if (document.hidden) return;
+      fetchData();
+    }, 90000);
+    const onVis = () => { if (!document.hidden) fetchData(); };
+    document.addEventListener('visibilitychange', onVis);
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', onVis);
+    };
   }, []);
 
   const superAdminLinks = [
@@ -109,9 +117,6 @@ export default function AdminDashboard() {
 
       {/* Interactive Feature Tour */}
       <OnboardingTour role={isSuperAdmin ? 'superadmin' : 'pseudoadmin'} />
-
-      {/* Push Notification Prompt */}
-      <NotificationPrompt />
     </div>
   );
 }

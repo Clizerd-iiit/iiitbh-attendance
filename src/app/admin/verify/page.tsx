@@ -28,8 +28,16 @@ export default function VerifyUsersPage() {
 
   useEffect(() => {
     fetchUsers();
-    const interval = setInterval(fetchUsers, 60000);
-    return () => clearInterval(interval);
+    const interval = setInterval(() => {
+      if (document.hidden) return;
+      fetchUsers();
+    }, 120_000);
+    const onVis = () => { if (!document.hidden) fetchUsers(); };
+    document.addEventListener('visibilitychange', onVis);
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', onVis);
+    };
   }, [filter]);
 
   const act = async (userId: string, action: 'approve'|'reject', reason?: string) => {

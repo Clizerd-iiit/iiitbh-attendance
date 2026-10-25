@@ -44,8 +44,16 @@ export default function AnnouncementsPage() {
 
   useEffect(() => {
     fetchData();
-    const interval = setInterval(fetchData, 45000);
-    return () => clearInterval(interval);
+    const interval = setInterval(() => {
+      if (document.hidden) return;
+      fetchData();
+    }, 60000);
+    const onVis = () => { if (!document.hidden) fetchData(); };
+    document.addEventListener('visibilitychange', onVis);
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', onVis);
+    };
   }, [fetchData]);
 
   const postAnnouncement = async () => {

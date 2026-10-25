@@ -27,8 +27,16 @@ export default function PendingVerificationPage() {
     };
     
     checkStatus();
-    const interval = setInterval(checkStatus, 20000); // Check every 20 seconds
-    return () => clearInterval(interval);
+    const interval = setInterval(() => {
+      if (document.hidden) return;
+      checkStatus();
+    }, 45000);
+    const onVis = () => { if (!document.hidden) checkStatus(); };
+    document.addEventListener('visibilitychange', onVis);
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', onVis);
+    };
   }, [update, router]);
 
   return (

@@ -30,8 +30,6 @@ export default function HistoryPage() {
     };
     setLoading(true);
     fetchData();
-    const interval = setInterval(fetchData, 60000);
-    return () => clearInterval(interval);
   }, [month]);
 
   const byDate: Record<string, DayRecord['records']> = {};

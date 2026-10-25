@@ -7,7 +7,6 @@ import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { PhotoZoom } from './PhotoZoom';
 import { ThemeToggle } from './ThemeToggle';
-import { NotificationBell } from '../notifications/NotificationBell';
 
 const SIDEBAR_ITEMS: Record<string, {href: string, icon: string, label: string}[]> = {
   superadmin: [
@@ -97,10 +96,13 @@ export function Navbar() {
     return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
+  const [isHibernating, setIsHibernating] = useState(false);
+
   // Check active CR delegation and is_cr status for student
   useEffect(() => {
     if (session?.user?.role === 'student') {
       const checkCR = async () => {
+        if (document.hidden) return;
         try {
           const res = await fetch('/api/cr-delegation');
           const data = await res.json();
@@ -111,7 +113,7 @@ export function Navbar() {
         } catch (e) {}
       };
       checkCR();
-      const id = setInterval(checkCR, 60000);
+      const id = setInterval(checkCR, 120_000);
       return () => clearInterval(id);
     }
   }, [session]);
@@ -146,10 +148,38 @@ export function Navbar() {
     });
   }
 
-  // Global Heartbeat — update online status every 60s across all pages
+  // Global Heartbeat with Smart Eco-Hibernation (Zero Credit Waste)
   useEffect(() => {
     if (!session?.user) return;
+
+    let lastActive = Date.now();
+    let isSleeping = false;
+
+    const onUserInteraction = () => {
+      lastActive = Date.now();
+      if (isSleeping) {
+        isSleeping = false;
+        setIsHibernating(false);
+        ping(); // Immediate wakeup ping
+      }
+    };
+
+    const events = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll'];
+    events.forEach(e => window.addEventListener(e, onUserInteraction, { passive: true }));
+
     const ping = async () => {
+      // 1. DO NOT PING IF TAB IS IN BACKGROUND / MINIMIZED / PHONE SCREEN LOCKED
+      if (document.hidden) return;
+
+      // 2. DO NOT PING IF USER HAS BEEN INACTIVE FOR > 10 MINUTES (Eco-Sleep)
+      if (Date.now() - lastActive > 10 * 60 * 1000) {
+        if (!isSleeping) {
+          isSleeping = true;
+          setIsHibernating(true);
+        }
+        return;
+      }
+
       try {
         const path = window.location.pathname;
         const now = new Date().toISOString();
@@ -191,9 +221,21 @@ export function Navbar() {
         }
       } catch (e) {}
     };
+
+    const onVisibilityChange = () => {
+      if (!document.hidden) {
+        onUserInteraction();
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+
     ping(); // immediate
-    const id = setInterval(ping, 60000); // Check every 5 seconds for faster auto-kick
-    return () => clearInterval(id);
+    const id = setInterval(ping, 90_000); // Check every 90 seconds (cuts requests by 33%)
+    return () => {
+      clearInterval(id);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      events.forEach(e => window.removeEventListener(e, onUserInteraction));
+    };
   }, [session]);
 
   const sidebarW = collapsed ? 'w-16' : 'w-64';
@@ -337,12 +379,9 @@ export function Navbar() {
           )}
         </div>
 
-        {/* Notifications & Theme Switcher */}
-        <div className={`pt-1 pb-1 flex items-center gap-1.5 ${collapsed ? 'justify-center' : 'justify-between'}`}>
-          <div className="flex items-center gap-1">
-            <NotificationBell />
-            {!collapsed && <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">Alerts</span>}
-          </div>
+        {/* Theme Switcher */}
+        <div className={`pt-1 pb-1 flex items-center ${collapsed ? 'justify-center' : 'justify-between px-2'}`}>
+          {!collapsed && <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">Theme</span>}
           <ThemeToggle className={collapsed ? '' : 'justify-center'} />
         </div>
 
@@ -399,7 +438,6 @@ export function Navbar() {
           <span className="font-bold text-gray-800 dark:text-[#fcf7f2] text-sm">AMS</span>
         </div>
         <div className="ml-auto flex items-center gap-1.5">
-          <NotificationBell />
           <ThemeToggle />
         </div>
       </div>
@@ -419,6 +457,21 @@ export function Navbar() {
       <div className={`hidden md:flex flex-col fixed top-0 left-0 h-full bg-white dark:bg-[#1a1410] border-r border-gray-100 dark:border-[#3d3026] z-30 transition-all duration-300 ${sidebarW}`}>
         {navContent}
       </div>
+
+      {/* ── Eco-Sleep Badge if user is inactive for > 10 min ── */}
+      {isHibernating && (
+        <div
+          onClick={() => {
+            const ev = new MouseEvent('click');
+            window.dispatchEvent(ev);
+          }}
+          className="fixed bottom-4 right-4 z-[9999] bg-gray-900/95 text-white dark:bg-amber-950/95 dark:text-amber-200 border border-gray-700 dark:border-amber-700/60 px-4 py-2.5 rounded-full shadow-2xl backdrop-blur-md text-xs font-bold flex items-center gap-2 cursor-pointer hover:scale-105 transition animate-pulse"
+          title="Click to resume"
+        >
+          <span>💤</span>
+          <span>Eco Sleep Mode (Credits Protected) · Tap anywhere to wake up</span>
+        </div>
+      )}
     </>
   );
 }

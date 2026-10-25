@@ -39,12 +39,16 @@ useEffect(() => {
       });
     };
     fetchData();
-    const interval = setInterval(fetchData, 60000);
+    const interval = setInterval(() => {
+      if (document.hidden) return;
+      fetchData();
+    }, 120_000);
     return () => clearInterval(interval);
   }, []);
 
   
   const loadAllStudents = async () => {
+    if (document.hidden) return;
     const res = await fetch('/api/users/students');
     const data = await res.json();
     setAllStudents(data.students || []);
@@ -52,13 +56,16 @@ useEffect(() => {
 
   useEffect(() => {
     loadAllStudents();
-    const interval = setInterval(loadAllStudents, 60000);
+    const interval = setInterval(() => {
+      if (document.hidden) return;
+      loadAllStudents();
+    }, 120_000);
     return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
     const fetchData = () => {
-      if (!selected) return;
+      if (!selected || document.hidden) return;
       fetch(`/api/admin/users?role=student&subject_id=${selected}`)
         .then(r=>r.json()).then(d => { setStudents(d.users||[]); setLoading(false); });
       fetch(`/api/attendance/class-summary?subject_id=${selected}`)
@@ -70,7 +77,7 @@ useEffect(() => {
     };
     setLoading(true);
     fetchData();
-    const interval = setInterval(fetchData, 60000);
+    const interval = setInterval(fetchData, 120_000);
     return () => clearInterval(interval);
   }, [selected]);
 

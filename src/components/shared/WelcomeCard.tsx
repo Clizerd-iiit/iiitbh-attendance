@@ -1,5 +1,4 @@
 "use client";
-import { useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { PhotoZoom } from './PhotoZoom';
 
@@ -13,14 +12,6 @@ export function WelcomeCard({ subtitle, isCr }: Props) {
   const photo  = session?.user?.profilePhotoUrl || session?.user?.image;
   const name   = session?.user?.name || '';
   const email  = session?.user?.email || '';
-
-  // Heartbeat — update online status every 60s
-  useEffect(() => {
-    const ping = () => fetch('/api/heartbeat', { method: 'POST' });
-    ping(); // immediate
-    const id = setInterval(ping, 60_000);
-    return () => clearInterval(id);
-  }, []);
 
   return (
     <div className="bg-white dark:bg-[#1a120b] rounded-2xl shadow-sm p-5 flex items-center gap-5 border border-gray-100 dark:border-amber-900/40">

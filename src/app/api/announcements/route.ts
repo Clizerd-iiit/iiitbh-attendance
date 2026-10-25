@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { supabaseAdmin } from '@/lib/supabase';
-import { broadcastPushNotification } from '@/lib/pushNotifications';
 
 export const dynamic = 'force-dynamic';
 
@@ -146,29 +145,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  // Broadcast Web Push Notification to all subscribed devices
-  let pushResult = { sent: 0, total: 0 };
-  try {
-    const posterName = dbUser.name || (role === 'superadmin' ? 'SuperAdmin' : 'Faculty');
-    const previewContent = (content || data?.content || '').slice(0, 110);
-    const notifTitle = `📢 Announcement: ${title.trim()}`;
-    const notifBody = `${posterName}: ${previewContent}${previewContent.length >= 110 ? '...' : ''}`;
-
-    pushResult = await broadcastPushNotification({
-      title: notifTitle,
-      body: notifBody,
-      url: '/student/announcements',
-      tag: `announcement-${data.id}`,
-      targetBranch: target_branch || undefined,
-      targetGroup: target_group || undefined,
-      targetUserIds: Array.isArray(target_student_ids) && target_student_ids.length > 0 ? target_student_ids : undefined,
-    });
-    console.log('[Announcements POST] Push broadcast complete:', pushResult);
-  } catch (pushErr) {
-    console.error('[Announcements POST] Push broadcast error:', pushErr);
-  }
-
-  return NextResponse.json({ announcement: data, pushResult, success: true });
+  return NextResponse.json({ announcement: data, success: true });
 }
 
 export async function DELETE(req: NextRequest) {
@@ -245,26 +222,6 @@ export async function PATCH(req: NextRequest) {
 
   const { data, error } = await supabaseAdmin.from('announcements').update(updateData).eq('id', id).select().single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-
-  // Trigger Instant Web Push Notification to all subscribed devices
-  try {
-    const posterName = dbUser.name || (role === 'superadmin' ? 'SuperAdmin' : 'Faculty');
-    const previewContent = (content || data?.content || '').slice(0, 110);
-    const notifTitle = `📢 [Updated] ${title || data?.title || 'Announcement'}`;
-    const notifBody = `${posterName}: ${previewContent}${previewContent.length >= 110 ? '...' : ''}`;
-
-    await broadcastPushNotification({
-      title: notifTitle,
-      body: notifBody,
-      url: '/student/announcements',
-      tag: `announcement-${data.id}`,
-      targetBranch: target_branch || undefined,
-      targetGroup: target_group || undefined,
-      targetUserIds: Array.isArray(target_student_ids) && target_student_ids.length > 0 ? target_student_ids : undefined,
-    });
-  } catch (pushErr) {
-    console.warn('[PushNotification] Trigger failed:', pushErr);
-  }
 
   return NextResponse.json({ announcement: data, success: true });
 }

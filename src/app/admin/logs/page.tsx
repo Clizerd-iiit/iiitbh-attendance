@@ -57,8 +57,16 @@ export default function AuditLogsPage() {
 
   useEffect(() => {
     fetchLogs();
-    const interval = setInterval(fetchLogs, 60000);
-    return () => clearInterval(interval);
+    const interval = setInterval(() => {
+      if (document.hidden) return;
+      fetchLogs();
+    }, 120_000);
+    const onVis = () => { if (!document.hidden) fetchLogs(); };
+    document.addEventListener('visibilitychange', onVis);
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', onVis);
+    };
   }, [offset]);
 
   const deleteLog = async (id: string) => {

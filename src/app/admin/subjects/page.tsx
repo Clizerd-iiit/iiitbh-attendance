@@ -20,7 +20,10 @@ export default function AdminSubjectsPage() {
   };
   useEffect(() => {
     fetchAll();
-    const interval = setInterval(fetchAll, 60000);
+    const interval = setInterval(() => {
+      if (document.hidden) return;
+      fetchAll();
+    }, 120_000);
     return () => clearInterval(interval);
   }, []);
 

@@ -76,13 +76,16 @@ export default function TeacherReports() {
     });
     };
     fetchData();
-    const interval = setInterval(fetchData, 60000);
+    const interval = setInterval(() => {
+      if (document.hidden) return;
+      fetchData();
+    }, 120_000);
     return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
     const fetchData = () => {
-      if (!selected) return;
+      if (!selected || document.hidden) return;
       let url = `/api/attendance/report?subject_id=${selected}`;
       if (branchFilter) url += `&branch=${encodeURIComponent(branchFilter)}`;
       if (groupFilter) url += `&group=${encodeURIComponent(groupFilter)}`;
@@ -91,7 +94,7 @@ export default function TeacherReports() {
     };
     setLoading(true);
     fetchData();
-    const interval = setInterval(fetchData, 60000);
+    const interval = setInterval(fetchData, 120_000);
     return () => clearInterval(interval);
   }, [selected, branchFilter, groupFilter]);
 

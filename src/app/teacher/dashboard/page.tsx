@@ -9,7 +9,7 @@ import { CRDelegationModal } from '@/components/teacher/CRDelegationModal';
 import { ActiveCRDelegations } from '@/components/teacher/ActiveCRDelegations';
 import type { CRDelegation } from '@/lib/delegation';
 import { OnboardingTour } from '@/components/shared/OnboardingTour';
-import { NotificationPrompt } from '@/components/notifications/NotificationPrompt';
+
 
 export default function TeacherDashboard() {
   const { data: session } = useSession();
@@ -45,8 +45,16 @@ export default function TeacherDashboard() {
 
   useEffect(() => {
     fetchData();
-    const interval = setInterval(fetchData, 60000);
-    return () => clearInterval(interval);
+    const interval = setInterval(() => {
+      if (document.hidden) return;
+      fetchData();
+    }, 90000);
+    const onVis = () => { if (!document.hidden) fetchData(); };
+    document.addEventListener('visibilitychange', onVis);
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', onVis);
+    };
   }, [fetchData]);
 
   return (
@@ -137,9 +145,6 @@ export default function TeacherDashboard() {
 
       {/* Interactive Feature Tour */}
       <OnboardingTour role="teacher" />
-
-      {/* Push Notification Prompt */}
-      <NotificationPrompt />
     </div>
   );
 }

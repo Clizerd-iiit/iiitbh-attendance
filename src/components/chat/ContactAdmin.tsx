@@ -31,7 +31,10 @@ export default function ContactAdmin() {
 
   useEffect(() => {
     fetchMessages();
-    const id = setInterval(fetchMessages, 60000);
+    const id = setInterval(() => {
+      if (document.hidden) return;
+      fetchMessages();
+    }, 60000);
     return () => clearInterval(id);
   }, []);
 
