@@ -9,6 +9,7 @@ import { CRDelegationModal } from '@/components/teacher/CRDelegationModal';
 import { ActiveCRDelegations } from '@/components/teacher/ActiveCRDelegations';
 import type { CRDelegation } from '@/lib/delegation';
 import { OnboardingTour } from '@/components/shared/OnboardingTour';
+import { NotificationPrompt } from '@/components/notifications/NotificationPrompt';
 
 export default function TeacherDashboard() {
   const { data: session } = useSession();
@@ -136,6 +137,9 @@ export default function TeacherDashboard() {
 
       {/* Interactive Feature Tour */}
       <OnboardingTour role="teacher" />
+
+      {/* Push Notification Prompt */}
+      <NotificationPrompt />
     </div>
   );
 }

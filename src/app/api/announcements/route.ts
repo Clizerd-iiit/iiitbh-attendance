@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { supabaseAdmin } from '@/lib/supabase';
+import { broadcastPushNotification } from '@/lib/pushNotifications';
 
 export const dynamic = 'force-dynamic';
 
@@ -111,6 +112,28 @@ export async function POST(req: NextRequest) {
   }).select().single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  // Trigger Instant Web Push Notification to all subscribed devices
+  try {
+    const posterName = session.user.name || (session.user.role === 'superadmin' ? 'SuperAdmin' : 'Teacher');
+    const previewContent = (content || data?.content || '').slice(0, 110);
+    const notifTitle = `📢 [Updated] ${title || data?.title || 'Announcement'}`;
+    const notifBody = `${posterName}: ${previewContent}${previewContent.length >= 110 ? '...' : ''}`;
+
+    // Non-blocking async execution
+    broadcastPushNotification({
+      title: notifTitle,
+      body: notifBody,
+      url: '/student/announcements',
+      tag: `announcement-${data.id}`,
+      targetBranch: target_branch || undefined,
+      targetGroup: target_group || undefined,
+      targetUserIds: Array.isArray(target_student_ids) && target_student_ids.length > 0 ? target_student_ids : undefined,
+    }).catch(err => console.error('[PushNotification] Error broadcasting:', err));
+  } catch (pushErr) {
+    console.warn('[PushNotification] Trigger failed:', pushErr);
+  }
+
   return NextResponse.json({ announcement: data });
 }
 
@@ -202,5 +225,27 @@ export async function PATCH(req: NextRequest) {
 
   const { data, error } = await supabaseAdmin.from('announcements').update(updateData).eq('id', id).select().single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  // Trigger Instant Web Push Notification to all subscribed devices
+  try {
+    const posterName = session.user.name || (session.user.role === 'superadmin' ? 'SuperAdmin' : 'Teacher');
+    const previewContent = (content || data?.content || '').slice(0, 110);
+    const notifTitle = `📢 [Updated] ${title || data?.title || 'Announcement'}`;
+    const notifBody = `${posterName}: ${previewContent}${previewContent.length >= 110 ? '...' : ''}`;
+
+    // Non-blocking async execution
+    broadcastPushNotification({
+      title: notifTitle,
+      body: notifBody,
+      url: '/student/announcements',
+      tag: `announcement-${data.id}`,
+      targetBranch: target_branch || undefined,
+      targetGroup: target_group || undefined,
+      targetUserIds: Array.isArray(target_student_ids) && target_student_ids.length > 0 ? target_student_ids : undefined,
+    }).catch(err => console.error('[PushNotification] Error broadcasting:', err));
+  } catch (pushErr) {
+    console.warn('[PushNotification] Trigger failed:', pushErr);
+  }
+
   return NextResponse.json({ announcement: data });
 }

@@ -4,6 +4,7 @@ import { useSession } from 'next-auth/react';
 import { Navbar } from '@/components/shared/Navbar';
 import Link from 'next/link';
 import { OnboardingTour } from '@/components/shared/OnboardingTour';
+import { NotificationPrompt } from '@/components/notifications/NotificationPrompt';
 
 interface Stats {
   totalStudents: number;
@@ -108,6 +109,9 @@ export default function AdminDashboard() {
 
       {/* Interactive Feature Tour */}
       <OnboardingTour role={isSuperAdmin ? 'superadmin' : 'pseudoadmin'} />
+
+      {/* Push Notification Prompt */}
+      <NotificationPrompt />
     </div>
   );
 }

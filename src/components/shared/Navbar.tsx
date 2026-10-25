@@ -7,6 +7,7 @@ import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { PhotoZoom } from './PhotoZoom';
 import { ThemeToggle } from './ThemeToggle';
+import { NotificationBell } from '../notifications/NotificationBell';
 
 const SIDEBAR_ITEMS: Record<string, {href: string, icon: string, label: string}[]> = {
   superadmin: [
@@ -336,9 +337,13 @@ export function Navbar() {
           )}
         </div>
 
-        {/* Theme Switcher Toggle */}
-        <div className="pt-1 pb-1">
-          <ThemeToggle className="w-full justify-center" />
+        {/* Notifications & Theme Switcher */}
+        <div className={`pt-1 pb-1 flex items-center gap-1.5 ${collapsed ? 'justify-center' : 'justify-between'}`}>
+          <div className="flex items-center gap-1">
+            <NotificationBell />
+            {!collapsed && <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">Alerts</span>}
+          </div>
+          <ThemeToggle className={collapsed ? '' : 'justify-center'} />
         </div>
 
         <button onClick={() => { 
@@ -393,7 +398,8 @@ export function Navbar() {
           </div>
           <span className="font-bold text-gray-800 dark:text-[#fcf7f2] text-sm">AMS</span>
         </div>
-        <div className="ml-auto">
+        <div className="ml-auto flex items-center gap-1.5">
+          <NotificationBell />
           <ThemeToggle />
         </div>
       </div>
