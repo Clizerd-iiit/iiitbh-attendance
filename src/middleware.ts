@@ -67,11 +67,16 @@ export default withAuth(
       }
     }
 
-    // 4. Public and API routes skip portal page-auth & profile completion checks
-    const skip = [
-      '/api/', '/auth/', '/profile/', '/pending-verification', '/_next/', '/directory/'
-    ];
-    if (pathname === '/' || skip.some(p => pathname.startsWith(p))) {
+    // 4. Allow public pages, API routes, auth flows, and unmatched routes (404) through to Next.js
+    const isPortalRoute = [
+      '/student', '/teacher', '/admin', '/profile', '/pending-verification', '/directory'
+    ].some(prefix => pathname.startsWith(prefix));
+
+    if (!isPortalRoute || pathname.startsWith('/api/') || pathname.startsWith('/auth/')) {
+      return NextResponse.next();
+    }
+
+    if (pathname === '/profile/setup' || pathname === '/pending-verification') {
       return NextResponse.next();
     }
 
