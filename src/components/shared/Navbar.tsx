@@ -152,11 +152,26 @@ export function Navbar() {
   useEffect(() => {
     if (!session?.user) return;
 
+    const isStudentPortal = role === 'student' || (pathname && pathname.startsWith('/student'));
+    const INACTIVITY_TIMEOUT = isStudentPortal ? 6 * 60 * 1000 : 10 * 60 * 1000; // 6 mins for Student Portal, 10 mins otherwise
+
     let lastActive = Date.now();
     let isSleeping = false;
+    let idleTimer: NodeJS.Timeout | null = null;
+
+    const scheduleIdleTimer = () => {
+      if (idleTimer) clearTimeout(idleTimer);
+      idleTimer = setTimeout(() => {
+        isSleeping = true;
+        setIsHibernating(true);
+      }, INACTIVITY_TIMEOUT);
+    };
+
+    scheduleIdleTimer();
 
     const onUserInteraction = () => {
       lastActive = Date.now();
+      scheduleIdleTimer();
       if (isSleeping) {
         isSleeping = false;
         setIsHibernating(false);
@@ -171,8 +186,8 @@ export function Navbar() {
       // 1. DO NOT PING IF TAB IS IN BACKGROUND / MINIMIZED / PHONE SCREEN LOCKED
       if (document.hidden) return;
 
-      // 2. DO NOT PING IF USER HAS BEEN INACTIVE FOR > 10 MINUTES (Eco-Sleep)
-      if (Date.now() - lastActive > 10 * 60 * 1000) {
+      // 2. DO NOT PING IF USER HAS BEEN INACTIVE (6 minutes in Student Portal)
+      if (Date.now() - lastActive > INACTIVITY_TIMEOUT) {
         if (!isSleeping) {
           isSleeping = true;
           setIsHibernating(true);
@@ -233,6 +248,7 @@ export function Navbar() {
     const id = setInterval(ping, 300_000); // Check every 5 minutes (drastically cuts CDN/edge requests)
     return () => {
       clearInterval(id);
+      if (idleTimer) clearTimeout(idleTimer);
       document.removeEventListener('visibilitychange', onVisibilityChange);
       events.forEach(e => window.removeEventListener(e, onUserInteraction));
     };

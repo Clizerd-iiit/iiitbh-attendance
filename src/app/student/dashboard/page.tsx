@@ -206,13 +206,20 @@ export default function StudentDashboard() {
       }
     });
 
-    // Background refresh relaxed to 5 minutes (summary is also auto-refreshed instantly when attendance is marked)
+    // Track user activity — if inactive for > 6 minutes in student portal, halt all background requests completely
+    let lastActive = Date.now();
+    const onActivity = () => { lastActive = Date.now(); };
+    const events = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll', 'click'];
+    events.forEach(e => window.addEventListener(e, onActivity, { passive: true }));
+
+    // Background refresh strictly paused if user is inactive for > 6 minutes (requests ekdam band)
     const interval = setInterval(() => {
-      if (document.hidden) return;
+      if (document.hidden || Date.now() - lastActive > 6 * 60 * 1000) return;
       fetchData();
     }, 300_000);
     return () => {
       clearInterval(interval);
+      events.forEach(e => window.removeEventListener(e, onActivity));
     };
   }, []);
 
