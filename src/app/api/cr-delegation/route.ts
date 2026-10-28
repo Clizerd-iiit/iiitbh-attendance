@@ -7,6 +7,8 @@ import {
   getDelegationsForTeacher,
   grantCRDelegation,
   updateCRDelegation,
+  deleteCRDelegation,
+  cleanupExpiredCRDelegations,
 } from '@/lib/delegation';
 
 export const dynamic = 'force-dynamic';
@@ -21,10 +23,7 @@ export async function GET(req: NextRequest) {
 
   // Auto-delete expired delegations from database so they are never retained
   try {
-    await supabaseAdmin
-      .from('cr_delegations')
-      .delete()
-      .lt('expires_at', new Date().toISOString());
+    await cleanupExpiredCRDelegations();
   } catch (err) {
     console.error('Error auto-cleaning expired CR delegations:', err);
   }
@@ -155,11 +154,11 @@ export async function DELETE(req: NextRequest) {
 
   try {
     if (permanent) {
-      // Permanently remove the delegation entry from database
-      await supabaseAdmin
-        .from('cr_delegations')
-        .delete()
-        .eq('id', delegationId);
+      // Permanently remove the delegation entry from database & fallback storage
+      await deleteCRDelegation({
+        delegationId,
+        teacherId: session.user.role === 'superadmin' ? undefined : userId,
+      });
 
       return NextResponse.json({ success: true, deleted: true });
     }

@@ -249,12 +249,94 @@ export async function updateCRDelegation(params: {
   // Fallback to system_settings
   const allFallback = await getFallbackDelegations();
   const target = allFallback.find(d => d.id === params.delegationId && d.teacher_id === params.teacherId);
-  if (!target) return null;
+  if (!target && !allFallback.some(d => d.id === params.delegationId)) return null;
+  const item = target || allFallback.find(d => d.id === params.delegationId)!;
 
-  Object.assign(target, updates);
-  await saveFallbackDelegation(target);
-  const [enriched] = await enrichDelegations([target]);
+  Object.assign(item, updates);
+  await saveFallbackDelegation(item);
+  const [enriched] = await enrichDelegations([item]);
   return enriched;
+}
+
+/**
+ * Permanently purge a CR delegation record (from database table and system_settings fallback)
+ */
+export async function deleteCRDelegation(params: {
+  delegationId: string;
+  teacherId?: string;
+}): Promise<boolean> {
+  // 1. Try DB table if exists
+  try {
+    let query = supabaseAdmin.from('cr_delegations').delete().eq('id', params.delegationId);
+    if (params.teacherId) {
+      query = query.eq('teacher_id', params.teacherId);
+    }
+    await query;
+  } catch (e) {}
+
+  // 2. Also delete from system_settings fallback
+  try {
+    if (params.teacherId) {
+      const { data: row } = await supabaseAdmin
+        .from('system_settings')
+        .select('value')
+        .eq('key', `cr_del_${params.delegationId}`)
+        .maybeSingle();
+
+      if (row?.value) {
+        try {
+          const parsed = JSON.parse(row.value);
+          if (parsed.teacher_id && parsed.teacher_id !== params.teacherId) {
+            return false; // Not owned by this teacher
+          }
+        } catch (e) {}
+      }
+    }
+
+    await supabaseAdmin
+      .from('system_settings')
+      .delete()
+      .eq('key', `cr_del_${params.delegationId}`);
+  } catch (e) {}
+
+  return true;
+}
+
+/**
+ * Clean up expired delegations from both DB table and system_settings fallback
+ */
+export async function cleanupExpiredCRDelegations(): Promise<void> {
+  const now = new Date();
+  const nowIso = now.toISOString();
+
+  try {
+    await supabaseAdmin
+      .from('cr_delegations')
+      .delete()
+      .lt('expires_at', nowIso);
+  } catch (err) {}
+
+  try {
+    const { data } = await supabaseAdmin
+      .from('system_settings')
+      .select('key, value')
+      .like('key', 'cr_del_%');
+
+    if (data && data.length > 0) {
+      const expiredKeys: string[] = [];
+      for (const item of data) {
+        try {
+          const parsed = JSON.parse(item.value);
+          if (parsed.expires_at && new Date(parsed.expires_at) < now) {
+            expiredKeys.push(item.key);
+          }
+        } catch (e) {}
+      }
+      if (expiredKeys.length > 0) {
+        await supabaseAdmin.from('system_settings').delete().in('key', expiredKeys);
+      }
+    }
+  } catch (err) {}
 }
 
 /**

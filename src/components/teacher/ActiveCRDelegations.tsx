@@ -16,11 +16,12 @@ export function ActiveCRDelegations({ delegations, onRefresh, loading = false }:
   const [editUnit, setEditUnit] = useState<'hours' | 'days'>('hours');
   const [submitting, setSubmitting] = useState(false);
   const [actionId, setActionId] = useState<string | null>(null);
+  const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set());
 
   // Filter out expired delegations so only non-expired entries show; active first, then revoked
   const sortedDelegations = useMemo(() => {
     return delegations
-      .filter(d => new Date(d.expires_at) > new Date())
+      .filter(d => !deletedIds.has(d.id) && new Date(d.expires_at) > new Date())
       .sort((a, b) => {
         const aActive = a.is_active;
         const bActive = b.is_active;
@@ -28,11 +29,11 @@ export function ActiveCRDelegations({ delegations, onRefresh, loading = false }:
         if (!aActive && bActive) return 1;
         return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
       });
-  }, [delegations]);
+  }, [delegations, deletedIds]);
 
   const activeCount = useMemo(() => {
-    return delegations.filter(d => d.is_active && new Date(d.expires_at) > new Date()).length;
-  }, [delegations]);
+    return delegations.filter(d => !deletedIds.has(d.id) && d.is_active && new Date(d.expires_at) > new Date()).length;
+  }, [delegations, deletedIds]);
 
   const handleRevoke = async (del: CRDelegation) => {
     const studentName = del.cr?.name || 'CR';
@@ -76,6 +77,7 @@ export function ActiveCRDelegations({ delegations, onRefresh, loading = false }:
         body: JSON.stringify({ delegationId: del.id, permanent: true }),
       });
       if (res.ok) {
+        setDeletedIds(prev => new Set(prev).add(del.id));
         onRefresh();
       } else {
         const d = await res.json();
