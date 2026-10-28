@@ -100,11 +100,6 @@ export default function CRTakeAttendancePage() {
 
   useEffect(() => {
     fetchDelegations();
-    const id = setInterval(() => {
-      if (document.hidden) return;
-      fetchDelegations();
-    }, 120_000);
-    return () => clearInterval(id);
   }, [fetchDelegations]);
 
   // Load students for active delegated subject

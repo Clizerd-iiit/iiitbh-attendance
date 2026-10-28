@@ -32,23 +32,14 @@ export default function TeachersPage() {
     }
   }, [isStudent]);
 
+  const fetchData = () => {
+    fetch('/api/users/teachers').then(r => r.json()).then(d => {
+      setTeachers(d.teachers || []); setLoading(false);
+    });
+  };
+
   useEffect(() => {
-    const fetchData = () => {
-      fetch('/api/users/teachers').then(r => r.json()).then(d => {
-        setTeachers(d.teachers || []); setLoading(false);
-      });
-    };
     fetchData();
-    const interval = setInterval(() => {
-      if (document.hidden) return;
-      fetchData();
-    }, 120_000);
-    const onVis = () => { if (!document.hidden) fetchData(); };
-    document.addEventListener('visibilitychange', onVis);
-    return () => {
-      clearInterval(interval);
-      document.removeEventListener('visibilitychange', onVis);
-    };
   }, []);
 
   const filtered = teachers.filter(t => {
@@ -79,7 +70,16 @@ export default function TeachersPage() {
       <div className="max-w-4xl mx-auto px-4 py-8">
         
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-          <h1 className="text-2xl font-bold text-gray-800">👨‍🏫 Teachers</h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-bold text-gray-800">👨‍🏫 Teachers</h1>
+            <button 
+              onClick={() => { setLoading(true); fetchData(); }} 
+              className="px-3 py-1.5 text-xs font-semibold bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 rounded-lg shadow-sm flex items-center gap-1.5 transition"
+              title="Refresh Teachers"
+            >
+              <span>🔄</span> Refresh
+            </button>
+          </div>
           {isStudent && (
             <div className="flex bg-gray-200 p-1 rounded-xl">
               <button onClick={() => setFilter('my')} className={`px-4 py-1.5 rounded-lg text-sm font-medium transition ${filter === 'my' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-700 hover:text-gray-800'}`}>My Teachers</button>

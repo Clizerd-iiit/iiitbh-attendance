@@ -206,15 +206,13 @@ export default function StudentDashboard() {
       }
     });
 
+    // Background refresh relaxed to 5 minutes (summary is also auto-refreshed instantly when attendance is marked)
     const interval = setInterval(() => {
       if (document.hidden) return;
       fetchData();
-    }, 90000);
-    const onVis = () => { if (!document.hidden) fetchData(); };
-    document.addEventListener('visibilitychange', onVis);
+    }, 300_000);
     return () => {
       clearInterval(interval);
-      document.removeEventListener('visibilitychange', onVis);
     };
   }, []);
 

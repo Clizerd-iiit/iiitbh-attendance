@@ -113,7 +113,7 @@ export function Navbar() {
         } catch (e) {}
       };
       checkCR();
-      const id = setInterval(checkCR, 120_000);
+      const id = setInterval(checkCR, 300_000); // Relaxed to 5 minutes to prevent unnecessary requests
       return () => clearInterval(id);
     }
   }, [session]);
@@ -230,7 +230,7 @@ export function Navbar() {
     document.addEventListener('visibilitychange', onVisibilityChange);
 
     ping(); // immediate
-    const id = setInterval(ping, 90_000); // Check every 90 seconds (cuts requests by 33%)
+    const id = setInterval(ping, 300_000); // Check every 5 minutes (drastically cuts CDN/edge requests)
     return () => {
       clearInterval(id);
       document.removeEventListener('visibilitychange', onVisibilityChange);
@@ -297,7 +297,7 @@ export function Navbar() {
           if (item.label === 'Subjects') tourId = role === 'teacher' ? 'tour-teacher-subjects-nav' : 'tour-admin-subjects';
 
           return (
-            <Link key={item.href} href={item.href} id={tourId}
+            <Link key={item.href} href={item.href} prefetch={false} id={tourId}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition group relative
                 ${active
                   ? 'bg-blue-50 text-blue-700 font-bold dark:bg-[#3d2e23] dark:text-amber-400 dark:border dark:border-amber-500/25'

@@ -73,16 +73,6 @@ export default function AdminAnnouncementsPage() {
 
   useEffect(() => {
     fetchData();
-    const interval = setInterval(() => {
-      if (document.hidden) return;
-      fetchData();
-    }, 60000);
-    const onVis = () => { if (!document.hidden) fetchData(); };
-    document.addEventListener('visibilitychange', onVis);
-    return () => {
-      clearInterval(interval);
-      document.removeEventListener('visibilitychange', onVis);
-    };
   }, []);
 
   return (
@@ -90,7 +80,16 @@ export default function AdminAnnouncementsPage() {
       <Navbar />
       <div className="max-w-3xl mx-auto px-4 py-8">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
-          <h1 className="text-2xl font-bold text-gray-800">📢 Announcements</h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-bold text-gray-800">📢 Announcements</h1>
+            <button 
+              onClick={() => { setLoading(true); fetchData(); }} 
+              className="px-2.5 py-1 text-xs font-semibold bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 rounded-lg shadow-sm flex items-center gap-1 transition"
+              title="Refresh Announcements"
+            >
+              <span>🔄</span> Refresh
+            </button>
+          </div>
           <button 
             onClick={() => setShowModal(true)} 
             className="w-full sm:w-auto bg-purple-600 hover:bg-purple-700 text-white px-4 py-2.5 rounded-xl text-sm font-black transition shadow-sm flex items-center justify-center gap-1.5 active:scale-95"

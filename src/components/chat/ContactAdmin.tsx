@@ -31,11 +31,6 @@ export default function ContactAdmin() {
 
   useEffect(() => {
     fetchMessages();
-    const id = setInterval(() => {
-      if (document.hidden) return;
-      fetchMessages();
-    }, 60000);
-    return () => clearInterval(id);
   }, []);
 
   useEffect(() => {
@@ -70,21 +65,30 @@ export default function ContactAdmin() {
 
   return (
     <div className="max-w-3xl mx-auto h-[calc(100vh-100px)] bg-white rounded-2xl shadow-sm border border-gray-200 flex flex-col overflow-hidden">
-      <div className="bg-blue-600 text-white p-4 flex items-center gap-3">
-        <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center overflow-hidden border-2 border-white">
-          <img src="/iiitbh-logo.jpg" alt="Admin" className="w-full h-full object-cover" />
+      <div className="bg-blue-600 text-white p-4 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center overflow-hidden border-2 border-white">
+            <img src="/iiitbh-logo.jpg" alt="Admin" className="w-full h-full object-cover" />
+          </div>
+          <div>
+            <h2 className="font-bold flex items-center gap-2">
+              Contact Admin
+              {isOnline(adminLastSeen) && (
+                <span className="flex items-center gap-1 text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded-full border border-green-100 shadow-sm">
+                  <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>Online
+                </span>
+              )}
+            </h2>
+            <p className="text-xs text-blue-100">Usually replies within a few hours</p>
+          </div>
         </div>
-        <div>
-          <h2 className="font-bold flex items-center gap-2">
-            Contact Admin
-            {isOnline(adminLastSeen) && (
-              <span className="flex items-center gap-1 text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded-full border border-green-100 shadow-sm">
-                <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>Online
-              </span>
-            )}
-          </h2>
-          <p className="text-xs text-blue-100">Usually replies within a few hours</p>
-        </div>
+        <button 
+          onClick={fetchMessages} 
+          className="px-2.5 py-1 text-xs font-semibold bg-white/10 hover:bg-white/20 text-white rounded-lg transition flex items-center gap-1 border border-white/20"
+          title="Refresh Messages"
+        >
+          <span>🔄</span> Refresh
+        </button>
       </div>
       <div className="bg-yellow-50 border-b border-yellow-100 p-3 text-center space-y-1">
         <p className="text-xs font-bold text-red-600">🚨 Report Bugs, Issues & Errors HERE!!</p>

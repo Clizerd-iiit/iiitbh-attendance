@@ -44,16 +44,6 @@ export default function AnnouncementsPage() {
 
   useEffect(() => {
     fetchData();
-    const interval = setInterval(() => {
-      if (document.hidden) return;
-      fetchData();
-    }, 60000);
-    const onVis = () => { if (!document.hidden) fetchData(); };
-    document.addEventListener('visibilitychange', onVis);
-    return () => {
-      clearInterval(interval);
-      document.removeEventListener('visibilitychange', onVis);
-    };
   }, [fetchData]);
 
   const postAnnouncement = async () => {
@@ -109,7 +99,16 @@ export default function AnnouncementsPage() {
       <div className="max-w-3xl mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h1 className="text-2xl font-black text-gray-900 dark:text-[#fcf7f2]">📢 Announcements</h1>
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-black text-gray-900 dark:text-[#fcf7f2]">📢 Announcements</h1>
+              <button 
+                onClick={() => { setLoading(true); fetchData(); }} 
+                className="px-2.5 py-1 text-xs font-semibold bg-white dark:bg-[#1a120b] border border-gray-200 dark:border-amber-900/40 text-gray-700 dark:text-amber-200 hover:bg-gray-50 dark:hover:bg-[#251a10] rounded-lg shadow-sm flex items-center gap-1 transition"
+                title="Refresh Announcements"
+              >
+                <span>🔄</span> Refresh
+              </button>
+            </div>
             <p className="text-xs text-gray-500 dark:text-amber-200/60 mt-0.5">Stay updated with classroom schedules and department notices</p>
           </div>
           {canPost && (

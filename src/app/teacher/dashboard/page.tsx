@@ -45,16 +45,6 @@ export default function TeacherDashboard() {
 
   useEffect(() => {
     fetchData();
-    const interval = setInterval(() => {
-      if (document.hidden) return;
-      fetchData();
-    }, 90000);
-    const onVis = () => { if (!document.hidden) fetchData(); };
-    document.addEventListener('visibilitychange', onVis);
-    return () => {
-      clearInterval(interval);
-      document.removeEventListener('visibilitychange', onVis);
-    };
   }, [fetchData]);
 
   return (

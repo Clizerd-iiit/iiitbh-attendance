@@ -20,11 +20,6 @@ export default function AdminSubjectsPage() {
   };
   useEffect(() => {
     fetchAll();
-    const interval = setInterval(() => {
-      if (document.hidden) return;
-      fetchAll();
-    }, 120_000);
-    return () => clearInterval(interval);
   }, []);
 
   const saveSubject = async () => {

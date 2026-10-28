@@ -42,16 +42,6 @@ export default function StudentDirectoryPage() {
 
   useEffect(() => {
     fetchData();
-    const interval = setInterval(() => {
-      if (document.hidden) return;
-      fetchData();
-    }, 120_000);
-    const onVis = () => { if (!document.hidden) fetchData(); };
-    document.addEventListener('visibilitychange', onVis);
-    return () => {
-      clearInterval(interval);
-      document.removeEventListener('visibilitychange', onVis);
-    };
   }, []);
 
   const filtered = students.filter(s => {
@@ -96,7 +86,16 @@ export default function StudentDirectoryPage() {
     <div className="min-h-screen bg-gray-50 md:pl-64 pt-14 md:pt-0">
       <Navbar />
       <div className="max-w-4xl mx-auto px-4 py-8">
-        <h1 className="text-2xl font-bold text-gray-800 mb-4">👥 Student Directory</h1>
+        <div className="flex items-center justify-between mb-4">
+          <h1 className="text-2xl font-bold text-gray-800">👥 Student Directory</h1>
+          <button 
+            onClick={() => { setLoading(true); fetchData(); }} 
+            className="px-3 py-1.5 text-xs font-semibold bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 rounded-lg shadow-sm flex items-center gap-1.5 transition"
+            title="Refresh Directory"
+          >
+            <span>🔄</span> Refresh
+          </button>
+        </div>
         <input value={search} onChange={e => setSearch(e.target.value)}
           placeholder="Search by name, roll no, or email…"
           className="w-full text-black font-bold border-2 border-gray-300 bg-white rounded-xl px-4 py-3 mb-4 focus:outline-none focus:border-blue-500 shadow-sm text-base"/>

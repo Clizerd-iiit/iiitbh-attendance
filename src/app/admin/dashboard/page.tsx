@@ -21,20 +21,7 @@ export default function AdminDashboard() {
   const branchName = (session?.user as any)?.pseudoadminBranch;
 
   useEffect(() => {
-    const fetchData = () => {
-      fetch('/api/admin/stats').then(r => r.json()).then(d => setStats(d));
-    };
-    fetchData();
-    const interval = setInterval(() => {
-      if (document.hidden) return;
-      fetchData();
-    }, 90000);
-    const onVis = () => { if (!document.hidden) fetchData(); };
-    document.addEventListener('visibilitychange', onVis);
-    return () => {
-      clearInterval(interval);
-      document.removeEventListener('visibilitychange', onVis);
-    };
+    fetch('/api/admin/stats').then(r => r.json()).then(d => setStats(d));
   }, []);
 
   const superAdminLinks = [

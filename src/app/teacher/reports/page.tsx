@@ -69,23 +69,15 @@ export default function TeacherReports() {
 
   const displayedReport = defaultersOnly ? report.filter(r => r.percentage < 75) : report;
   useEffect(() => {
-    const fetchData = () => {
-      fetch('/api/teacher/subjects').then(r=>r.json()).then(d => {
+    fetch('/api/teacher/subjects').then(r=>r.json()).then(d => {
       setSubjects(d.subjects||[]);
       if (d.subjects?.[0]) setSelected(d.subjects[0].id);
     });
-    };
-    fetchData();
-    const interval = setInterval(() => {
-      if (document.hidden) return;
-      fetchData();
-    }, 120_000);
-    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
     const fetchData = () => {
-      if (!selected || document.hidden) return;
+      if (!selected) return;
       let url = `/api/attendance/report?subject_id=${selected}`;
       if (branchFilter) url += `&branch=${encodeURIComponent(branchFilter)}`;
       if (groupFilter) url += `&group=${encodeURIComponent(groupFilter)}`;
@@ -94,8 +86,6 @@ export default function TeacherReports() {
     };
     setLoading(true);
     fetchData();
-    const interval = setInterval(fetchData, 120_000);
-    return () => clearInterval(interval);
   }, [selected, branchFilter, groupFilter]);
 
   const exportCSV = async (studentId?: string) => {

@@ -37,15 +37,10 @@ export default function AdminInbox() {
     } catch(e) {}
   };
 
-  // Poll inbox list
+  // Load inbox list on mount
   useEffect(() => {
     fetchInbox();
     fetchAllUsers();
-    const id = setInterval(() => {
-      if (document.hidden) return;
-      fetchInbox();
-    }, 60000);
-    return () => clearInterval(id);
   }, []);
 
   // Sync activeUser with latest inbox data (for real-time last_seen_at updates)
@@ -59,14 +54,14 @@ export default function AdminInbox() {
   }, [inbox]);
 
 
-  // Poll active chat
+  // Poll active chat (relaxed to 5 minutes)
   useEffect(() => {
     if (!activeUser) return;
     fetchMessages(activeUser.user_id);
     const id = setInterval(() => {
       if (document.hidden) return;
       fetchMessages(activeUser.user_id);
-    }, 60000);
+    }, 300_000);
     return () => clearInterval(id);
   }, [activeUser]);
 

@@ -30,9 +30,9 @@ export async function POST(req: Request) {
   const now = Date.now();
   const cached = heartbeatCache.get(userId);
 
-  // If a heartbeat was processed within the last 60 seconds from this user,
+  // If a heartbeat was processed within the last 120 seconds from this user,
   // return the cached response immediately to save Vercel CPU and Supabase DB reads/writes.
-  if (cached && (now - cached.timestamp < 60_000)) {
+  if (cached && (now - cached.timestamp < 120_000)) {
     return NextResponse.json(cached.response);
   }
 
