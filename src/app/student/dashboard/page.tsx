@@ -744,12 +744,12 @@ export default function StudentDashboard() {
                 </div>
                 <div>
                   <h3 className="text-base sm:text-lg font-bold text-gray-900 leading-snug">Precise Location Required</h3>
-                  <p className="text-xs text-gray-600 font-medium">सटीक लोकेशन चालू करने का तरीका</p>
+                  <p className="text-xs text-gray-600 font-medium">Quick guide to enable high-accuracy GPS</p>
                 </div>
               </div>
               <button 
                 onClick={() => setShowLocationHelp(false)}
-                className="p-1.5 rounded-full text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition"
+                className="p-1.5 rounded-full text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition cursor-pointer"
                 title="Close"
               >
                 <X className="w-5 h-5" />
@@ -774,7 +774,7 @@ export default function StudentDashboard() {
               <button
                 type="button"
                 onClick={() => setLocationHelpTab('android')}
-                className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-lg text-xs font-bold transition ${
+                className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-lg text-xs font-bold transition cursor-pointer ${
                   locationHelpTab === 'android' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-700 hover:text-gray-900'
                 }`}
               >
@@ -784,7 +784,7 @@ export default function StudentDashboard() {
               <button
                 type="button"
                 onClick={() => setLocationHelpTab('ios')}
-                className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-lg text-xs font-bold transition ${
+                className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-lg text-xs font-bold transition cursor-pointer ${
                   locationHelpTab === 'ios' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-700 hover:text-gray-900'
                 }`}
               >
@@ -794,7 +794,7 @@ export default function StudentDashboard() {
               <button
                 type="button"
                 onClick={() => setLocationHelpTab('laptop')}
-                className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-lg text-xs font-bold transition ${
+                className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-lg text-xs font-bold transition cursor-pointer ${
                   locationHelpTab === 'laptop' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-700 hover:text-gray-900'
                 }`}
               >
@@ -810,23 +810,24 @@ export default function StudentDashboard() {
                   <div className="flex items-start gap-2.5">
                     <span className="w-5 h-5 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">1</span>
                     <p className="text-xs text-gray-900 font-medium">
-                      Browser address bar me left side <strong>Lock (🔒) ya Page Info</strong> icon par tap karein.
+                      In Chrome address bar, tap the <strong>Lock (🔒) or Page Settings icon</strong> on the left side of the website URL.
                     </p>
                   </div>
                   <div className="flex items-start gap-2.5">
                     <span className="w-5 h-5 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">2</span>
                     <p className="text-xs text-gray-900 font-medium">
-                      <strong>Permissions &rarr; Location</strong> par click karein.
+                      Tap <strong>Permissions &rarr; Location</strong>.
                     </p>
                   </div>
                   <div className="flex items-start gap-2.5">
                     <span className="w-5 h-5 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">3</span>
                     <p className="text-xs text-gray-900 font-medium">
-                      <strong>"Use precise location" (सटीक स्थान चालू करें)</strong> toggle ko ON karein.
+                      Turn <strong>"Use precise location"</strong> toggle to <strong>ON</strong> (or choose <strong>Precise</strong> instead of Approximate).
                     </p>
                   </div>
-                  <div className="border-t border-gray-200 pt-2 text-[11px] text-gray-700">
-                    💡 <em>Direct Phone Settings: Settings &rarr; Apps &rarr; Chrome &rarr; Permissions &rarr; Location &rarr; Select "Allow only while using the app" & "Use precise location".</em>
+                  <div className="border-t border-gray-200 pt-2 text-[11px] text-gray-700 space-y-1">
+                    <p>💡 <strong>Alternative Path:</strong> Phone Settings &rarr; Apps &rarr; Chrome &rarr; Permissions &rarr; Location &rarr; Select "Allow only while using the app" and toggle ON "Use precise location".</p>
+                    <p>📶 <strong>Indoor Tip:</strong> Keep your Wi-Fi turned ON (even without connecting) to help Google enhance indoor classroom triangulation.</p>
                   </div>
                 </div>
               )}
@@ -836,23 +837,23 @@ export default function StudentDashboard() {
                   <div className="flex items-start gap-2.5">
                     <span className="w-5 h-5 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">1</span>
                     <p className="text-xs text-gray-900 font-medium">
-                      iPhone <strong>Settings</strong> app open karein.
+                      Open your iPhone <strong>Settings</strong> app.
                     </p>
                   </div>
                   <div className="flex items-start gap-2.5">
                     <span className="w-5 h-5 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">2</span>
                     <p className="text-xs text-gray-900 font-medium">
-                      Neeche scroll karke <strong>Safari</strong> (ya Chrome) par tap karein.
+                      Scroll down and tap <strong>Safari</strong> (or Chrome).
                     </p>
                   </div>
                   <div className="flex items-start gap-2.5">
                     <span className="w-5 h-5 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">3</span>
                     <p className="text-xs text-gray-900 font-medium">
-                      <strong>Location</strong> select karein aur <strong>"Precise Location"</strong> toggle ko ON (Green) karein.
+                      Select <strong>Location</strong> and make sure the <strong>"Precise Location"</strong> toggle is switched <strong>ON (Green)</strong>.
                     </p>
                   </div>
                   <div className="border-t border-gray-200 pt-2 text-[11px] text-gray-700">
-                    💡 <em>Settings badalne ke baad browser par wapas aayein aur neeche "Retry" button dabayein.</em>
+                    💡 <em>After updating settings, return to your browser and tap the "Retry Location Check" button below.</em>
                   </div>
                 </div>
               )}
@@ -862,19 +863,19 @@ export default function StudentDashboard() {
                   <div className="flex items-start gap-2.5">
                     <span className="w-5 h-5 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">1</span>
                     <p className="text-xs text-gray-900 font-medium">
-                      Chrome / Edge address bar me URL ke left side <strong>Lock (🔒) icon</strong> click karein.
+                      Click the <strong>Lock (🔒) icon</strong> on the left side of the address bar.
                     </p>
                   </div>
                   <div className="flex items-start gap-2.5">
                     <span className="w-5 h-5 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">2</span>
                     <p className="text-xs text-gray-900 font-medium">
-                      <strong>Location</strong> dropdown ko <strong>"Allow"</strong> par set karein.
+                      Change the <strong>Location</strong> permission to <strong>"Allow"</strong>.
                     </p>
                   </div>
                   <div className="flex items-start gap-2.5">
                     <span className="w-5 h-5 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">3</span>
                     <p className="text-xs text-gray-900 font-medium">
-                      <strong>System Settings:</strong> Windows Settings &rarr; Privacy &rarr; Location ON karein. Mac me System Settings &rarr; Privacy & Security &rarr; Location Services ON karein.
+                      <strong>Operating System Check:</strong> On Windows, go to Settings &rarr; Privacy & Security &rarr; Location &rarr; Turn ON. On Mac, go to System Settings &rarr; Privacy & Security &rarr; Location Services &rarr; Turn ON.
                     </p>
                   </div>
                 </div>
