@@ -265,9 +265,11 @@ export async function deleteCRDelegation(params: {
   delegationId: string;
   teacherId?: string;
 }): Promise<boolean> {
+  const cleanId = params.delegationId.replace(/^cr_del_/, '');
+
   // 1. Try DB table if exists
   try {
-    let query = supabaseAdmin.from('cr_delegations').delete().eq('id', params.delegationId);
+    let query = supabaseAdmin.from('cr_delegations').delete().eq('id', cleanId);
     if (params.teacherId) {
       query = query.eq('teacher_id', params.teacherId);
     }
@@ -280,14 +282,22 @@ export async function deleteCRDelegation(params: {
       const { data: row } = await supabaseAdmin
         .from('system_settings')
         .select('value')
-        .eq('key', `cr_del_${params.delegationId}`)
+        .or(`key.eq.cr_del_${cleanId},key.eq.${params.delegationId}`)
         .maybeSingle();
 
       if (row?.value) {
         try {
           const parsed = JSON.parse(row.value);
           if (parsed.teacher_id && parsed.teacher_id !== params.teacherId) {
-            return false; // Not owned by this teacher
+            const { data: subj } = await supabaseAdmin
+              .from('subjects')
+              .select('teacher_ids, teacher_id')
+              .eq('id', parsed.subject_id)
+              .maybeSingle();
+            const teaches =
+              subj?.teacher_ids?.includes(params.teacherId) ||
+              subj?.teacher_id === params.teacherId;
+            if (!teaches) return false;
           }
         } catch (e) {}
       }
@@ -296,7 +306,7 @@ export async function deleteCRDelegation(params: {
     await supabaseAdmin
       .from('system_settings')
       .delete()
-      .eq('key', `cr_del_${params.delegationId}`);
+      .in('key', [`cr_del_${cleanId}`, params.delegationId]);
   } catch (e) {}
 
   return true;

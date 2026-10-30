@@ -9,7 +9,7 @@ const classDeviceMap = new Map<string, Map<string, Set<string>>>();
 
 // Cleanup expired memory records every 5 minutes
 if (typeof setInterval !== 'undefined') {
-  setInterval(() => {
+  const timer = setInterval(() => {
     const now = Date.now();
     for (const [key, val] of otpFailedAttempts.entries()) {
       if (val.lockedUntil < now && val.count === 0) {
@@ -21,6 +21,9 @@ if (typeof setInterval !== 'undefined') {
       classDeviceMap.clear();
     }
   }, 5 * 60 * 1000);
+  if (timer && typeof (timer as any).unref === 'function') {
+    (timer as any).unref();
+  }
 }
 
 /**
@@ -47,13 +50,13 @@ export function recordFailedOtpAttempt(studentId: string, classId: string): { is
   const now = Date.now();
   let record = otpFailedAttempts.get(key);
 
-  if (!record || record.lockedUntil <= now) {
+  if (!record || (record.lockedUntil > 0 && record.lockedUntil <= now)) {
     record = { count: 1, lockedUntil: 0 };
   } else {
     record.count += 1;
   }
 
-  const MAX_ATTEMPTS = 8;
+  const MAX_ATTEMPTS = 5;
   if (record.count >= MAX_ATTEMPTS) {
     record.lockedUntil = now + 10 * 60 * 1000; // 10 minutes lockout
     otpFailedAttempts.set(key, record);

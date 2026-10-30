@@ -9,6 +9,7 @@ export const dynamic = 'force-dynamic';
 function matchStudent(s: any, branch?: string, group?: string) {
   const sBranch = (s.signup_info?.branch || s.branch || '').toUpperCase().trim();
   const sGroup = (s.signup_info?.group || s.section || '').toUpperCase().trim();
+  const sSubGroup = (s.signup_info?.sub_group || '').toUpperCase().trim();
 
   if (branch && branch !== 'ALL' && sBranch !== branch.toUpperCase().trim()) {
     return false;
@@ -16,9 +17,9 @@ function matchStudent(s: any, branch?: string, group?: string) {
 
   if (group && group !== 'ALL') {
     const g = group.toUpperCase().trim();
-    if (g === 'G1' && !sGroup.startsWith('G1')) return false;
-    if (g === 'G2' && !sGroup.startsWith('G2')) return false;
-    if (g !== 'G1' && g !== 'G2' && sGroup !== g) return false;
+    if (g === 'G1' && !sGroup.startsWith('G1') && !sSubGroup.startsWith('G1')) return false;
+    if (g === 'G2' && !sGroup.startsWith('G2') && !sSubGroup.startsWith('G2')) return false;
+    if (g !== 'G1' && g !== 'G2' && sGroup !== g && sSubGroup !== g) return false;
   }
 
   return true;
