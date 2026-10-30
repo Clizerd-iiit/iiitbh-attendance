@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { supabaseAdmin } from '@/lib/supabase';
 import { v4 as uuidv4 } from 'uuid';
-import { autoCloseAbandonedClasses } from '@/lib/autoCloseClasses';
+import { autoCloseAbandonedClasses, closeClassAndMarkAbsent } from '@/lib/autoCloseClasses';
 import { hasActiveDelegationForSubject } from '@/lib/delegation';
 import { setClassSettings } from '@/lib/classSettings';
 import { backupClassAttendance } from '@/lib/secondaryBackup';
@@ -121,35 +121,7 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: 'Delegation expired. Contact teacher.' }, { status: 403 });
 
   if (action === 'close') {
-    // Close the class and auto-mark absent for all unenrolled students
-    await supabaseAdmin.from('classes').update({ status: 'closed' }).eq('id', classId);
-
-    const { data: enrolled } = await supabaseAdmin
-      .from('enrollments')
-      .select('student_id')
-      .eq('subject_id', cls.subject_id);
-
-    const { data: marked } = await supabaseAdmin
-      .from('attendance')
-      .select('student_id')
-      .eq('class_id', classId);
-
-    const markedIds = new Set(marked?.map((m: any) => m.student_id) || []);
-    const absentStudents = (enrolled || [])
-      .filter((e: any) => !markedIds.has(e.student_id))
-      .map((e: any) => ({
-        class_id: classId,
-        student_id: e.student_id,
-        status: 'A',
-        method: 'auto',
-      }));
-
-    if (absentStudents.length > 0)
-      await supabaseAdmin.from('attendance').insert(absentStudents);
-
-    // Asynchronously trigger secondary append-only backup
-    backupClassAttendance(classId).catch(err => console.error('[CR Backup Error]:', err));
-
+    await closeClassAndMarkAbsent(classId, cls.subject_id);
     return NextResponse.json({ success: true });
   }
 
@@ -181,7 +153,7 @@ export async function GET(req: NextRequest) {
 
   const { data } = await supabaseAdmin
     .from('classes')
-    .select('id, date, start_time, status, subject_id, subjects!inner(name, code)')
+    .select('id, date, start_time, end_time, status, subject_id, qr_code, qr_expires_at, otp, otp_expires_at, created_at, subjects!inner(name, code)')
     .eq('created_by', session.user.userId)
     .order('date', { ascending: false })
     .limit(100);

@@ -3,6 +3,7 @@ import { supabaseAdmin } from './supabase';
 export interface ClassVerificationSettings {
   require_geofence: boolean;
   require_face: boolean;
+  method?: 'qr' | 'otp' | 'kiosk' | 'manual';
 }
 
 export async function getClassSettings(classId: string): Promise<ClassVerificationSettings> {
@@ -18,13 +19,14 @@ export async function getClassSettings(classId: string): Promise<ClassVerificati
       return {
         require_geofence: parsed.require_geofence !== false,
         require_face: parsed.require_face !== false,
+        method: parsed.method || 'otp',
       };
     }
   } catch (e) {
     console.warn(`Could not load settings for class ${classId}, using defaults`, e);
   }
 
-  return { require_geofence: true, require_face: true };
+  return { require_geofence: true, require_face: true, method: 'otp' };
 }
 
 export async function setClassSettings(classId: string, settings: ClassVerificationSettings): Promise<void> {
@@ -34,6 +36,7 @@ export async function setClassSettings(classId: string, settings: ClassVerificat
       value: JSON.stringify({
         require_geofence: !!settings.require_geofence,
         require_face: !!settings.require_face,
+        method: settings.method || 'otp',
       }),
       updated_at: new Date().toISOString(),
     });

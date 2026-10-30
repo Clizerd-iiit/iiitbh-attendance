@@ -58,6 +58,7 @@ function AttendancePage() {
   const [qrExpiry, setQrExpiry] = useState<number>(60);
   const [otpRefreshInterval, setOtpRefreshInterval] = useState<number>(60);
   const [otpExpiry, setOtpExpiry] = useState<number>(60);
+  const [sessionTimeLeft, setSessionTimeLeft] = useState<number>(600); // 10 minutes maximum duration
   
   const [toastMsg, setToastMsg] = useState('');
   const [closedClasses, setClosedClasses] = useState<any[]>([]);
@@ -118,10 +119,25 @@ function AttendancePage() {
         .then(r => r.json())
         .then(d => {
           if (d.classes) {
-            // Check if there is an abandoned active class
+            // Check if there is an active class
             const active = d.classes.find((c: any) => c.status === 'active');
             if (active) {
               setActiveClass(active);
+              if (active.subject_id) setSubjectId(active.subject_id);
+              if (active.method) setMethod(active.method);
+              if (active.method === 'kiosk') setShowKiosk(true);
+              const createdAt = active.created_at ? new Date(active.created_at).getTime() : Date.now();
+              const elapsed = Math.floor((Date.now() - createdAt) / 1000);
+              const remaining = Math.max(0, 600 - elapsed);
+              setSessionTimeLeft(remaining);
+              if (active.qr_expires_at) {
+                const qrSec = Math.floor((new Date(active.qr_expires_at).getTime() - Date.now()) / 1000);
+                if (qrSec > 0) setQrExpiry(qrSec);
+              }
+              if (active.otp_expires_at) {
+                const otpSec = Math.floor((new Date(active.otp_expires_at).getTime() - Date.now()) / 1000);
+                if (otpSec > 0) setOtpExpiry(otpSec);
+              }
             }
 
             // Group by subject to calculate classNo (only for closed classes)
@@ -153,6 +169,50 @@ function AttendancePage() {
     }
   }, [activeClass]);
 
+  const formatTime = (seconds: number) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  };
+
+  const handleAutoClose = useCallback(async () => {
+    if (!activeClass) return;
+    setLoading(true);
+    try {
+      await fetch('/api/teacher/classes', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ classId: activeClass.id, action: 'close' })
+      });
+      setToastMsg('⏱️ 10 minutes session limit reached! Class auto-closed and attendance saved.');
+      setTimeout(() => setToastMsg(''), 5000);
+    } catch (e) {
+      console.error('Auto-close error:', e);
+    } finally {
+      setActiveClass(null);
+      setMarked({});
+      setLoading(false);
+      setShowKiosk(false);
+      setFullScreenMode(null);
+    }
+  }, [activeClass]);
+
+  // Strict 10-Minute Maximum Session Countdown
+  useEffect(() => {
+    if (!activeClass) return;
+    const interval = setInterval(() => {
+      setSessionTimeLeft(prev => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          handleAutoClose();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [activeClass, handleAutoClose]);
+
   // Live Attendance Polling
   useEffect(() => {
     if (!activeClass) return;
@@ -160,6 +220,18 @@ function AttendancePage() {
       const res = await fetch(`/api/teacher/classes/live-attendance?classId=${activeClass.id}`);
       if (res.ok) {
         const data = await res.json();
+        if (data.isClosed) {
+          setActiveClass(null);
+          setMarked({});
+          setShowKiosk(false);
+          setFullScreenMode(null);
+          setToastMsg('⏱️ 10 minutes session limit reached! Class auto-closed and attendance saved.');
+          setTimeout(() => setToastMsg(''), 5000);
+          return;
+        }
+        if (typeof data.remainingSeconds === 'number') {
+          setSessionTimeLeft(data.remainingSeconds);
+        }
         setMarked(prev => {
           // Check for new markings
           const newlyMarked = Object.keys(data.marked).filter(id => !prev[id] && data.marked[id] === 'P');
@@ -263,6 +335,7 @@ function AttendancePage() {
       return;
     }
     setActiveClass(data.class);
+    setSessionTimeLeft(600);
     setQrExpiry(qrRefreshInterval);
     setOtpExpiry(otpRefreshInterval);
     setLoading(false);
@@ -309,6 +382,7 @@ function AttendancePage() {
       setActiveClass(null);
       setMarked({});
       setShowKiosk(false);
+      setFullScreenMode(null);
       alert('Active class session discarded and deleted successfully.');
     } catch {
       alert('Network error while discarding session.');
@@ -331,6 +405,7 @@ function AttendancePage() {
     setMarked({});
     setLoading(false);
     setShowKiosk(false);
+    setFullScreenMode(null);
   };
 
   const markBulk = async (studentIds: string[], status: AttendanceStatus) => {
@@ -751,6 +826,37 @@ function AttendancePage() {
         ) : (
           <div className="space-y-6">
             
+            {/* 10-Minute Maximum Session Countdown Banner */}
+            <div className={`p-4 md:p-5 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm transition-all ${
+              sessionTimeLeft <= 60 
+                ? 'bg-red-50 border-red-300 text-red-900 animate-pulse'
+                : sessionTimeLeft <= 180
+                ? 'bg-amber-50 border-amber-300 text-amber-900'
+                : 'bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200 text-blue-900'
+            }`}>
+              <div className="flex items-center gap-3">
+                <span className="text-3xl">{sessionTimeLeft <= 60 ? '🚨' : sessionTimeLeft <= 180 ? '⚠️' : '⏳'}</span>
+                <div>
+                  <h3 className="font-extrabold text-base md:text-lg flex items-center gap-2">
+                    {sessionTimeLeft <= 60 
+                      ? 'Closing in 1 Minute!' 
+                      : 'Class Session Active (Max 10 Minutes)'}
+                  </h3>
+                  <p className="text-xs md:text-sm opacity-80 mt-0.5">
+                    {sessionTimeLeft <= 60 
+                      ? 'Attendance will automatically save and unmarked students will be marked Absent.' 
+                      : 'After 10 minutes, the class will automatically close and save attendance.'}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2.5 shrink-0 bg-white/95 px-5 py-2.5 rounded-xl border font-mono font-black text-2xl md:text-3xl shadow-sm self-start sm:self-auto">
+                <span className="text-xl">⏱️</span>
+                <span className={sessionTimeLeft <= 60 ? 'text-red-600' : sessionTimeLeft <= 180 ? 'text-amber-600' : 'text-blue-700'}>
+                  {formatTime(sessionTimeLeft)}
+                </span>
+              </div>
+            </div>
+
             {/* Header for Active Class */}
             <div className="bg-white p-6 rounded-2xl shadow-sm border flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
@@ -923,10 +1029,16 @@ function AttendancePage() {
       {/* FULL SCREEN OVERLAY */}
       {fullScreenMode && activeClass && (
         <div className="fixed inset-0 z-[99999] bg-white flex flex-col items-center justify-between p-4 md:p-8 h-screen w-screen overflow-hidden">
-          <div className="w-full flex justify-between items-start shrink-0">
+          <div className="w-full flex justify-between items-center shrink-0">
             <button onClick={() => setFullScreenMode(null)} className="bg-gray-100 hover:bg-gray-200 text-gray-800 px-5 py-2.5 rounded-xl font-bold text-lg shadow-sm transition flex items-center gap-2">
               ← Back
             </button>
+            <div className="flex items-center gap-2.5 bg-gray-50 border border-gray-200 px-4 py-2 rounded-xl shadow-inner font-mono font-black text-base md:text-lg">
+              <span>⏳ Closes in:</span>
+              <span className={sessionTimeLeft <= 60 ? 'text-red-600 animate-pulse' : 'text-blue-600'}>
+                {formatTime(sessionTimeLeft)}
+              </span>
+            </div>
             <div className="text-gray-700 font-medium hidden sm:block">Press ESC to exit</div>
           </div>
           

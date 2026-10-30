@@ -3,8 +3,8 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { supabaseAdmin } from '@/lib/supabase';
 import { v4 as uuidv4 } from 'uuid';
-import { autoCloseAbandonedClasses } from '@/lib/autoCloseClasses';
-import { setClassSettings } from '@/lib/classSettings';
+import { autoCloseAbandonedClasses, closeClassAndMarkAbsent } from '@/lib/autoCloseClasses';
+import { setClassSettings, getClassSettings } from '@/lib/classSettings';
 import { logAudit } from '@/lib/audit';
 import { backupClassAttendance } from '@/lib/secondaryBackup';
 
@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
   }
 
   let query = supabaseAdmin.from('classes')
-    .select('id, date, start_time, status, subject_id, created_by, subjects!inner(name, code)')
+    .select('id, date, start_time, end_time, status, subject_id, created_by, qr_code, qr_expires_at, otp, otp_expires_at, created_at, latitude, longitude, geofence_radius, subjects!inner(name, code)')
     .neq('status', 'scheduled')
     .order('date', { ascending: false })
     .limit(limit);
@@ -67,11 +67,25 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  const enriched = (data || []).map((c: any) => ({
-    ...c,
-    creator_name: creatorMap[c.created_by]?.name || null,
-    creator_role: creatorMap[c.created_by]?.role || null,
-    is_cr_conducted: !!c.created_by && c.created_by !== session.user.userId && creatorMap[c.created_by]?.role === 'student',
+  const enriched = await Promise.all((data || []).map(async (c: any) => {
+    let method = 'otp';
+    let require_geofence = true;
+    let require_face = true;
+    if (c.status === 'active') {
+      const cfg = await getClassSettings(c.id);
+      method = cfg.method || (c.qr_code && !c.otp ? 'qr' : 'otp');
+      require_geofence = cfg.require_geofence;
+      require_face = cfg.require_face;
+    }
+    return {
+      ...c,
+      method,
+      require_geofence,
+      require_face,
+      creator_name: creatorMap[c.created_by]?.name || null,
+      creator_role: creatorMap[c.created_by]?.role || null,
+      is_cr_conducted: !!c.created_by && c.created_by !== session.user.userId && creatorMap[c.created_by]?.role === 'student',
+    };
   }));
 
   return NextResponse.json({ classes: enriched });
@@ -137,13 +151,14 @@ export async function POST(req: NextRequest) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  // Store verification flags
+  // Store verification flags and method
   await setClassSettings(newClass.id, {
     require_geofence: !!requireGeofence,
     require_face: !!requireFace,
+    method: method || 'otp',
   });
 
-  return NextResponse.json({ class: newClass, qrCode, otp });
+  return NextResponse.json({ class: { ...newClass, method }, qrCode, otp });
 }
 
 export async function PATCH(req: NextRequest) {
@@ -180,17 +195,7 @@ export async function PATCH(req: NextRequest) {
   }
 
   if (action === 'close') {
-    await supabaseAdmin.from('classes').update({ status: 'closed' }).eq('id', classId);
-    const { data: enrolled } = await supabaseAdmin.from('enrollments').select('student_id').eq('subject_id', cls.subject_id);
-    const { data: marked }   = await supabaseAdmin.from('attendance').select('student_id').eq('class_id', classId);
-    const markedIds = new Set(marked?.map(m => m.student_id) || []);
-    const absentStudents = (enrolled||[]).filter(e => !markedIds.has(e.student_id))
-      .map(e => ({ class_id: classId, student_id: e.student_id, status: 'A', method: 'auto' }));
-    if (absentStudents.length > 0) await supabaseAdmin.from('attendance').insert(absentStudents);
-    
-    // Asynchronously trigger secondary append-only backup
-    backupClassAttendance(classId).catch(err => console.error('[Backup Error]:', err));
-
+    await closeClassAndMarkAbsent(classId, cls.subject_id);
     return NextResponse.json({ success: true });
   }
 

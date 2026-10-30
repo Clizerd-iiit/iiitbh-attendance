@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { supabaseAdmin } from '@/lib/supabase';
 import { getClassSettings } from '@/lib/classSettings';
+import { closeClassAndMarkAbsent } from '@/lib/autoCloseClasses';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,7 +25,7 @@ export async function GET(req: NextRequest) {
   // Try matching OTP or QR token on active classes
   let clsQuery = supabaseAdmin
     .from('classes')
-    .select('id, subject_id, status, latitude, longitude, geofence_radius, otp_expires_at, qr_expires_at, subjects(name, code)')
+    .select('id, subject_id, status, latitude, longitude, geofence_radius, otp_expires_at, qr_expires_at, created_at, subjects(name, code)')
     .eq('status', 'active');
 
   const isOtp = code.length <= 6;
@@ -41,6 +42,18 @@ export async function GET(req: NextRequest) {
       found: false,
       error: 'Active class session not found for this code. Please verify the code or ask teacher.',
     }, { status: 404 });
+  }
+
+  // Strict 10-Minute Maximum Limit Check
+  if (cls.created_at) {
+    const elapsedMs = Date.now() - new Date(cls.created_at).getTime();
+    if (elapsedMs >= 10 * 60 * 1000) {
+      await closeClassAndMarkAbsent(cls.id, cls.subject_id);
+      return NextResponse.json({
+        found: false,
+        error: 'This class session has expired (10-minute maximum limit exceeded). Attendance is closed.',
+      }, { status: 400 });
+    }
   }
 
   // Check expiry

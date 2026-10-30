@@ -8,6 +8,7 @@ import type { AttendanceStatus } from '@/types';
 
 import { rateLimit, getIp } from '@/lib/rate-limit';
 import { getClassSettings } from '@/lib/classSettings';
+import { closeClassAndMarkAbsent } from '@/lib/autoCloseClasses';
 import {
   checkOtpLockout,
   recordFailedOtpAttempt,
@@ -68,6 +69,27 @@ export async function POST(req: NextRequest) {
   }
 
   if (!classId) return NextResponse.json({ error: 'Class not found or inactive. Please ask teacher to refresh.' }, { status: 404 });
+
+  // If self-marking via QR or OTP, enforce active status and 10-minute max limit
+  if (method === 'qr' || method === 'otp') {
+    const { data: currentCls } = await supabaseAdmin
+      .from('classes')
+      .select('id, status, created_at, subject_id')
+      .eq('id', classId)
+      .single();
+
+    if (!currentCls || currentCls.status !== 'active') {
+      return NextResponse.json({ error: 'This class session is closed.' }, { status: 400 });
+    }
+
+    if (currentCls.created_at) {
+      const elapsedMs = Date.now() - new Date(currentCls.created_at).getTime();
+      if (elapsedMs >= 10 * 60 * 1000) {
+        await closeClassAndMarkAbsent(currentCls.id, currentCls.subject_id);
+        return NextResponse.json({ error: 'This class session has expired (10-minute maximum limit exceeded). Attendance is closed.' }, { status: 400 });
+      }
+    }
+  }
 
   // SECURITY: Determine acting user vs target student
   const currentUserId = (session.user.userId || (session.user as any).id) as string;
