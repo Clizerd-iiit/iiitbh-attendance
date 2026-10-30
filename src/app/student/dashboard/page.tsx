@@ -466,7 +466,7 @@ export default function StudentDashboard() {
           navigator.geolocation.getCurrentPosition(res, rej, { 
             enableHighAccuracy: true, 
             timeout: 15000, 
-            maximumAge: 30000 
+            maximumAge: 0 // Force fresh GPS fix, don't use stale approximate cached location
           })
         );
         
@@ -894,19 +894,30 @@ export default function StudentDashboard() {
               </button>
 
               {locationHelpDetails.coords && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowLocationHelp(false);
-                    if (locationHelpDetails.coords) {
-                      setMarking(true);
-                      executeAttendance(locationHelpDetails.coords.lat, locationHelpDetails.coords.lon, locationHelpDetails.accuracy);
-                    }
-                  }}
-                  className="w-full py-2 px-4 bg-gray-100 hover:bg-gray-200 text-gray-900 text-xs font-bold rounded-xl transition"
-                >
-                  ⚡ Proceed with Current Location ({locationHelpDetails.accuracy ? `±${locationHelpDetails.accuracy}m` : 'Detected'})
-                </button>
+                locationHelpDetails.accuracy && locationHelpDetails.accuracy > 500 ? (
+                  <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-center">
+                    <p className="text-xs font-bold text-red-700">
+                      ⚠️ Current accuracy is ±{locationHelpDetails.accuracy}m (Too Low)
+                    </p>
+                    <p className="text-[11px] text-red-600 mt-0.5">
+                      Server requires Precise Location (max ±500m). Please follow Step 3 above and click "Retry Location Check".
+                    </p>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowLocationHelp(false);
+                      if (locationHelpDetails.coords) {
+                        setMarking(true);
+                        executeAttendance(locationHelpDetails.coords.lat, locationHelpDetails.coords.lon, locationHelpDetails.accuracy);
+                      }
+                    }}
+                    className="w-full py-2 px-4 bg-gray-100 hover:bg-gray-200 text-gray-900 text-xs font-bold rounded-xl transition"
+                  >
+                    ⚡ Proceed with Current Location ({locationHelpDetails.accuracy ? `±${locationHelpDetails.accuracy}m` : 'Detected'})
+                  </button>
+                )
               )}
 
               <button
