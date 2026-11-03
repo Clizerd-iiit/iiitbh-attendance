@@ -126,6 +126,7 @@ export function Navbar() {
   if (isPseudoadmin && role === 'student') {
     items = [
       { href: '/admin/dashboard', icon: '📊', label: 'Admin Dashboard' },
+      { href: '/admin/inbox', icon: '💬', label: 'Inbox' },
       { href: '/admin/verify', icon: '⏳', label: 'Verify Users' },
       { href: '/admin/announcements', icon: '📢', label: 'Announcements' },
       { href: '/admin/users', icon: '👥', label: 'All Users' },

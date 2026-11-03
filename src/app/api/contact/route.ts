@@ -4,11 +4,10 @@ import { authOptions } from '@/lib/auth';
 import { supabaseAdmin } from '@/lib/supabase';
 import { sanitizeInput } from '@/lib/security';
 
-
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
-  // --- AUTO CLEANUP: Delete messages older than 14 days ---
+  // --- AUTO CLEANUP: Keep messages for 14 days, delete older ---
   const fourteenDaysAgo = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString();
   await supabaseAdmin.from('support_messages').delete().lt('created_at', fourteenDaysAgo);
   // --------------------------------------------------------
@@ -17,11 +16,32 @@ export async function GET(req: NextRequest) {
   if (!session?.user?.userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const role = session.user.role;
+  const isSuperadmin = role === 'superadmin';
+  const isPseudoadmin = !!(session.user as any)?.isPseudoadmin;
+  const pseudoadminBranch = ((session.user as any)?.pseudoadminBranch || '').toUpperCase().trim();
+  const isAdmin = isSuperadmin || isPseudoadmin;
+
   const { searchParams } = new URL(req.url);
   const targetUserId = searchParams.get('user_id');
 
-  if (role === 'superadmin') {
+  if (isAdmin) {
     if (targetUserId) {
+      // If Pseudoadmin, verify target user's branch
+      if (isPseudoadmin) {
+        const { data: targetUser } = await supabaseAdmin
+          .from('users')
+          .select('id, name, branch, section, signup_info')
+          .eq('id', targetUserId)
+          .single();
+
+        if (!targetUser) return NextResponse.json({ error: 'User not found' }, { status: 404 });
+
+        const userBranch = ((targetUser.signup_info?.branch || targetUser.branch || '')).toUpperCase().trim();
+        if (pseudoadminBranch && userBranch !== pseudoadminBranch) {
+          return NextResponse.json({ error: `Unauthorized: User is not in your branch (${pseudoadminBranch})` }, { status: 403 });
+        }
+      }
+
       // Fetch chat with specific user
       const { data, error } = await supabaseAdmin
         .from('support_messages')
@@ -36,25 +56,40 @@ export async function GET(req: NextRequest) {
         .eq('user_id', targetUserId)
         .neq('sender_id', session.user.userId);
         
-      return NextResponse.json({ messages: data });
+      return NextResponse.json({ messages: data, isSuperadmin });
     } else {
-      // Fetch inbox list (all users who have messaged, with their latest message)
-      // Since supabase JS doesn't do complex grouping easily, we'll fetch all and group in JS (or use a view).
-      // Given it's a small app, fetching all ordered by date and picking the latest per user is fine.
-      
+      // Fetch inbox list (all conversations)
       const { data, error } = await supabaseAdmin
         .from('support_messages')
         .select('*')
         .order('created_at', { ascending: false });
       if (error) return NextResponse.json({ error: error.message }, { status: 500 });
       
-      const inboxMap = new Map();
       const userIds = [...new Set(data?.map(m => m.user_id) || [])];
       
-      const { data: usersData } = await supabaseAdmin.from('users').select('id, name, role, profile_photo_url, last_seen_at').in('id', userIds);
-      const userMap = Object.fromEntries(usersData?.map(u => [u.id, u]) || []);
+      let usersData: any[] = [];
+      if (userIds.length > 0) {
+        const { data: uData } = await supabaseAdmin
+          .from('users')
+          .select('id, name, role, profile_photo_url, branch, section, signup_info, last_seen_at')
+          .in('id', userIds);
+        usersData = uData || [];
+      }
 
+      // Filter users by branch if pseudoadmin
+      const branchUsers = (usersData || []).filter((u: any) => {
+        if (isSuperadmin) return true;
+        const uBranch = ((u.signup_info?.branch || u.branch || '')).toUpperCase().trim();
+        return !pseudoadminBranch || uBranch === pseudoadminBranch;
+      });
+
+      const userMap = Object.fromEntries(branchUsers.map((u: any) => [u.id, u]));
+
+      const inboxMap = new Map();
       for (const msg of data || []) {
+        // Only include if user is accessible to this admin
+        if (!userMap[msg.user_id]) continue;
+
         if (!inboxMap.has(msg.user_id)) {
           inboxMap.set(msg.user_id, {
             user_id: msg.user_id,
@@ -69,10 +104,10 @@ export async function GET(req: NextRequest) {
         }
       }
 
-      return NextResponse.json({ inbox: Array.from(inboxMap.values()) });
+      return NextResponse.json({ inbox: Array.from(inboxMap.values()), isSuperadmin });
     }
   } else {
-    // Student or Teacher
+    // Normal Student or Teacher view
     const { data, error } = await supabaseAdmin
       .from('support_messages')
       .select('*')
@@ -106,33 +141,54 @@ export async function POST(req: NextRequest) {
   if (!content?.trim()) return NextResponse.json({ error: 'Empty message' }, { status: 400 });
 
   const role = session.user.role;
+  const isSuperadmin = role === 'superadmin';
+  const isPseudoadmin = !!(session.user as any)?.isPseudoadmin;
+  const pseudoadminBranch = ((session.user as any)?.pseudoadminBranch || '').toUpperCase().trim();
+  const isAdmin = isSuperadmin || isPseudoadmin;
+
   const targetUserId = body.user_id;
 
-  const user_id = role === 'superadmin' ? targetUserId : session.user.userId;
-  const sender_id = session.user.userId;
+  let user_id = session.user.userId;
+  if (isAdmin && targetUserId) {
+    if (isPseudoadmin) {
+      const { data: targetUser } = await supabaseAdmin
+        .from('users')
+        .select('id, branch, signup_info')
+        .eq('id', targetUserId)
+        .single();
 
-  if (!user_id) return NextResponse.json({ error: 'User ID required' }, { status: 400 });
+      if (!targetUser) return NextResponse.json({ error: 'Target user not found' }, { status: 404 });
+      const targetBranch = ((targetUser.signup_info?.branch || targetUser.branch || '')).toUpperCase().trim();
+      if (pseudoadminBranch && targetBranch !== pseudoadminBranch) {
+        return NextResponse.json({ error: `Unauthorized: You can only reply to students in your branch (${pseudoadminBranch})` }, { status: 403 });
+      }
+    }
+    user_id = targetUserId;
+  }
 
+  // Monthly Anti-Spam: Max 100 messages per calendar month for normal students & teachers
+  // Pseudoadmins and Superadmins have unlimited messages
+  if (!isAdmin) {
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
 
-  // Anti-Spam: Max 100 messages per user per day
-  if (role !== 'superadmin') {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
     const { count } = await supabaseAdmin
       .from('support_messages')
       .select('*', { count: 'exact', head: true })
       .eq('sender_id', session.user.userId)
-      .gte('created_at', today.toISOString());
+      .gte('created_at', startOfMonth.toISOString());
     
-    if (count && count >= 100) {
-      return NextResponse.json({ error: 'Daily message limit reached (100). Please wait until tomorrow or contact admin via other means.' }, { status: 429 });
+    if (count !== null && count >= 100) {
+      return NextResponse.json({ 
+        error: 'Monthly message limit reached (100 messages per month). You can send more messages next month or reach out in person.' 
+      }, { status: 429 });
     }
   }
 
   const { data, error } = await supabaseAdmin.from('support_messages').insert({
-
     user_id,
-    sender_id,
+    sender_id: session.user.userId,
     content,
     is_read: false
   }).select().single();
@@ -141,10 +197,12 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({ message: data });
 }
 
-
 export async function DELETE(req: NextRequest) {
   const session = await getServerSession(authOptions);
-  if (session?.user?.role !== 'superadmin') return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  // STRICT PERMISSION: Only SuperAdmin can delete messages or clear conversation history
+  if (session?.user?.role !== 'superadmin') {
+    return NextResponse.json({ error: 'Unauthorized: Only SuperAdmin can delete messages or clear chats.' }, { status: 403 });
+  }
 
   const { searchParams } = new URL(req.url);
   const messageId = searchParams.get('message_id');

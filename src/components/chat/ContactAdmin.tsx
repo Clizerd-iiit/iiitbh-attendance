@@ -53,8 +53,8 @@ export default function ContactAdmin() {
       body: JSON.stringify({ content: msg })
     });
     const data = await res.json();
-    if (res.status === 429) {
-      alert(data.error);
+    if (!res.ok) {
+      alert(data.error || 'Failed to send message');
       // Remove the optimistic temp message since it failed
       setMessages(prev => prev.filter(m => m.id !== 'temp'));
     }

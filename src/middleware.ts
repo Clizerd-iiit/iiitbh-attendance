@@ -35,7 +35,8 @@ const authMiddleware = withAuth(
       pathname.startsWith('/admin/announcements') ||
       pathname.startsWith('/admin/users') ||
       pathname.startsWith('/admin/subjects') ||
-      pathname.startsWith('/admin/logs')
+      pathname.startsWith('/admin/logs') ||
+      pathname.startsWith('/admin/inbox')
     )) {
       return NextResponse.next();
     }

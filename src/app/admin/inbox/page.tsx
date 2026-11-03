@@ -5,6 +5,10 @@ import { useSession } from 'next-auth/react';
 
 export default function AdminInbox() {
   const { data: session } = useSession();
+  const isSuperAdmin = session?.user?.role === 'superadmin';
+  const isPseudoadmin = !!(session?.user as any)?.isPseudoadmin;
+  const pseudoadminBranch = ((session?.user as any)?.pseudoadminBranch || '').toUpperCase().trim();
+
   const [inbox, setInbox] = useState<any[]>([]);
   const [activeUser, setActiveUser] = useState<any>(null);
   const [messages, setMessages] = useState<any[]>([]);
@@ -17,7 +21,16 @@ export default function AdminInbox() {
     try {
       const res = await fetch('/api/admin/users');
       const data = await res.json();
-      if (data.users) setAllUsers(data.users);
+      if (data.users) {
+        if (isPseudoadmin && pseudoadminBranch) {
+          setAllUsers(data.users.filter((u: any) => {
+            const b = ((u.signup_info?.branch || u.branch || '')).toUpperCase().trim();
+            return b === pseudoadminBranch;
+          }));
+        } else {
+          setAllUsers(data.users);
+        }
+      }
     } catch(e) {}
   };
 
@@ -41,7 +54,7 @@ export default function AdminInbox() {
   useEffect(() => {
     fetchInbox();
     fetchAllUsers();
-  }, []);
+  }, [isPseudoadmin, pseudoadminBranch]);
 
   // Sync activeUser with latest inbox data (for real-time last_seen_at updates)
   useEffect(() => {
@@ -52,7 +65,6 @@ export default function AdminInbox() {
       }
     }
   }, [inbox]);
-
 
   // Poll active chat (relaxed to 5 minutes)
   useEffect(() => {
@@ -69,8 +81,8 @@ export default function AdminInbox() {
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-
   const deleteMessage = async (msgId: string) => {
+    if (!isSuperAdmin) return;
     setMessages(prev => prev.filter(m => m.id !== msgId));
     await fetch(`/api/contact?message_id=${msgId}`, { method: 'DELETE' });
     fetchInbox();
@@ -82,6 +94,7 @@ export default function AdminInbox() {
   };
 
   const clearChat = async (userId: string) => {
+    if (!isSuperAdmin) return;
     if (!confirm("Are you sure you want to delete this entire conversation?")) return;
     setMessages([]);
     setActiveUser(null);
@@ -97,11 +110,16 @@ export default function AdminInbox() {
     
     setMessages(prev => [...prev, { id: 'temp', content: msg, sender_id: session?.user?.userId, created_at: new Date().toISOString() }]);
     
-    await fetch('/api/contact', {
+    const res = await fetch('/api/contact', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ content: msg, user_id: activeUser.user_id })
     });
+    if (!res.ok) {
+      const errData = await res.json();
+      alert(errData.error || 'Failed to send message');
+      setMessages(prev => prev.filter(m => m.id !== 'temp'));
+    }
     fetchMessages(activeUser.user_id);
     fetchInbox(); // update latest message in sidebar
   };
@@ -112,13 +130,27 @@ export default function AdminInbox() {
         
         {/* Sidebar */}
         <div className="w-1/3 border-r bg-gray-50 flex flex-col">
-          <div className="p-4 bg-white border-b space-y-3">
-            <h2 className="font-bold text-lg text-gray-800">Admin Inbox</h2>
-            <div className="relative">
+          <div className="p-4 bg-white border-b space-y-2">
+            <div className="flex items-center justify-between">
+              <h2 className="font-bold text-lg text-gray-800">
+                {isPseudoadmin ? `Inbox • ${pseudoadminBranch || 'Branch'}` : 'Admin Inbox'}
+              </h2>
+              {isPseudoadmin && (
+                <span className="bg-purple-100 text-purple-900 border border-purple-200 text-[11px] font-black px-2 py-0.5 rounded-full">
+                  🛡️ {pseudoadminBranch || 'Branch Admin'}
+                </span>
+              )}
+            </div>
+            {isPseudoadmin && (
+              <p className="text-[11px] text-gray-600 font-medium">
+                Viewing & replying to <strong className="text-purple-800">{pseudoadminBranch}</strong> students only.
+              </p>
+            )}
+            <div className="relative pt-1">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-700">🔍</span>
               <input 
                 type="text" 
-                placeholder="Search teacher/student..." 
+                placeholder={isPseudoadmin ? `Search ${pseudoadminBranch} students...` : "Search teacher/student..."} 
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 className="w-full bg-gray-100 border-transparent focus:bg-white focus:ring-2 focus:ring-blue-500 rounded-lg pl-9 pr-4 py-2 text-sm"
@@ -131,7 +163,7 @@ export default function AdminInbox() {
               if (searchQuery.trim()) {
                 const q = searchQuery.toLowerCase();
                 const filtered = allUsers.filter(u => 
-                  (u.name?.toLowerCase().includes(q) || u.email?.toLowerCase().includes(q))
+                  (u.name?.toLowerCase().includes(q) || u.email?.toLowerCase().includes(q) || u.roll_no?.toLowerCase().includes(q))
                 );
                 
                 if (filtered.length === 0) return <p className="p-4 text-gray-700 text-sm text-center">No user found.</p>;
@@ -157,7 +189,7 @@ export default function AdminInbox() {
                       <div className="flex justify-between items-baseline mb-1">
                         <h3 className="font-medium text-sm text-gray-900 truncate">{u.name || 'Unknown'}</h3>
                       </div>
-                      <p className="text-xs text-gray-700 capitalize">{u.role}</p>
+                      <p className="text-xs text-gray-700 capitalize">{u.role} {u.branch ? `• ${u.branch}` : ''}</p>
                       <p className="text-xs text-gray-700 truncate">{u.email}</p>
                     </div>
                   </button>
@@ -221,12 +253,20 @@ export default function AdminInbox() {
                        </span>
                     )}
                   </h3>
-                  <p className="text-xs text-gray-700 capitalize">{activeUser.user?.role}</p>
+                  <p className="text-xs text-gray-700 capitalize">
+                    {activeUser.user?.role} {activeUser.user?.branch ? `• ${activeUser.user?.branch}` : ''}
+                  </p>
                 </div>
               </div>
-              <button onClick={() => clearChat(activeUser.user_id)} className="text-red-500 hover:bg-red-50 p-2 rounded-lg text-sm font-medium flex items-center gap-1 transition flex-shrink-0">
-                🗑️ Clear Chat
-              </button>
+              {isSuperAdmin && (
+                <button 
+                  onClick={() => clearChat(activeUser.user_id)} 
+                  className="text-red-500 hover:bg-red-50 p-2 rounded-lg text-sm font-medium flex items-center gap-1 transition flex-shrink-0"
+                  title="Delete entire conversation (SuperAdmin only)"
+                >
+                  🗑️ Clear Chat
+                </button>
+              )}
             </div>
             
             <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
@@ -235,8 +275,8 @@ export default function AdminInbox() {
                 return (
                   <div key={m.id || i} className={`flex ${isMe ? 'justify-end' : 'justify-start'} group relative`}>
                     <div className={`relative max-w-[75%] p-3 rounded-2xl ${isMe ? 'bg-blue-600 text-white rounded-br-sm' : 'bg-white border text-gray-800 rounded-bl-sm shadow-sm'}`}>
-                      {m.id !== 'temp' && (
-                        <button onClick={() => deleteMessage(m.id)} title="Delete message"
+                      {isSuperAdmin && m.id !== 'temp' && (
+                        <button onClick={() => deleteMessage(m.id)} title="Delete message (SuperAdmin only)"
                           className={`absolute hidden group-hover:flex items-center justify-center w-6 h-6 bg-red-100 text-red-600 rounded-full shadow-sm -top-2 ${isMe ? '-left-2' : '-right-2'} hover:bg-red-200 transition text-sm z-10`}>
                           ×
                         </button>
