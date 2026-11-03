@@ -217,6 +217,7 @@ function AttendancePage() {
   useEffect(() => {
     if (!activeClass) return;
     const pollAttendance = async () => {
+      if (document.hidden) return;
       const res = await fetch(`/api/teacher/classes/live-attendance?classId=${activeClass.id}`);
       if (res.ok) {
         const data = await res.json();
@@ -248,7 +249,14 @@ function AttendancePage() {
     };
     pollAttendance();
     const interval = setInterval(pollAttendance, 3000);
-    return () => clearInterval(interval);
+    const onVisibility = () => {
+      if (!document.hidden) pollAttendance();
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
   }, [activeClass, students]);
 
   const regenerateQr = async () => {

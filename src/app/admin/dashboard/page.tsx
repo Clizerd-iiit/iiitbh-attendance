@@ -33,6 +33,8 @@ export default function AdminDashboard() {
   ];
 
   const pseudoAdminLinks = [
+    { href: '/admin/inbox', icon: '💬', label: 'Inbox', desc: 'Chat and reply to students from your branch' },
+    { href: '/admin/verify', icon: '⏳', label: 'Verify Users', desc: 'Verify and approve student registrations' },
     { href: '/admin/users', icon: '👥', label: 'Manage Users', desc: 'View and manage student details' },
     { href: '/admin/subjects', icon: '📚', label: 'Subjects', desc: 'View subjects and course mappings' },
     { href: '/admin/announcements', icon: '📢', label: 'Announcements', desc: 'Broadcast branch announcements' },

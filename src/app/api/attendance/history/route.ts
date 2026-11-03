@@ -18,12 +18,15 @@ export async function GET(req: NextRequest) {
   if (session.user.role === 'student' && studentId !== session.user.userId)
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
-  const { data, error } = await supabaseAdmin
+  let query = supabaseAdmin
     .from('attendance')
     .select('status, class:classes(date, subject:subjects(code))')
-    .eq('student_id', studentId)
-    .gte('classes.date', start || '')
-    .lte('classes.date', end   || '');
+    .eq('student_id', studentId);
+
+  if (start) query = query.gte('classes.date', start);
+  if (end) query = query.lte('classes.date', end);
+
+  const { data, error } = await query;
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 

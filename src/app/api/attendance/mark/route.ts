@@ -267,19 +267,23 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Async Google Sheets sync
+  // Async Google Sheets sync (safely wrapped to prevent unhandled rejections)
   (async () => {
-    const { data: cls } = await supabaseAdmin.from('classes')
-      .select('date, subjects(code, name)').eq('id', classId).single();
-    const { data: student } = await supabaseAdmin.from('users')
-      .select('roll_no, name').eq('id', targetStudentId).single();
-    if (cls && student) {
-      const sub = cls.subjects as unknown as { code: string; name: string } | null;
-      await updateAttendanceInSheet({
-        subjectCode: sub?.code || 'UNKNOWN', subjectName: sub?.name || 'Subject',
-        date: cls.date, studentRollNo: student.roll_no || targetStudentId,
-        studentName: student.name, status: markStatus,
-      });
+    try {
+      const { data: cls } = await supabaseAdmin.from('classes')
+        .select('date, subjects(code, name)').eq('id', classId).single();
+      const { data: student } = await supabaseAdmin.from('users')
+        .select('roll_no, name').eq('id', targetStudentId).single();
+      if (cls && student) {
+        const sub = cls.subjects as unknown as { code: string; name: string } | null;
+        await updateAttendanceInSheet({
+          subjectCode: sub?.code || 'UNKNOWN', subjectName: sub?.name || 'Subject',
+          date: cls.date, studentRollNo: student.roll_no || targetStudentId,
+          studentName: student.name, status: markStatus,
+        });
+      }
+    } catch (err) {
+      console.error('Async Google Sheets sync error:', err);
     }
   })();
 

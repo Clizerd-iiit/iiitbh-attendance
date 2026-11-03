@@ -12,7 +12,7 @@ const heartbeatCache = new Map<string, HeartbeatCacheItem>();
 
 // Clean up stale cache entries every 10 minutes
 if (typeof setInterval !== 'undefined') {
-  setInterval(() => {
+  const timer = setInterval(() => {
     const now = Date.now();
     for (const [key, item] of heartbeatCache.entries()) {
       if (now - item.timestamp > 300_000) {
@@ -20,6 +20,9 @@ if (typeof setInterval !== 'undefined') {
       }
     }
   }, 600_000);
+  if (timer && typeof (timer as any).unref === 'function') {
+    (timer as any).unref();
+  }
 }
 
 export async function POST(req: Request) {

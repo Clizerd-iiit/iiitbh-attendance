@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
 
   // Get all classes for this subject
   const { data: classes } = await supabaseAdmin.from('classes').select('id, date, start_time, status').eq('subject_id', subjectId).order('date', { ascending: false });
-  if (!classes) return NextResponse.json({ history: [] });
+  if (!classes || classes.length === 0) return NextResponse.json({ history: [] });
 
   const classIds = classes.map(c => c.id);
   

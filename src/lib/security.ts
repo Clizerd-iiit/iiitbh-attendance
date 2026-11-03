@@ -1,8 +1,8 @@
 import { supabaseAdmin } from './supabase';
 import { logAudit } from './audit';
 
-// In-memory failed OTP attempts tracker: key -> { count: number, lockedUntil: number }
-const otpFailedAttempts = new Map<string, { count: number; lockedUntil: number }>();
+// In-memory failed OTP attempts tracker: key -> { count: number; lockedUntil: number; lastAttempt: number }
+const otpFailedAttempts = new Map<string, { count: number; lockedUntil: number; lastAttempt: number }>();
 
 // In-memory device fingerprint mapping per class: classId -> Map<deviceToken, Set<studentId>>
 const classDeviceMap = new Map<string, Map<string, Set<string>>>();
@@ -12,7 +12,7 @@ if (typeof setInterval !== 'undefined') {
   const timer = setInterval(() => {
     const now = Date.now();
     for (const [key, val] of otpFailedAttempts.entries()) {
-      if (val.lockedUntil < now && val.count === 0) {
+      if ((val.lockedUntil > 0 && val.lockedUntil <= now) || (val.lockedUntil === 0 && now - val.lastAttempt > 15 * 60 * 1000)) {
         otpFailedAttempts.delete(key);
       }
     }
@@ -51,9 +51,10 @@ export function recordFailedOtpAttempt(studentId: string, classId: string): { is
   let record = otpFailedAttempts.get(key);
 
   if (!record || (record.lockedUntil > 0 && record.lockedUntil <= now)) {
-    record = { count: 1, lockedUntil: 0 };
+    record = { count: 1, lockedUntil: 0, lastAttempt: now };
   } else {
     record.count += 1;
+    record.lastAttempt = now;
   }
 
   const MAX_ATTEMPTS = 5;

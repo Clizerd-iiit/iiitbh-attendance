@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
       .eq('subject_id', subject_id)
       .order('date', { ascending: false });
 
-    if (!classes) return NextResponse.json({ history: [] });
+    if (!classes || classes.length === 0) return NextResponse.json({ history: [] });
 
     // Fetch student's attendance for these classes
     const classIds = classes.map(c => c.id);

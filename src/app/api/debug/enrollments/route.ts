@@ -15,10 +15,16 @@ export async function GET(req: Request) {
   if (enrError) return NextResponse.json({ error: enrError });
 
   const subjectIds = (enrollments || []).map(e => e.subject_id);
-  const { data: subjectsData, error: subError } = await supabaseAdmin
-    .from('subjects')
-    .select('id, name, code, teacher_ids')
-    .in('id', subjectIds);
+  let subjectsData: any[] = [];
+  let subError = null;
+  if (subjectIds.length > 0) {
+    const res = await supabaseAdmin
+      .from('subjects')
+      .select('id, name, code, teacher_ids')
+      .in('id', subjectIds);
+    subjectsData = res.data || [];
+    subError = res.error;
+  }
     
   return NextResponse.json({ enrollments, subjectsData, subError });
 }

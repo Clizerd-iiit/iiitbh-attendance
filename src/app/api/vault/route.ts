@@ -22,6 +22,7 @@ export async function GET() {
 
   let query = supabaseAdmin.from('notes_vault').select('*, uploader:users(name, profile_photo_url), subject:subjects(name, code)').order('created_at', { ascending: false });
   if (session.user.role === 'student') {
+    if (subjectIds.length === 0) return NextResponse.json({ notes: [] });
     query = query.in('subject_id', subjectIds);
   }
 

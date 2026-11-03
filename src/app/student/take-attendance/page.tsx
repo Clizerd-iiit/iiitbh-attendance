@@ -186,6 +186,7 @@ export default function CRTakeAttendancePage() {
   useEffect(() => {
     if (!activeClass) return;
     const poll = async () => {
+      if (document.hidden) return;
       try {
         const res = await fetch(`/api/cr/classes/live-attendance?classId=${activeClass.id}`);
         const data = await res.json();
@@ -205,7 +206,14 @@ export default function CRTakeAttendancePage() {
     };
     poll();
     const id = setInterval(poll, 2500);
-    return () => clearInterval(id);
+    const onVisibility = () => {
+      if (!document.hidden) poll();
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      clearInterval(id);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
   }, [activeClass]);
 
   // QR / OTP Countdown and auto-refresh

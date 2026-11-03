@@ -8,7 +8,9 @@ export async function POST(req: NextRequest) {
   if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { classId, studentIds, status, method } = await req.json();
-  if (!classId || !studentIds || !Array.isArray(studentIds)) return NextResponse.json({ error: 'Invalid payload' }, { status: 400 });
+  if (!classId || !studentIds || !Array.isArray(studentIds) || studentIds.length === 0) {
+    return NextResponse.json({ error: 'Invalid payload: classId and non-empty studentIds array required' }, { status: 400 });
+  }
 
   const userId = (session.user.userId || (session.user as any).id) as string;
   let isAuthorized = ['teacher', 'superadmin'].includes(session.user.role as string);

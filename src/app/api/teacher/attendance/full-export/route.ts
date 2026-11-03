@@ -68,11 +68,14 @@ export async function GET(req: NextRequest) {
   });
 
   // 3. Get attendance records
-  let recQuery = supabaseAdmin.from('attendance').select('student_id, class_id, status')
-    .in('class_id', classList.map(c => c.id));
-  if (studentId) recQuery = recQuery.eq('student_id', studentId);
-  
-  const { data: records } = await recQuery;
+  let records: any[] = [];
+  if (classList.length > 0) {
+    let recQuery = supabaseAdmin.from('attendance').select('student_id, class_id, status')
+      .in('class_id', classList.map(c => c.id));
+    if (studentId) recQuery = recQuery.eq('student_id', studentId);
+    const { data: recData } = await recQuery;
+    records = recData || [];
+  }
 
   // 4. Assemble CSV
   const header = ['Roll No', 'Name', 'Branch', 'Group', 'Total Classes', 'Attended', 'Percentage'];

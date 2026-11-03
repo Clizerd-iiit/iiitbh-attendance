@@ -68,14 +68,14 @@ export default function AdminInbox() {
 
   // Poll active chat (relaxed to 5 minutes)
   useEffect(() => {
-    if (!activeUser) return;
+    if (!activeUser?.user_id) return;
     fetchMessages(activeUser.user_id);
     const id = setInterval(() => {
       if (document.hidden) return;
       fetchMessages(activeUser.user_id);
     }, 300_000);
     return () => clearInterval(id);
-  }, [activeUser]);
+  }, [activeUser?.user_id]);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
