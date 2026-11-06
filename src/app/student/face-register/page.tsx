@@ -1,7 +1,6 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
-import * as faceapi from 'face-api.js';
-import { loadFaceModelsWithProgress } from '@/lib/modelProgress';
+import { loadInsightFaceWithProgress } from '@/lib/humanInsightFace';
 import { Navbar } from '@/components/shared/Navbar';
 
 const ANGLES = [
@@ -14,36 +13,46 @@ const ANGLES = [
 
 export default function FaceRegisterPage() {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const [loading, setLoading] = useState('Loading AI Models...');
+  const humanRef = useRef<any>(null);
+  const [loading, setLoading] = useState('Initializing InsightFace...');
   const [modelProgress, setModelProgress] = useState(0);
   const [stream, setStream] = useState<MediaStream | null>(null);
   
   const [step, setStep] = useState(0); // 0 to 4 for angles, 5 for complete
-  const [descriptors, setDescriptors] = useState<Float32Array[]>([]);
+  const [descriptors, setDescriptors] = useState<number[][]>([]);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    const loadModels = async () => {
+    let isCancelled = false;
+
+    const init = async () => {
       try {
-        await loadFaceModelsWithProgress((percent, stage) => {
-          setModelProgress(percent);
-          setLoading(`Loading AI Models (${percent}%)...`);
+        const human = await loadInsightFaceWithProgress((percent, stage) => {
+          if (!isCancelled) {
+            setModelProgress(percent);
+            setLoading(`${stage} (${percent}%)`);
+          }
         });
-        setLoading('Starting Camera...');
-        startVideo();
+        if (!isCancelled) {
+          humanRef.current = human;
+          setLoading('Starting Camera...');
+          startVideo();
+        }
       } catch (e) {
-        setLoading('Error loading AI models. Make sure /models folder exists.');
+        if (!isCancelled) setLoading('Error loading InsightFace AI models. Please refresh.');
       }
     };
-    loadModels();
+
+    init();
     
     return () => {
+      isCancelled = true;
       if (stream) stream.getTracks().forEach(track => track.stop());
     };
   }, []);
 
   const startVideo = () => {
-    navigator.mediaDevices.getUserMedia({ video: {} })
+    navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 640 }, height: { ideal: 640 }, facingMode: 'user' } })
       .then(s => {
         setStream(s);
         if (videoRef.current) {
@@ -57,38 +66,43 @@ export default function FaceRegisterPage() {
   };
 
   const captureAngle = async () => {
-    if (!videoRef.current) return;
-    setLoading('Scanning...');
-    const detection = await faceapi.detectSingleFace(videoRef.current, new faceapi.TinyFaceDetectorOptions())
-      .withFaceLandmarks()
-      .withFaceDescriptor();
-
-    if (!detection) {
-      setLoading('');
-      alert("No face detected! Please follow the instruction on screen.");
-      return;
-    }
+    if (!videoRef.current || !humanRef.current) return;
+    setLoading('Scanning with InsightFace...');
     
-    setDescriptors(prev => [...prev, detection.descriptor]);
-    setStep(prev => prev + 1);
-    setLoading('');
+    try {
+      const res = await humanRef.current.detect(videoRef.current);
+      if (!res.face || res.face.length === 0 || !res.face[0]?.embedding) {
+        setLoading('');
+        alert("No face detected! Please look directly at the camera with clear lighting.");
+        return;
+      }
+      
+      const embedding = Array.from(res.face[0].embedding as number[] | Float32Array);
+      setDescriptors(prev => [...prev, embedding]);
+      setStep(prev => prev + 1);
+      setLoading('');
+    } catch (err) {
+      console.error(err);
+      setLoading('');
+      alert("Error scanning face. Please try again.");
+    }
   };
 
   const saveMultiAngleFace = async () => {
     if (descriptors.length < 5) return;
     setSaving(true);
-    // Convert array of Float32Arrays to standard 2D array
-    const arr2D = descriptors.map(d => Array.from(d));
     const res = await fetch('/api/student/face', {
-      method: 'POST', headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ descriptor: arr2D }) // Upload 2D array
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ descriptor: descriptors }) // Upload 5-angle 512-D vectors
     });
     setSaving(false);
     if (res.ok) {
-      alert("Multi-Angle Face ID Registered Successfully!");
+      alert("✅ InsightFace Multi-Angle Face ID Registered Successfully!");
       window.location.href = '/student/dashboard';
     } else {
-      alert("Failed to save Face ID");
+      const d = await res.json();
+      alert("❌ " + (d.error || "Failed to save Face ID"));
     }
   };
 

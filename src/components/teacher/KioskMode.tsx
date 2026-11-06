@@ -1,7 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from 'react';
-import * as faceapi from 'face-api.js';
-import { loadFaceModelsWithProgress } from '@/lib/modelProgress';
+import { loadInsightFaceWithProgress, matchInsightDescriptor } from '@/lib/humanInsightFace';
 
 interface KioskModeProps {
   subjectId: string;
@@ -11,12 +10,35 @@ interface KioskModeProps {
   students: { id: string; name: string; roll_no?: string }[];
 }
 
+function drawInsightBox(
+  ctx: CanvasRenderingContext2D,
+  box: { x: number; y: number; width: number; height: number },
+  label: string,
+  color: string
+) {
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 3;
+  ctx.strokeRect(box.x, box.y, box.width, box.height);
+
+  // Label capsule
+  ctx.font = 'bold 15px system-ui, -apple-system, sans-serif';
+  const textWidth = ctx.measureText(label).width;
+  const padding = 6;
+  ctx.fillStyle = color === '#22c55e' ? 'rgba(22, 101, 52, 0.95)' : 'rgba(153, 27, 27, 0.95)';
+  const labelY = box.y - 28 > 0 ? box.y - 28 : box.y;
+  ctx.fillRect(box.x, labelY, textWidth + padding * 2, 26);
+  ctx.fillStyle = '#ffffff';
+  ctx.fillText(label, box.x + padding, labelY + 18);
+  ctx.restore();
+}
+
 export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: KioskModeProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [status, setStatus] = useState<'loading_models'|'loading_faces'|'starting_camera'|'active'|'error'>('loading_models');
   const [modelLoadProgress, setModelLoadProgress] = useState(0);
-  const [modelLoadStage, setModelLoadStage] = useState('Initializing AI Neural Engine...');
+  const [modelLoadStage, setModelLoadStage] = useState('Initializing InsightFace Neural Engine...');
   const [msg, setMsg] = useState('');
   const [recentMatches, setRecentMatches] = useState<{id: string, name: string, time: number}[]>([]);
   const [fps, setFps] = useState(0);
@@ -34,7 +56,7 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
     const init = async () => {
       try {
         setStatus('loading_models');
-        await loadFaceModelsWithProgress((percent, stage) => {
+        const human = await loadInsightFaceWithProgress((percent, stage) => {
           setModelLoadProgress(percent);
           setModelLoadStage(stage);
         });
@@ -43,63 +65,54 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
         const res = await fetch(`/api/teacher/attendance/faces?subject_id=${subjectId}`);
         const data = await res.json();
         
-        // Build map of student info (id -> { name, roll_no })
-        const infoMap: Record<string, { name: string; roll_no: string }> = {};
+        // Build map of student info (id -> { name, roll_no, descriptor })
+        const infoMap: Record<string, { name: string; roll_no: string; descriptor: any }> = {};
         (data.students || []).forEach((s: any) => {
-          if (s.id) infoMap[s.id] = { name: s.name || '', roll_no: s.roll_no || '' };
+          if (s.id && s.descriptor) {
+            infoMap[s.id] = { name: s.name || 'Student', roll_no: s.roll_no || '', descriptor: s.descriptor };
+          }
         });
         (students || []).forEach((s: any) => {
-          if (s.id && !infoMap[s.id]) {
-            infoMap[s.id] = { name: s.name || '', roll_no: s.roll_no || '' };
-          } else if (s.id && infoMap[s.id] && !infoMap[s.id].roll_no && s.roll_no) {
+          if (s.id && infoMap[s.id] && !infoMap[s.id].roll_no && s.roll_no) {
             infoMap[s.id].roll_no = s.roll_no;
           }
         });
 
-        const labeledDescriptors = (data.students || []).map((s: any) => {
-          // Check if the descriptor is multi-angle (array of arrays) or legacy (single array)
-          const isMulti = Array.isArray(s.descriptor[0]);
-          if (isMulti) {
-             const descriptorsArray = s.descriptor.map((arr: any) => new Float32Array(arr));
-             return new faceapi.LabeledFaceDescriptors(s.id, descriptorsArray);
-          } else {
-             return new faceapi.LabeledFaceDescriptors(s.id, [new Float32Array(s.descriptor)]);
-          }
-        });
+        const enrolledStudents = Object.entries(infoMap).map(([id, info]) => ({
+          id,
+          name: info.name,
+          roll_no: info.roll_no,
+          descriptor: info.descriptor,
+        }));
 
-        if (labeledDescriptors.length === 0) {
+        if (enrolledStudents.length === 0) {
           setStatus('error');
-          setMsg('No students have registered their Face ID yet!');
+          setMsg('No students have registered their InsightFace ID yet! Ask students to set up Face ID.');
           return;
         }
 
-        // 0.44 calibrated threshold for teacher portal face matching
-        const DISTANCE_THRESHOLD = 0.44;
-        const faceMatcher = new faceapi.FaceMatcher(labeledDescriptors, DISTANCE_THRESHOLD);
-
         setStatus('starting_camera');
-        // Request higher resolution for M1 Mac performance
         stream = await navigator.mediaDevices.getUserMedia({ 
-            video: { width: { ideal: 1280 }, height: { ideal: 720 } } 
+          video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' } 
         });
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
         }
 
         await new Promise(r => {
-           if (videoRef.current && videoRef.current.readyState >= 2) r(true);
-           else if (videoRef.current) videoRef.current.onloadeddata = () => r(true);
-           else setTimeout(r, 1000);
+          if (videoRef.current && videoRef.current.readyState >= 2) r(true);
+          else if (videoRef.current) videoRef.current.onloadeddata = () => r(true);
+          else setTimeout(r, 1000);
         });
         
         if (videoRef.current && canvasRef.current) {
-           canvasRef.current.width = videoRef.current.videoWidth;
-           canvasRef.current.height = videoRef.current.videoHeight;
+          canvasRef.current.width = videoRef.current.videoWidth || 640;
+          canvasRef.current.height = videoRef.current.videoHeight || 480;
         }
 
         setStatus('active');
 
-        // High-Speed Throttled Inference Loop to prevent UI/frame freezing
+        // High-Speed Throttled Inference Loop
         let isDetecting = false;
         let lastDetectTime = 0;
 
@@ -108,99 +121,91 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
           
           const now = Date.now();
           if (!isDetecting && now - lastDetectTime >= 120 && videoRef.current.readyState === 4) {
-             isDetecting = true;
-             lastDetectTime = now;
-             try {
-               const displaySize = { width: videoRef.current.videoWidth, height: videoRef.current.videoHeight };
-               faceapi.matchDimensions(canvasRef.current, displaySize);
+            isDetecting = true;
+            lastDetectTime = now;
+            try {
+              if (canvasRef.current.width !== videoRef.current.videoWidth || canvasRef.current.height !== videoRef.current.videoHeight) {
+                canvasRef.current.width = videoRef.current.videoWidth;
+                canvasRef.current.height = videoRef.current.videoHeight;
+              }
 
-               const detections = await faceapi.detectAllFaces(
-                 videoRef.current, 
-                 new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.55 })
-               ).withFaceLandmarks().withFaceDescriptors();
+              const result = await human.detect(videoRef.current);
+              setFacesCount(result.face ? result.face.length : 0);
+              
+              const ctx = canvasRef.current.getContext('2d');
+              if (ctx) ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
 
-               const resizedDetections = faceapi.resizeResults(detections, displaySize);
-               setFacesCount(resizedDetections ? resizedDetections.length : 0);
-               
-               const ctx = canvasRef.current.getContext('2d');
-               if (ctx) ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+              if (result.face && result.face.length > 0) {
+                const newlyMarkedNames: string[] = [];
+                const markPromises: Promise<void>[] = [];
 
-               if (resizedDetections && resizedDetections.length > 0) {
-                 const newlyMarkedNames: string[] = [];
-                 const markPromises: Promise<void>[] = [];
+                result.face.forEach((det: any) => {
+                  if (!det.box) return;
+                  const [bx, by, bw, bh] = det.box;
+                  if (bw < 60 || bh < 60) return;
+                  const box = { x: bx, y: by, width: bw, height: bh };
 
-                 resizedDetections.forEach(det => {
-                    const box = det.detection.box;
-                    
-                    // Ignore tiny background faces or ghost detections
-                    if (box.width < 70 || box.height < 70) return;
+                  let bestMatch: any = null;
+                  let highestConf = 0;
 
-                    const bestMatch = faceMatcher.findBestMatch(det.descriptor);
-                    const isUnknown = bestMatch.label === 'unknown' || bestMatch.distance > DISTANCE_THRESHOLD;
-                    const studentId = bestMatch.label;
-                    
-                    // Confidence score (lower distance = higher confidence)
-                    const confidence = isUnknown ? 0 : Math.max(0, Math.min(99, Math.round((1 - bestMatch.distance) * 100)));
-                    
-                    let boxColor = '#ef4444'; // Red for unknown
-                    let labelText = 'Unrecognized Face';
-
-                    if (!isUnknown && studentId && studentId !== 'unknown') {
-                       const studentData = infoMap[studentId] || students.find(x => x.id === studentId);
-                       const studentName = studentData?.name?.trim() || 'Student';
-                       const rollNo = studentData?.roll_no ? ` (${studentData.roll_no})` : '';
-
-                       labelText = `${studentName} ${confidence}%`;
-                       boxColor = '#22c55e'; // Green for recognized
-
-                       if (markedRef.current[studentId] !== 'P') {
-                          markedRef.current[studentId] = 'P'; 
-                          markPromises.push(onMark(studentId));
-                          newlyMarkedNames.push(`${studentName}${rollNo}`);
-                       }
+                  if (det.embedding) {
+                    for (const s of enrolledStudents) {
+                      const match = matchInsightDescriptor(det.embedding, s.descriptor, 0.58);
+                      if (match.isMatch && match.confidence > highestConf) {
+                        highestConf = match.confidence;
+                        bestMatch = s;
+                      }
                     }
+                  }
 
-                    // Crisp Bounding Box with label
-                    const drawBox = new faceapi.draw.DrawBox(box, {
-                       label: labelText,
-                       boxColor: boxColor,
-                       lineWidth: 3,
-                       drawLabelOptions: {
-                          fontColor: '#ffffff',
-                          fontSize: 18,
-                          padding: 6
-                       }
-                    });
-                    if (canvasRef.current) drawBox.draw(canvasRef.current);
-                 });
+                  let labelText = 'Unrecognized Face';
+                  let boxColor = '#ef4444'; // Red for unknown
 
-                 if (markPromises.length > 0) await Promise.all(markPromises);
+                  if (bestMatch && highestConf >= 58) {
+                    const studentName = bestMatch.name || 'Student';
+                    const rollNo = bestMatch.roll_no ? ` (${bestMatch.roll_no})` : '';
 
-                 if (newlyMarkedNames.length > 0) {
-                    const stamp = Date.now();
-                    const newMatches = newlyMarkedNames.map((n, i) => ({ id: stamp + '-' + i, name: n, time: stamp }));
-                    setRecentMatches(prev => [...prev, ...newMatches]);
-                    setTimeout(() => {
-                       setRecentMatches(prev => prev.filter(m => stamp - m.time < 3500));
-                    }, 3500);
-                 }
-               }
-             } catch (err) {
-               console.error("Face matching error:", err);
-             } finally {
-               isDetecting = false;
-             }
+                    labelText = `${studentName} ${highestConf}%`;
+                    boxColor = '#22c55e'; // Green for recognized
+
+                    if (markedRef.current[bestMatch.id] !== 'P') {
+                      markedRef.current[bestMatch.id] = 'P';
+                      markPromises.push(onMark(bestMatch.id));
+                      newlyMarkedNames.push(`${studentName}${rollNo}`);
+                    }
+                  }
+
+                  if (canvasRef.current && ctx) {
+                    drawInsightBox(ctx, box, labelText, boxColor);
+                  }
+                });
+
+                if (markPromises.length > 0) await Promise.all(markPromises);
+
+                if (newlyMarkedNames.length > 0) {
+                  const stamp = Date.now();
+                  const newMatches = newlyMarkedNames.map((n, i) => ({ id: stamp + '-' + i, name: n, time: stamp }));
+                  setRecentMatches(prev => [...prev, ...newMatches]);
+                  setTimeout(() => {
+                    setRecentMatches(prev => prev.filter(m => stamp - m.time < 3500));
+                  }, 3500);
+                }
+              }
+            } catch (err) {
+              console.error("InsightFace matching error:", err);
+            } finally {
+              isDetecting = false;
+            }
           }
           
           // FPS Calculation
           frameCount++;
           if (now - lastFpsTime >= 1000) {
-             setFps(frameCount);
-             frameCount = 0;
-             lastFpsTime = now;
+            setFps(frameCount);
+            frameCount = 0;
+            lastFpsTime = now;
           }
           
-          // Smooth animation frame loop
           if (isRunning) requestAnimationFrame(scanLoop);
         };
 
@@ -209,7 +214,7 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
       } catch (e: any) {
         console.error(e);
         setStatus('error');
-        setMsg(e.message || 'Failed to start YOLO Engine');
+        setMsg(e.message || 'Failed to start InsightFace Engine');
       }
     };
 
@@ -226,7 +231,7 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
       <div className="p-4 bg-gray-950 flex justify-between items-center border-b border-gray-800">
         <h2 className="text-white font-bold text-xl flex items-center gap-3">
           <span className="w-3 h-3 bg-red-500 rounded-full animate-pulse"/>
-          YOLO Inference Engine (M1 Optimized)
+          InsightFace Biometric Kiosk (ArcFace 512-D)
         </h2>
         <div className="flex items-center gap-4">
            <div className="text-green-400 font-bold bg-gray-900 px-3 py-1 rounded border border-green-900">
@@ -281,17 +286,17 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
            <video ref={videoRef} autoPlay muted playsInline className="absolute w-full h-full object-cover" />
            <canvas ref={canvasRef} className="absolute w-full h-full object-cover pointer-events-none" />
            
-           {/* YOLO HUD Overlay */}
+           {/* InsightFace HUD Overlay */}
            {status === 'active' && (
-             <div className="absolute top-4 left-4 text-green-400 text-xs md:text-sm font-bold opacity-70 pointer-events-none">
-                <p>MODEL: YOLO-Face-Optimized</p>
-                <p>TARGET: Attendance Recognition</p>
+             <div className="absolute top-4 left-4 text-green-400 text-xs md:text-sm font-bold opacity-80 pointer-events-none">
+                <p>MODEL: InsightFace (ArcFace 512-D MobileNet)</p>
+                <p>TARGET: High-Precision Attendance Recognition</p>
                 <p>DEVICE: WebGL Hardware Accelerated</p>
              </div>
            )}
         </div>
         
-        {/* Realtime Toast Popups (YOLO Style) */}
+        {/* Realtime Toast Popups (InsightFace Style) */}
         <div className="absolute right-6 top-20 bottom-6 w-72 md:w-80 overflow-hidden flex flex-col items-end gap-3 pointer-events-none p-2">
           {recentMatches.map((match) => (
             <div key={match.id} className="bg-gray-900 text-green-400 px-4 py-3 rounded font-bold text-lg shadow-lg flex items-center justify-between w-full border border-green-500">

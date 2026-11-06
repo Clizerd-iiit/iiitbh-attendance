@@ -1,6 +1,5 @@
 import { useState, useRef } from 'react';
-import * as faceapi from 'face-api.js';
-import { loadFaceModelsWithProgress } from '@/lib/modelProgress';
+import { loadInsightFaceWithProgress } from '@/lib/humanInsightFace';
 
 const ANGLES = [
   { id: 'center', label: 'Look Straight', emoji: '😐' },
@@ -25,7 +24,8 @@ export function EditStudentModal({ student, onClose, onSaved }: { student: any, 
   const [stream, setStream] = useState<MediaStream | null>(null);
   
   const [step, setStep] = useState(0);
-  const [descriptors, setDescriptors] = useState<Float32Array[]>([]);
+  const [descriptors, setDescriptors] = useState<number[][]>([]);
+  const humanRef = useRef<any>(null);
 
   const saveDetails = async () => {
     setSaving(true);
@@ -43,12 +43,13 @@ export function EditStudentModal({ student, onClose, onSaved }: { student: any, 
   
   const startCamera = async () => {
     try {
-      setFaceMsg('Loading AI Models...');
-      await loadFaceModelsWithProgress((pct) => {
-        setFaceMsg(`Loading AI Models (${pct}%)...`);
+      setFaceMsg('Loading InsightFace AI...');
+      const human = await loadInsightFaceWithProgress((pct, stage) => {
+        setFaceMsg(`${stage} (${pct}%)`);
       });
+      humanRef.current = human;
       setFaceMsg('Starting Camera...');
-      const s = await navigator.mediaDevices.getUserMedia({ video: {} });
+      const s = await navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 640 }, height: { ideal: 640 }, facingMode: 'user' } });
       setStream(s);
       if (videoRef.current) {
         videoRef.current.srcObject = s;
@@ -64,25 +65,29 @@ export function EditStudentModal({ student, onClose, onSaved }: { student: any, 
   };
   
   const captureAngle = async () => {
-    if (!videoRef.current) return;
-    setFaceMsg('Scanning...');
-    const detection = await faceapi.detectSingleFace(videoRef.current, new faceapi.TinyFaceDetectorOptions())
-      .withFaceLandmarks().withFaceDescriptor();
-    if (!detection) {
-      setFaceMsg(''); alert('No face detected! Please ensure good lighting.'); return;
+    if (!videoRef.current || !humanRef.current) return;
+    setFaceMsg('Scanning with InsightFace...');
+    try {
+      const res = await humanRef.current.detect(videoRef.current);
+      if (!res.face || res.face.length === 0 || !res.face[0]?.embedding) {
+        setFaceMsg(''); alert('No face detected! Please ensure good lighting and face camera.'); return;
+      }
+      const embedding = Array.from(res.face[0].embedding as number[] | Float32Array);
+      setDescriptors(prev => [...prev, embedding]);
+      setStep(s => s + 1);
+      setFaceMsg('');
+    } catch (e) {
+      setFaceMsg('');
+      alert('Error during face detection');
     }
-    setDescriptors(prev => [...prev, detection.descriptor]);
-    setStep(s => s + 1);
-    setFaceMsg('');
   };
   
   const saveFace = async () => {
     setSaving(true);
-    const arr2D = descriptors.map(d => Array.from(d));
     const res = await fetch('/api/teacher/students/face', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ student_id: student.id, descriptor: arr2D })
+      body: JSON.stringify({ student_id: student.id, descriptor: descriptors })
     });
     setSaving(false);
     if (res.ok) {

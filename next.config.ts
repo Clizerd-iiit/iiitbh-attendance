@@ -2,11 +2,11 @@ import type { NextConfig } from "next";
 
 const cspHeader = `
   default-src 'self';
-  script-src 'self' 'unsafe-eval' 'unsafe-inline' https://accounts.google.com https://apis.google.com;
+  script-src 'self' 'unsafe-eval' 'unsafe-inline' https://accounts.google.com https://apis.google.com https://cdn.jsdelivr.net;
   style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
   font-src 'self' data: https://fonts.gstatic.com;
   img-src 'self' data: blob: https:;
-  connect-src 'self' https://*.supabase.co wss://*.supabase.co https://script.google.com https://script.googleusercontent.com https://accounts.google.com https://apis.google.com https://*.googleapis.com https://*.push.apple.com;
+  connect-src 'self' https://*.supabase.co wss://*.supabase.co https://script.google.com https://script.googleusercontent.com https://accounts.google.com https://apis.google.com https://*.googleapis.com https://*.push.apple.com https://cdn.jsdelivr.net https://vladmandic.github.io;
   frame-src 'self' https://accounts.google.com;
   object-src 'none';
   base-uri 'self';
@@ -79,6 +79,17 @@ const nextConfig: NextConfig = {
         hostname: 'lh3.googleusercontent.com',
       },
     ],
+  },
+  webpack: (config) => {
+    config.resolve.fallback = {
+      ...config.resolve.fallback,
+      fs: false,
+      path: false,
+      crypto: false,
+      '@tensorflow/tfjs-node': false,
+      '@tensorflow/tfjs-node-gpu': false,
+    };
+    return config;
   },
 };
 

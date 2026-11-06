@@ -33,6 +33,7 @@ export async function POST(req: NextRequest) {
   const signupInfo = user?.signup_info || {};
   
   signupInfo.face_descriptor = descriptor;
+  signupInfo.face_model = 'insightface-arcface';
   signupInfo.last_face_update = new Date().toISOString();
 
   const { error } = await supabaseAdmin.from('users').update({ signup_info: signupInfo }).eq('id', student_id);

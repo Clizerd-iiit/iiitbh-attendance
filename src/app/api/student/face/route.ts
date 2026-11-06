@@ -16,10 +16,10 @@ export async function POST(req: NextRequest) {
   const { data: user } = await supabaseAdmin.from('users').select('signup_info').eq('id', session.user.userId).single();
   const signupInfo = user?.signup_info || {};
   
-  // Check 30 day limit, BUT allow bypass if upgrading from old 1D model to new 3D Multi-Angle model
-  const isLegacy = signupInfo.face_descriptor && !Array.isArray(signupInfo.face_descriptor[0]);
+  // Allow immediate upgrade to new InsightFace ArcFace model without 30-day block
+  const isUpgradingToInsight = signupInfo.face_model !== 'insightface-arcface';
   
-  if (signupInfo.last_face_update && !isLegacy) {
+  if (signupInfo.last_face_update && !isUpgradingToInsight) {
     const lastUpdate = new Date(signupInfo.last_face_update).getTime();
     const now = Date.now();
     const daysSince = (now - lastUpdate) / (1000 * 60 * 60 * 24);
@@ -29,6 +29,7 @@ export async function POST(req: NextRequest) {
   }
 
   signupInfo.face_descriptor = descriptor;
+  signupInfo.face_model = 'insightface-arcface';
   signupInfo.last_face_update = new Date().toISOString();
 
   const { error } = await supabaseAdmin.from('users').update({ signup_info: signupInfo }).eq('id', session.user.userId);

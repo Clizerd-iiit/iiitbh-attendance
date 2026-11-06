@@ -5,8 +5,7 @@ import { Navbar } from '@/components/shared/Navbar';
 import { WelcomeCard } from '@/components/shared/WelcomeCard';
 import { QrScanner } from '@/components/student/QrScanner';
 import { StudentAttendanceSummary } from '@/types';
-import * as faceapi from 'face-api.js';
-import { loadFaceModelsWithProgress } from '@/lib/modelProgress';
+import { loadInsightFaceWithProgress, matchInsightDescriptor } from '@/lib/humanInsightFace';
 import { MapPin, Laptop, Smartphone, RefreshCw, X, AlertTriangle, HelpCircle } from 'lucide-react';
 import { OnboardingTour } from '@/components/shared/OnboardingTour';
 
@@ -379,7 +378,7 @@ export default function StudentDashboard() {
 
       let stream: MediaStream | null = null;
       try {
-        await loadFaceModelsWithProgress((percent, stage) => {
+        const human = await loadInsightFaceWithProgress((percent, stage) => {
           setModelLoadProgress(percent);
           setModelLoadStage(stage);
         });
@@ -399,7 +398,7 @@ export default function StudentDashboard() {
         let matched = false;
         let consecutiveMatches = 0;
 
-        // Realtime detection loop: scans face, draws square frame & name badge
+        // Realtime detection loop: scans face with InsightFace, draws square frame & name badge
         while (Date.now() - startTime < 15000 && !matched) {
           if (!videoRef.current || !canvasRef.current) break;
 
@@ -415,48 +414,36 @@ export default function StudentDashboard() {
               canvas.width = displaySize.width;
               canvas.height = displaySize.height;
             }
-            faceapi.matchDimensions(canvas, displaySize);
 
-            const detection = await faceapi.detectSingleFace(
-              video,
-              new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.5 })
-            ).withFaceLandmarks().withFaceDescriptor();
-
+            const res = await human.detect(video);
             const ctx = canvas.getContext('2d');
             if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            if (detection) {
-              const resized = faceapi.resizeResults(detection, displaySize);
-              const box = resized.detection.box;
+            if (res.face && res.face.length > 0 && res.face[0]?.embedding) {
+              const detectedFace = res.face[0];
+              const [bx, by, bw, bh] = detectedFace.box;
+              const box = { x: bx, y: by, width: bw, height: bh };
 
-              // Handle Multi-Angle vs Legacy Single-Angle mapping
-              let dist = 1.0;
-              if (Array.isArray(faceDescriptor[0])) {
-                for (let i = 0; i < faceDescriptor.length; i++) {
-                  const currentDist = faceapi.euclideanDistance(detection.descriptor, new Float32Array(faceDescriptor[i]));
-                  if (currentDist < dist) dist = currentDist;
-                }
-              } else {
-                dist = faceapi.euclideanDistance(detection.descriptor, new Float32Array(faceDescriptor));
-              }
+              const { isMatch, confidence } = matchInsightDescriptor(
+                detectedFace.embedding,
+                faceDescriptor,
+                0.58
+              );
 
-              if (dist <= 0.54) {
+              if (isMatch) {
                 consecutiveMatches++;
-                // Anti-Spoof Liveness: require 2 consecutive live frames (~240ms) to ensure continuous live presence
+                // Anti-Spoof Liveness: require 2 consecutive live frames (~240ms)
                 if (consecutiveMatches >= 2) {
-                  // Verified! Draw Green Square with Verified Name Badge
-                  if (ctx) drawSquareFaceBox(ctx, box, studentName, 'verified');
+                  if (ctx) drawSquareFaceBox(ctx, box, `${studentName} (${confidence}%)`, 'verified');
                   matched = true;
                   setFaceCheckState('success');
-                  // Hold for 1.2s so student clearly sees their square face and verified name badge
                   await new Promise(r => setTimeout(r, 1200));
                   break;
                 } else {
-                  if (ctx) drawSquareFaceBox(ctx, box, studentName, 'scanning');
+                  if (ctx) drawSquareFaceBox(ctx, box, `${studentName} (${confidence}%)`, 'scanning');
                 }
               } else {
                 consecutiveMatches = 0;
-                // Still scanning / matching face
                 if (ctx) drawSquareFaceBox(ctx, box, studentName, 'scanning');
               }
             }
