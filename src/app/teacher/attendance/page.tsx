@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { CRDelegationModal } from '@/components/teacher/CRDelegationModal';
 import { ActiveCRDelegations } from '@/components/teacher/ActiveCRDelegations';
 import type { CRDelegation } from '@/lib/delegation';
+import { LocalQRCode } from '@/components/shared/LocalQRCode';
 
 type Method = 'qr' | 'otp' | 'kiosk' | 'past';
 
@@ -903,7 +904,10 @@ function AttendancePage() {
                 
                 <div className="flex flex-col items-center justify-center mb-6">
                   <div className="p-4 bg-white border-8 border-purple-100 rounded-3xl shadow-lg mb-4 transition-transform hover:scale-105">
-                    <img src={`https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(window.location.origin + '/student/dashboard?token=' + activeClass.qr_code)}`} alt="QR Code" className="w-56 h-56 md:w-80 md:h-80" />
+                    <LocalQRCode 
+                      text={typeof window !== 'undefined' ? `${window.location.origin}/student/dashboard?token=${activeClass.qr_code}` : activeClass.qr_code} 
+                      className="w-56 h-56 md:w-80 md:h-80" 
+                    />
                   </div>
                 </div>
 
@@ -1053,7 +1057,10 @@ function AttendancePage() {
           <div className="flex-1 flex items-center justify-center w-full min-h-0 my-4 md:my-8">
             {fullScreenMode === 'qr' ? (
               <div className="p-4 md:p-8 bg-white border-[12px] md:border-[20px] border-purple-100 rounded-[2rem] md:rounded-[4rem] shadow-2xl h-full aspect-square max-h-[75vh] max-w-[90vw] flex items-center justify-center overflow-hidden">
-                <img src={`https://api.qrserver.com/v1/create-qr-code/?size=800x800&data=${encodeURIComponent(window.location.origin + '/student/dashboard?token=' + activeClass.qr_code)}`} alt="QR Code" className="w-full h-full object-contain" />
+                <LocalQRCode 
+                  text={typeof window !== 'undefined' ? `${window.location.origin}/student/dashboard?token=${activeClass.qr_code}` : activeClass.qr_code} 
+                  className="w-full h-full object-contain" 
+                />
               </div>
             ) : (
               <div className="w-full h-full max-h-[75vh] flex items-center justify-center bg-gray-50 border-[12px] md:border-[20px] border-dashed border-green-200 rounded-[3rem] md:rounded-[5rem] shadow-inner overflow-hidden">

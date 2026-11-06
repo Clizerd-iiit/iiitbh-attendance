@@ -1,11 +1,12 @@
 "use client";
 import { useEffect, useState, useRef } from 'react';
-import { useSession } from 'next-auth/react';
+import { useSession, signOut } from 'next-auth/react';
 import { Navbar } from '@/components/shared/Navbar';
 import { WelcomeCard } from '@/components/shared/WelcomeCard';
 import { QrScanner } from '@/components/student/QrScanner';
 import { StudentAttendanceSummary } from '@/types';
 import * as faceapi from 'face-api.js';
+import { loadFaceModelsWithProgress } from '@/lib/modelProgress';
 import { MapPin, Laptop, Smartphone, RefreshCw, X, AlertTriangle, HelpCircle } from 'lucide-react';
 import { OnboardingTour } from '@/components/shared/OnboardingTour';
 
@@ -134,6 +135,15 @@ export default function StudentDashboard() {
   const [markForm, setMarkForm] = useState({ code: '' });
   const [marking, setMarking] = useState(false);
   const [faceCheckState, setFaceCheckState] = useState<'idle'|'loading_models'|'scanning'|'success'|'failed'>('idle');
+  const [modelLoadProgress, setModelLoadProgress] = useState(0);
+  const [modelLoadStage, setModelLoadStage] = useState('Initializing AI Neural Engine...');
+  const [showProxyWarningModal, setShowProxyWarningModal] = useState(false);
+  const [proxyWarningData, setProxyWarningData] = useState<{
+    warningCount: number;
+    maxWarnings: number;
+    isSuspended: boolean;
+    message: string;
+  }>({ warningCount: 0, maxWarnings: 3, isSuspended: false, message: '' });
   const [faceDescriptor, setFaceDescriptor] = useState<any>(null);
   const [batchInfo, setBatchInfo] = useState('');
   const [isCr, setIsCr] = useState(false);
@@ -243,8 +253,9 @@ export default function StudentDashboard() {
     }
   };
 
-  const executeAttendance = async (lat: number|null, lon: number|null, accuracy?: number) => {
-    const isOtp = markForm.code.length <= 6;
+  const executeAttendance = async (lat: number|null, lon: number|null, accuracy?: number, overrideCode?: string) => {
+    const rawCode = (overrideCode || markForm.code || '').trim();
+    const isOtp = rawCode.length <= 6;
     const method = isOtp ? 'otp' : 'qr';
     const deviceFingerprint = getClientDeviceFingerprint();
     const body: any = { method, deviceFingerprint };
@@ -253,8 +264,8 @@ export default function StudentDashboard() {
       body.longitude = lon;
       if (typeof accuracy === 'number') body.accuracy = accuracy;
     }
-    if (isOtp) body.otp = markForm.code;
-    else body.qrToken = markForm.code;
+    if (isOtp) body.otp = rawCode;
+    else body.qrToken = rawCode;
 
     const res = await fetch('/api/attendance/mark', {
       method: 'POST',
@@ -269,7 +280,6 @@ export default function StudentDashboard() {
     setMarking(false);
     setFaceCheckState('idle');
     if (res.ok) {
-      alert("✅ Attendance marked successfully!");
       setShowMarkModal(false);
       setMarkForm({ code: '' });
       fetch('/api/attendance/summary').then(r => r.json()).then(data => {
@@ -277,6 +287,18 @@ export default function StudentDashboard() {
         setStreak(data.streak || 0);
         setShowPercentage(data.settings?.show_student_attendance_percentage !== 'false');
       });
+
+      if (d.proxyDetected) {
+        setProxyWarningData({
+          warningCount: d.warningCount || 1,
+          maxWarnings: d.maxWarnings || 3,
+          isSuspended: !!d.isSuspended,
+          message: d.warningMessage || 'Proxy attempt caught by ProxyShield. Continued violations will result in account suspension.'
+        });
+        setShowProxyWarningModal(true);
+      } else {
+        alert("✅ Attendance marked successfully!");
+      }
     } else {
       alert("❌ " + (d.error || "Failed to mark attendance"));
     }
@@ -320,8 +342,8 @@ export default function StudentDashboard() {
     }
   };
 
-  const handleMarkAttendance = async () => {
-    const code = (markForm.code || '').trim();
+  const handleMarkAttendance = async (overrideCode?: string | React.MouseEvent) => {
+    const code = typeof overrideCode === 'string' ? overrideCode.trim() : (markForm.code || '').trim();
     if (!code) return alert("Enter OTP or QR Token");
 
     setMarking(true);
@@ -352,14 +374,15 @@ export default function StudentDashboard() {
       }
 
       setFaceCheckState('loading_models');
+      setModelLoadProgress(15);
+      setModelLoadStage('Initializing AI Neural Engine...');
 
       let stream: MediaStream | null = null;
       try {
-        await Promise.all([
-          faceapi.nets.tinyFaceDetector.loadFromUri('/models'),
-          faceapi.nets.faceLandmark68Net.loadFromUri('/models'),
-          faceapi.nets.faceRecognitionNet.loadFromUri('/models')
-        ]);
+        await loadFaceModelsWithProgress((percent, stage) => {
+          setModelLoadProgress(percent);
+          setModelLoadStage(stage);
+        });
 
         setFaceCheckState('scanning');
         stream = await navigator.mediaDevices.getUserMedia({ 
@@ -510,7 +533,7 @@ export default function StudentDashboard() {
     }
 
     // 4. Submit attendance directly
-    await executeAttendance(lat, lon, accuracy ?? undefined);
+    await executeAttendance(lat, lon, accuracy ?? undefined, code);
   };
 
   const submitVote = async (index: number) => {
@@ -639,9 +662,25 @@ export default function StudentDashboard() {
                   <canvas ref={canvasRef} className="absolute inset-0 w-full h-full object-cover pointer-events-none" />
                   
                   {faceCheckState === 'loading_models' && (
-                    <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center p-4">
-                      <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-3"></div>
-                      <p className="text-white text-xs font-bold tracking-wide">Loading Face AI Models...</p>
+                    <div className="absolute inset-0 bg-black/85 backdrop-blur-sm flex flex-col items-center justify-center p-5 text-center">
+                      <div className="relative mb-3 flex items-center justify-center">
+                        <div className="w-12 h-12 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin"></div>
+                        <span className="absolute text-[11px] font-black text-blue-400">
+                          {modelLoadProgress}%
+                        </span>
+                      </div>
+                      <p className="text-white text-xs font-bold tracking-wide mb-2">
+                        Loading AI Model ({modelLoadProgress}%)
+                      </p>
+                      <div className="w-44 bg-gray-700/60 rounded-full h-2 overflow-hidden border border-gray-600/40">
+                        <div 
+                          className="bg-gradient-to-r from-blue-500 to-indigo-500 h-full rounded-full transition-all duration-300 ease-out"
+                          style={{ width: `${Math.min(100, Math.max(5, modelLoadProgress))}%` }}
+                        />
+                      </div>
+                      <p className="text-[11px] text-gray-300 mt-2 font-medium">
+                        {modelLoadStage}
+                      </p>
                     </div>
                   )}
 
@@ -664,7 +703,9 @@ export default function StudentDashboard() {
                 </div>
 
                 {faceCheckState === 'loading_models' && (
-                  <p className="font-bold text-blue-600 animate-pulse text-xs">Initializing AI Camera...</p>
+                  <p className="font-bold text-blue-600 animate-pulse text-xs">
+                    {modelLoadStage} ({modelLoadProgress}%)
+                  </p>
                 )}
                 {faceCheckState === 'scanning' && (
                   <p className="font-bold text-blue-600 animate-pulse text-xs">
@@ -703,14 +744,17 @@ export default function StudentDashboard() {
                 onScan={(text) => {
                   setShowScanner(false);
                   const tokenMatch = text.match(/token=([a-zA-Z0-9-]+)/);
-                  setMarkForm({ code: tokenMatch ? tokenMatch[1] : text.trim() });
+                  const scannedToken = (tokenMatch ? tokenMatch[1] : text).trim();
+                  setMarkForm({ code: scannedToken });
+                  // Instant Auto-Advance: automatically verify & mark without requiring student to click Submit!
+                  handleMarkAttendance(scannedToken);
                 }} 
               />
             )}
             
             <div className="flex gap-3">
               <button onClick={() => setShowMarkModal(false)} className="flex-1 py-2.5 bg-gray-100 text-gray-800 font-medium rounded-xl hover:bg-gray-200">Cancel</button>
-              <button onClick={handleMarkAttendance} disabled={marking} className="flex-1 py-2.5 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 disabled:opacity-70">
+              <button onClick={() => handleMarkAttendance()} disabled={marking} className="flex-1 py-2.5 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 disabled:opacity-70">
                 {marking ? 'Marking...' : 'Submit'}
               </button>
             </div>
@@ -928,6 +972,117 @@ export default function StudentDashboard() {
               >
                 Close
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Strict English Proxy Warning Modal */}
+      {showProxyWarningModal && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-7 shadow-2xl border-2 border-red-500 animate-in fade-in zoom-in duration-200">
+            {/* Security Banner */}
+            <div className="flex items-center gap-3 pb-4 border-b border-red-100">
+              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black text-2xl ${
+                proxyWarningData.isSuspended ? 'bg-red-600 text-white animate-bounce' : 'bg-amber-100 text-amber-700'
+              }`}>
+                🛡️
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-red-100 text-red-700 border border-red-200">
+                    ProxyShield Defense
+                  </span>
+                  <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                    proxyWarningData.isSuspended ? 'bg-red-600 text-white' : 'bg-amber-500 text-white'
+                  }`}>
+                    Strike {proxyWarningData.warningCount} of {proxyWarningData.maxWarnings}
+                  </span>
+                </div>
+                <h3 className="text-lg font-black text-gray-900 mt-0.5">
+                  {proxyWarningData.isSuspended ? 'CRITICAL: Account Suspended' : 'Security Alert: Proxy Attempt Caught'}
+                </h3>
+              </div>
+            </div>
+
+            {/* Body Content */}
+            <div className="py-5 space-y-4">
+              {/* Attendance Marked Status Notification */}
+              <div className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-start gap-3">
+                <span className="text-xl">✅</span>
+                <div>
+                  <p className="text-xs font-bold text-emerald-900 uppercase tracking-wide">Attendance Status: Recorded</p>
+                  <p className="text-xs text-emerald-700 mt-0.5">
+                    Your attendance for today’s session has been saved provisionally.
+                  </p>
+                </div>
+              </div>
+
+              {/* Warning Notice Box */}
+              <div className={`p-4 rounded-2xl border ${
+                proxyWarningData.isSuspended 
+                  ? 'bg-red-50 border-red-300 text-red-950' 
+                  : 'bg-amber-50 border-amber-300 text-amber-950'
+              }`}>
+                <h4 className="font-black text-sm uppercase tracking-wide mb-1.5 flex items-center gap-1.5">
+                  <span>⚠️</span>
+                  <span>Official Violation Notice</span>
+                </h4>
+                <p className="text-xs leading-relaxed font-medium whitespace-pre-line">
+                  {proxyWarningData.message}
+                </p>
+              </div>
+
+              {/* Strike Indicator Progress */}
+              <div className="bg-gray-50 p-4 rounded-2xl border border-gray-200">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-xs font-bold text-gray-700">Proxy Violation Strikes:</span>
+                  <span className="text-xs font-black text-red-600">
+                    {proxyWarningData.warningCount} / {proxyWarningData.maxWarnings} Max
+                  </span>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  {[1, 2, 3].map((step) => {
+                    const isPassed = step <= proxyWarningData.warningCount;
+                    const isFinal = step === 3;
+                    return (
+                      <div 
+                        key={step} 
+                        className={`py-2 text-center rounded-xl font-bold text-xs border ${
+                          isPassed 
+                            ? isFinal 
+                              ? 'bg-red-600 text-white border-red-700 font-black' 
+                              : 'bg-amber-500 text-white border-amber-600'
+                            : 'bg-white text-gray-400 border-gray-200'
+                        }`}
+                      >
+                        Strike {step} {isFinal ? '(Suspended)' : ''}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="pt-2">
+              {proxyWarningData.isSuspended ? (
+                <button
+                  onClick={() => {
+                    signOut({ callbackUrl: '/auth/signin' });
+                  }}
+                  className="w-full py-3.5 bg-red-600 hover:bg-red-700 text-white font-black rounded-2xl shadow-lg transition tracking-wide text-sm"
+                >
+                  Acknowledge & Sign Out
+                </button>
+              ) : (
+                <button
+                  onClick={() => setShowProxyWarningModal(false)}
+                  className="w-full py-3.5 bg-gray-900 hover:bg-black text-white font-black rounded-2xl shadow-lg transition tracking-wide text-sm"
+                >
+                  I Understand & Acknowledge (Do Not Repeat)
+                </button>
+              )}
             </div>
           </div>
         </div>

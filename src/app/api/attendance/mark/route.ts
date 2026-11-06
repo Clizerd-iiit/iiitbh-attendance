@@ -108,21 +108,91 @@ export async function POST(req: NextRequest) {
     targetStudentId = studentId || currentUserId;
   }
 
-  // Device Sharing Proxy Detection (Stop one device marking for multiple different students)
+  // Check if student account is currently suspended
+  const { data: studentUser } = await supabaseAdmin
+    .from('users')
+    .select('id, name, roll_no, is_active, signup_info')
+    .eq('id', targetStudentId)
+    .single();
+
+  if (studentUser && !canManageAttendance) {
+    const isSuspended = studentUser.is_active === false || !!studentUser.signup_info?.is_suspended;
+    if (isSuspended) {
+      return NextResponse.json({
+        error: 'Your student account is suspended due to proxy fraud violations. Please contact the administrator or SuperAdmin.',
+      }, { status: 403 });
+    }
+  }
+
+  // Device Sharing Proxy Detection & Strike Tracking
+  let proxyDetected = false;
+  let proxyWarningCount = 0;
+  let isStudentSuspended = false;
+  let proxyWarningMessage = '';
+
   if (!canManageAttendance && (method === 'qr' || method === 'otp')) {
     const devCheck = trackDeviceAttendance(classId, deviceToken, targetStudentId);
     if (devCheck.isProxyDetected) {
-      await logAudit({
-        userId: targetStudentId,
-        action: 'MULTI_ACCOUNT_DEVICE_PROXY_FLAGGED',
-        tableName: 'attendance',
-        recordId: classId,
-        newValue: { otherStudentsCount: devCheck.otherStudentsCount, ip },
-        ipAddress: ip,
-      });
-      return NextResponse.json({
-        error: 'Multiple accounts detected using this device for attendance. Proxy attendance is strictly prohibited.',
-      }, { status: 403 });
+      proxyDetected = true;
+      const currentWarnings = Number(studentUser?.signup_info?.proxy_warnings || 0);
+      proxyWarningCount = currentWarnings + 1;
+      const signupInfo = { ...(studentUser?.signup_info || {}) };
+      signupInfo.proxy_warnings = proxyWarningCount;
+      signupInfo.last_proxy_at = new Date().toISOString();
+
+      if (proxyWarningCount >= 3) {
+        // Strike 3: Suspend account
+        isStudentSuspended = true;
+        signupInfo.is_suspended = true;
+        signupInfo.suspended_at = new Date().toISOString();
+        signupInfo.suspension_reason = 'Account suspended: Reached maximum proxy attendance warnings (Strike 3 of 3).';
+
+        await supabaseAdmin.from('users').update({
+          is_active: false,
+          signup_info: signupInfo,
+        }).eq('id', targetStudentId);
+
+        await logAudit({
+          userId: targetStudentId,
+          action: 'STUDENT_SUSPENDED_PROXY_FRAUD',
+          tableName: 'users',
+          recordId: targetStudentId,
+          oldValue: { warnings: currentWarnings, is_active: true },
+          newValue: {
+            warnings: proxyWarningCount,
+            is_active: false,
+            deviceToken,
+            classId,
+            ip,
+            reason: '3 strikes reached for device-sharing proxy fraud',
+          },
+          ipAddress: ip,
+        });
+
+        proxyWarningMessage = `SECURITY ALERT - FINAL WARNING 3 OF 3: ACCOUNT SUSPENDED!\n\nYour proxy attempt has been caught by ProxyShield. You logged into multiple accounts on a single device.\n\nToday's attendance has been provisionally recorded, but because this is your 3rd violation, your account has been SUSPENDED. Do not try to bypass security. Contact college administration immediately.`;
+      } else {
+        // Strike 1 or 2: Record strike and warn student
+        await supabaseAdmin.from('users').update({
+          signup_info: signupInfo,
+        }).eq('id', targetStudentId);
+
+        await logAudit({
+          userId: targetStudentId,
+          action: 'PROXY_ATTENDANCE_FLAGGED',
+          tableName: 'attendance',
+          recordId: classId,
+          newValue: {
+            warningCount: proxyWarningCount,
+            deviceToken,
+            otherStudentsCount: devCheck.otherStudentsCount,
+            classId,
+            ip,
+          },
+          ipAddress: ip,
+        });
+
+        proxyWarningMessage = `SECURITY ALERT - PROXY DETECTED (Warning ${proxyWarningCount} of 3)!\n\nYour proxy attempt has been caught by ProxyShield. Multiple accounts were detected using this same device.\n\nDo not act smart. Today's attendance is allowed as a provisional exception. However, be strictly warned: continued proxy attempts will lead to immediate account suspension upon reaching Warning 3. This is Warning ${proxyWarningCount} of 3.`;
+      }
     }
   }
 
@@ -287,5 +357,12 @@ export async function POST(req: NextRequest) {
     }
   })();
 
-  return NextResponse.json({ success: true });
+  return NextResponse.json({
+    success: true,
+    proxyDetected,
+    warningCount: proxyWarningCount,
+    maxWarnings: 3,
+    isSuspended: isStudentSuspended,
+    warningMessage: proxyWarningMessage || undefined,
+  });
 }

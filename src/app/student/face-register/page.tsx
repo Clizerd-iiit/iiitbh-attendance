@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import * as faceapi from 'face-api.js';
+import { loadFaceModelsWithProgress } from '@/lib/modelProgress';
 import { Navbar } from '@/components/shared/Navbar';
 
 const ANGLES = [
@@ -14,6 +15,7 @@ const ANGLES = [
 export default function FaceRegisterPage() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [loading, setLoading] = useState('Loading AI Models...');
+  const [modelProgress, setModelProgress] = useState(0);
   const [stream, setStream] = useState<MediaStream | null>(null);
   
   const [step, setStep] = useState(0); // 0 to 4 for angles, 5 for complete
@@ -23,11 +25,10 @@ export default function FaceRegisterPage() {
   useEffect(() => {
     const loadModels = async () => {
       try {
-        await Promise.all([
-          faceapi.nets.tinyFaceDetector.loadFromUri('/models'),
-          faceapi.nets.faceLandmark68Net.loadFromUri('/models'),
-          faceapi.nets.faceRecognitionNet.loadFromUri('/models')
-        ]);
+        await loadFaceModelsWithProgress((percent, stage) => {
+          setModelProgress(percent);
+          setLoading(`Loading AI Models (${percent}%)...`);
+        });
         setLoading('Starting Camera...');
         startVideo();
       } catch (e) {
@@ -112,7 +113,27 @@ export default function FaceRegisterPage() {
           </div>
 
           <div className="relative w-full max-w-sm mx-auto aspect-square bg-gray-900 rounded-3xl overflow-hidden border-4 border-gray-800 shadow-xl mb-6 flex items-center justify-center">
-            {loading && <div className="absolute inset-0 bg-black/50 text-white flex items-center justify-center font-bold z-10 p-4 text-center">{loading}</div>}
+            {loading && (
+              <div className="absolute inset-0 bg-black/85 backdrop-blur-sm text-white flex flex-col items-center justify-center font-bold z-10 p-6 text-center">
+                <div className="relative mb-3 flex items-center justify-center">
+                  <div className="w-12 h-12 border-3 border-blue-500/30 border-t-blue-500 rounded-full animate-spin"></div>
+                  {modelProgress > 0 && (
+                    <span className="absolute text-xs font-black text-blue-400">
+                      {modelProgress}%
+                    </span>
+                  )}
+                </div>
+                <p className="text-sm font-bold mb-2">{loading}</p>
+                {modelProgress > 0 && modelProgress < 100 && (
+                  <div className="w-44 bg-gray-700/60 rounded-full h-2 overflow-hidden border border-gray-600/40">
+                    <div 
+                      className="bg-blue-500 h-full rounded-full transition-all duration-300 ease-out"
+                      style={{ width: `${Math.min(100, Math.max(5, modelProgress))}%` }}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
             <video ref={videoRef} className="w-full h-full object-cover" muted playsInline />
             
             {step < 5 && (

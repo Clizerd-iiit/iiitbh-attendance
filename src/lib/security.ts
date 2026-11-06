@@ -110,7 +110,8 @@ export function validateCoordinates(lat?: number, lon?: number, accuracy?: numbe
 
 /**
  * Anti-Proxy Device Sharing Check:
- * Ensures a single phone/device isn't used to mark attendance for more than 4 distinct students in the same class.
+ * Detects if a single physical device/browser is being used by multiple different student accounts
+ * to mark attendance in the same class session.
  */
 export function trackDeviceAttendance(
   classId: string,
@@ -133,16 +134,15 @@ export function trackDeviceAttendance(
     classMap.set(deviceFingerprint, studentsOnDevice);
   }
 
+  // If another student already marked attendance from this same device in this class session
+  const isProxyDetected = studentsOnDevice.size > 0 && !studentsOnDevice.has(studentId);
+
   studentsOnDevice.add(studentId);
 
-  // Allow up to 4 distinct students on the same device. If 5 or more students try, block as proxy fraud.
-  const MAX_STUDENTS_PER_DEVICE = 4;
-  if (studentsOnDevice.size > MAX_STUDENTS_PER_DEVICE) {
-    studentsOnDevice.delete(studentId); // Do not lock student to this device if rejected
-    return { isProxyDetected: true, otherStudentsCount: studentsOnDevice.size };
-  }
-
-  return { isProxyDetected: false, otherStudentsCount: studentsOnDevice.size - 1 };
+  return {
+    isProxyDetected,
+    otherStudentsCount: isProxyDetected ? studentsOnDevice.size - 1 : 0
+  };
 }
 
 /**

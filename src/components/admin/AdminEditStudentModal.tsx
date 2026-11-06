@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import * as faceapi from 'face-api.js';
+import { loadFaceModelsWithProgress } from '@/lib/modelProgress';
 
 const ANGLES = [
   { id: 'center', label: 'Look Straight', emoji: '😐' },
@@ -55,11 +56,9 @@ export function AdminEditStudentModal({ student, onClose, onSaved }: { student: 
   const startCamera = async () => {
     try {
       setFaceMsg('Loading AI Models...');
-      await Promise.all([
-        faceapi.nets.tinyFaceDetector.loadFromUri('/models'),
-        faceapi.nets.faceLandmark68Net.loadFromUri('/models'),
-        faceapi.nets.faceRecognitionNet.loadFromUri('/models')
-      ]);
+      await loadFaceModelsWithProgress((pct) => {
+        setFaceMsg(`Loading AI Models (${pct}%)...`);
+      });
       setFaceMsg('Starting Camera...');
       const s = await navigator.mediaDevices.getUserMedia({ video: {} });
       setStream(s);

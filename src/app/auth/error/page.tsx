@@ -8,6 +8,7 @@ const errorMessages: Record<string, { title: string; msg: string; icon: string }
   unauthorized_domain: { title: 'Wrong Email Domain', msg: 'Only @iiitbh.ac.in college email accounts are allowed.', icon: '🚫' },
   not_registered:      { title: 'Not Registered',    msg: 'Your email is not registered. Contact the administrator.', icon: '❓' },
   account_disabled:    { title: 'Account Disabled',  msg: 'Your account has been disabled. Contact admin.', icon: '🔒' },
+  account_suspended:   { title: 'Account Suspended', msg: 'Your account has been suspended due to repeated proxy attendance violations (3 of 3 strikes). Please contact the Super Administrator.', icon: '🚨' },
   account_rejected:    { title: 'Verification Rejected', msg: 'Your account was not approved. Contact the administrator for more information.', icon: '❌' },
   forbidden:           { title: 'Access Denied',     msg: 'You do not have permission to access this page.', icon: '🚷' },
   server_error:        { title: 'Server Error',      msg: 'An error occurred. Please try again.', icon: '⚠️' },

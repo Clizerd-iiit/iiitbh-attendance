@@ -12,8 +12,8 @@ const authMiddleware = withAuth(
     }
 
     // Account active & verification status checks for portal users
-    if (token?.isActive === false && role !== 'superadmin') {
-      return NextResponse.redirect(new URL('/auth/error?error=account_deactivated', req.url));
+    if ((token?.isActive === false || (token as any)?.isSuspended) && role !== 'superadmin') {
+      return NextResponse.redirect(new URL('/auth/error?error=account_suspended', req.url));
     }
     if (!token?.profileCompleted && role !== 'superadmin') {
       return NextResponse.redirect(new URL('/profile/setup', req.url));

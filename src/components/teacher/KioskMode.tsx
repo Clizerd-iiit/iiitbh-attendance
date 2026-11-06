@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from 'react';
 import * as faceapi from 'face-api.js';
+import { loadFaceModelsWithProgress } from '@/lib/modelProgress';
 
 interface KioskModeProps {
   subjectId: string;
@@ -14,6 +15,8 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [status, setStatus] = useState<'loading_models'|'loading_faces'|'starting_camera'|'active'|'error'>('loading_models');
+  const [modelLoadProgress, setModelLoadProgress] = useState(0);
+  const [modelLoadStage, setModelLoadStage] = useState('Initializing AI Neural Engine...');
   const [msg, setMsg] = useState('');
   const [recentMatches, setRecentMatches] = useState<{id: string, name: string, time: number}[]>([]);
   const [fps, setFps] = useState(0);
@@ -31,11 +34,10 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
     const init = async () => {
       try {
         setStatus('loading_models');
-        await Promise.all([
-          faceapi.nets.tinyFaceDetector.loadFromUri('/models'),
-          faceapi.nets.faceLandmark68Net.loadFromUri('/models'),
-          faceapi.nets.faceRecognitionNet.loadFromUri('/models')
-        ]);
+        await loadFaceModelsWithProgress((percent, stage) => {
+          setModelLoadProgress(percent);
+          setModelLoadStage(stage);
+        });
 
         setStatus('loading_faces');
         const res = await fetch(`/api/teacher/attendance/faces?subject_id=${subjectId}`);
@@ -97,97 +99,108 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
 
         setStatus('active');
 
-        // YOLO-style High-Speed Inference Loop
+        // High-Speed Throttled Inference Loop to prevent UI/frame freezing
+        let isDetecting = false;
+        let lastDetectTime = 0;
+
         const scanLoop = async () => {
           if (!isRunning || !videoRef.current || !canvasRef.current) return;
           
-          if (videoRef.current.readyState === 4) {
-             const displaySize = { width: videoRef.current.videoWidth, height: videoRef.current.videoHeight };
-             faceapi.matchDimensions(canvasRef.current, displaySize);
+          const now = Date.now();
+          if (!isDetecting && now - lastDetectTime >= 120 && videoRef.current.readyState === 4) {
+             isDetecting = true;
+             lastDetectTime = now;
+             try {
+               const displaySize = { width: videoRef.current.videoWidth, height: videoRef.current.videoHeight };
+               faceapi.matchDimensions(canvasRef.current, displaySize);
 
-             const detections = await faceapi.detectAllFaces(videoRef.current, new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.6 })).withFaceLandmarks().withFaceDescriptors();
-             const resizedDetections = faceapi.resizeResults(detections, displaySize);
-             setFacesCount(resizedDetections ? resizedDetections.length : 0);
-             
-             const ctx = canvasRef.current.getContext('2d');
-             if (ctx) ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+               const detections = await faceapi.detectAllFaces(
+                 videoRef.current, 
+                 new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.55 })
+               ).withFaceLandmarks().withFaceDescriptors();
 
-             if (resizedDetections && resizedDetections.length > 0) {
-              try {
-                const newlyMarkedNames: string[] = [];
-                const markPromises: Promise<void>[] = [];
+               const resizedDetections = faceapi.resizeResults(detections, displaySize);
+               setFacesCount(resizedDetections ? resizedDetections.length : 0);
+               
+               const ctx = canvasRef.current.getContext('2d');
+               if (ctx) ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
 
-                resizedDetections.forEach(det => {
-                   const box = det.detection.box;
-                   
-                   // Ignore tiny background faces or ghost detections
-                   if (box.width < 90 || box.height < 90) return;
+               if (resizedDetections && resizedDetections.length > 0) {
+                 const newlyMarkedNames: string[] = [];
+                 const markPromises: Promise<void>[] = [];
 
-                   const bestMatch = faceMatcher.findBestMatch(det.descriptor);
-                   const isUnknown = bestMatch.label === 'unknown' || bestMatch.distance > DISTANCE_THRESHOLD;
-                   const studentId = bestMatch.label;
-                   
-                   // Confidence score (lower distance = higher confidence)
-                   const confidence = isUnknown ? 0 : Math.max(0, Math.min(99, Math.round((1 - bestMatch.distance) * 100)));
-                   
-                   let boxColor = '#ef4444'; // Red for unknown
-                   let labelText = 'Unrecognized Face';
+                 resizedDetections.forEach(det => {
+                    const box = det.detection.box;
+                    
+                    // Ignore tiny background faces or ghost detections
+                    if (box.width < 70 || box.height < 70) return;
 
-                   if (!isUnknown && studentId && studentId !== 'unknown') {
-                      const studentData = infoMap[studentId] || students.find(x => x.id === studentId);
-                      const studentName = studentData?.name?.trim() || 'Student';
-                      const rollNo = studentData?.roll_no ? ` (${studentData.roll_no})` : '';
+                    const bestMatch = faceMatcher.findBestMatch(det.descriptor);
+                    const isUnknown = bestMatch.label === 'unknown' || bestMatch.distance > DISTANCE_THRESHOLD;
+                    const studentId = bestMatch.label;
+                    
+                    // Confidence score (lower distance = higher confidence)
+                    const confidence = isUnknown ? 0 : Math.max(0, Math.min(99, Math.round((1 - bestMatch.distance) * 100)));
+                    
+                    let boxColor = '#ef4444'; // Red for unknown
+                    let labelText = 'Unrecognized Face';
 
-                      labelText = `${studentName} ${confidence}%`;
-                      boxColor = '#22c55e'; // Green for recognized
+                    if (!isUnknown && studentId && studentId !== 'unknown') {
+                       const studentData = infoMap[studentId] || students.find(x => x.id === studentId);
+                       const studentName = studentData?.name?.trim() || 'Student';
+                       const rollNo = studentData?.roll_no ? ` (${studentData.roll_no})` : '';
 
-                      if (markedRef.current[studentId] !== 'P') {
-                         markedRef.current[studentId] = 'P'; 
-                         markPromises.push(onMark(studentId));
-                         newlyMarkedNames.push(`${studentName}${rollNo}`);
-                      }
-                   }
+                       labelText = `${studentName} ${confidence}%`;
+                       boxColor = '#22c55e'; // Green for recognized
 
-                   // Crisp Bounding Box with label
-                   const drawBox = new faceapi.draw.DrawBox(box, {
-                      label: labelText,
-                      boxColor: boxColor,
-                      lineWidth: 3,
-                      drawLabelOptions: {
-                         fontColor: '#ffffff',
-                         fontSize: 18,
-                         padding: 6
-                      }
-                   });
-                   if (canvasRef.current) drawBox.draw(canvasRef.current);
-                });
+                       if (markedRef.current[studentId] !== 'P') {
+                          markedRef.current[studentId] = 'P'; 
+                          markPromises.push(onMark(studentId));
+                          newlyMarkedNames.push(`${studentName}${rollNo}`);
+                       }
+                    }
 
-                if (markPromises.length > 0) await Promise.all(markPromises);
+                    // Crisp Bounding Box with label
+                    const drawBox = new faceapi.draw.DrawBox(box, {
+                       label: labelText,
+                       boxColor: boxColor,
+                       lineWidth: 3,
+                       drawLabelOptions: {
+                          fontColor: '#ffffff',
+                          fontSize: 18,
+                          padding: 6
+                       }
+                    });
+                    if (canvasRef.current) drawBox.draw(canvasRef.current);
+                 });
 
-                if (newlyMarkedNames.length > 0) {
-                   const now = Date.now();
-                   const newMatches = newlyMarkedNames.map((n, i) => ({ id: now + '-' + i, name: n, time: now }));
-                   setRecentMatches(prev => [...prev, ...newMatches]);
-                   setTimeout(() => {
-                      setRecentMatches(prev => prev.filter(m => now - m.time < 3500));
-                   }, 3500);
-                }
-              } catch (err) {
-                 console.error("Face matching error:", err);
-              }
+                 if (markPromises.length > 0) await Promise.all(markPromises);
+
+                 if (newlyMarkedNames.length > 0) {
+                    const stamp = Date.now();
+                    const newMatches = newlyMarkedNames.map((n, i) => ({ id: stamp + '-' + i, name: n, time: stamp }));
+                    setRecentMatches(prev => [...prev, ...newMatches]);
+                    setTimeout(() => {
+                       setRecentMatches(prev => prev.filter(m => stamp - m.time < 3500));
+                    }, 3500);
+                 }
+               }
+             } catch (err) {
+               console.error("Face matching error:", err);
+             } finally {
+               isDetecting = false;
              }
           }
           
           // FPS Calculation
           frameCount++;
-          const now = Date.now();
           if (now - lastFpsTime >= 1000) {
              setFps(frameCount);
              frameCount = 0;
              lastFpsTime = now;
           }
           
-          // Ultra-fast requestAnimationFrame for M1 Mac performance
+          // Smooth animation frame loop
           if (isRunning) requestAnimationFrame(scanLoop);
         };
 
@@ -226,12 +239,34 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
       </div>
 
       <div className="flex-1 relative flex items-center justify-center bg-gray-900 overflow-hidden">
-        {status !== 'active' && status !== 'error' && (
+        {status === 'loading_models' && (
+          <div className="absolute z-10 flex flex-col items-center max-w-sm px-6 text-center">
+            <div className="relative mb-4 flex items-center justify-center">
+              <div className="w-16 h-16 border-4 border-green-500/30 border-t-green-500 rounded-full animate-spin" />
+              <span className="absolute text-sm font-black text-green-400 font-mono">
+                {modelLoadProgress}%
+              </span>
+            </div>
+            <p className="text-green-400 font-bold uppercase tracking-widest text-sm mb-2 font-mono">
+              Loading AI Models ({modelLoadProgress}%)
+            </p>
+            <div className="w-64 bg-gray-800 rounded-full h-2.5 overflow-hidden border border-green-900/50 mb-2">
+              <div 
+                className="bg-green-500 h-full rounded-full transition-all duration-300 ease-out"
+                style={{ width: `${Math.min(100, Math.max(5, modelLoadProgress))}%` }}
+              />
+            </div>
+            <p className="text-gray-400 text-xs font-mono">
+              {modelLoadStage}
+            </p>
+          </div>
+        )}
+
+        {status !== 'loading_models' && status !== 'active' && status !== 'error' && (
           <div className="absolute z-10 flex flex-col items-center">
             <div className="w-12 h-12 border-4 border-green-500 border-t-transparent rounded-full animate-spin mb-4"/>
             <p className="text-green-400 font-bold uppercase tracking-widest">
-              {status === 'loading_models' ? 'Initializing YOLO Weights...' : 
-               status === 'loading_faces' ? 'Loading Descriptors...' : 'Starting Camera...'}
+              {status === 'loading_faces' ? 'Loading Descriptors...' : 'Starting Camera...'}
             </p>
           </div>
         )}

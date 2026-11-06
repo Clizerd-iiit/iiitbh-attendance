@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { Navbar } from '@/components/shared/Navbar';
+import { LocalQRCode } from '@/components/shared/LocalQRCode';
 import { KioskMode } from '@/components/teacher/KioskMode';
 import {
   Lock,
@@ -721,12 +722,10 @@ export default function CRTakeAttendancePage() {
             {method === 'qr' && (
               <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 sm:p-8 text-center flex flex-col items-center">
                 <div className="p-4 bg-white border-8 border-purple-100 rounded-3xl shadow-lg mb-4">
-                  <img
-                    src={`https://api.qrserver.com/v1/create-qr-code/?size=350x350&data=${encodeURIComponent(
-                      window.location.origin + '/student/dashboard?token=' + activeClass.qr_code
-                    )}`}
-                    alt="Attendance QR"
+                  <LocalQRCode
+                    text={typeof window !== 'undefined' ? `${window.location.origin}/student/dashboard?token=${activeClass.qr_code}` : activeClass.qr_code}
                     className="w-64 h-64 sm:w-72 sm:h-72 object-contain"
+                    alt="Attendance QR"
                   />
                 </div>
                 <div className="flex items-center gap-2 text-xs font-bold text-gray-700 mb-1">
@@ -1045,12 +1044,10 @@ export default function CRTakeAttendancePage() {
           <div className="flex-1 flex items-center justify-center my-4">
             {fullScreenMode === 'qr' ? (
               <div className="p-6 sm:p-10 bg-white border-[16px] border-purple-100 rounded-[3rem] shadow-2xl aspect-square max-h-[75vh] flex items-center justify-center">
-                <img
-                  src={`https://api.qrserver.com/v1/create-qr-code/?size=800x800&data=${encodeURIComponent(
-                    window.location.origin + '/student/dashboard?token=' + activeClass.qr_code
-                  )}`}
-                  alt="QR Code"
+                <LocalQRCode
+                  text={typeof window !== 'undefined' ? `${window.location.origin}/student/dashboard?token=${activeClass.qr_code}` : activeClass.qr_code}
                   className="w-full h-full object-contain"
+                  alt="QR Code"
                 />
               </div>
             ) : (

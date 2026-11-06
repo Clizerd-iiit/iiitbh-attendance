@@ -25,6 +25,7 @@ export default function AdminDashboard() {
   }, []);
 
   const superAdminLinks = [
+    { href: '/admin/proxyshield', icon: '🛡️', label: 'ProxyShield', desc: 'Monitor multi-account proxy attempts & 3-strike suspensions' },
     { href: '/admin/users', icon: '👥', label: 'Manage Users', desc: 'Add, edit, disable students & teachers' },
     { href: '/admin/subjects', icon: '📚', label: 'Subjects', desc: 'Create subjects & assign teachers' },
     { href: '/admin/logs', icon: '🔍', label: 'Audit Logs', desc: 'Full history of all changes' },

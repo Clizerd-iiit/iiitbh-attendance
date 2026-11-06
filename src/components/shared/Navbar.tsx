@@ -21,6 +21,7 @@ const SIDEBAR_ITEMS: Record<string, {href: string, icon: string, label: string}[
     { href: '/directory/students',icon: '🧑‍🎓', label: 'Students' },
     { href: '/profile',          icon: '👤', label: 'My Profile' },
     { href: '/admin/inbox',      icon: '💬', label: 'Inbox' },
+    { href: '/admin/proxyshield', icon: '🛡️', label: 'ProxyShield' },
     { href: '/admin/issues',     icon: '⚠️', label: 'Reported Issues' },
     { href: '/admin/settings',   icon: '⚙️', label: 'Settings' },
   ],
