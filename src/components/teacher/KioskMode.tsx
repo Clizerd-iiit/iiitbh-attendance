@@ -120,7 +120,7 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
           if (!isRunning || !videoRef.current || !canvasRef.current) return;
           
           const now = Date.now();
-          if (!isDetecting && now - lastDetectTime >= 120 && videoRef.current.readyState === 4) {
+          if (!isDetecting && now - lastDetectTime >= 120 && videoRef.current.readyState >= 2) {
             isDetecting = true;
             lastDetectTime = now;
             try {

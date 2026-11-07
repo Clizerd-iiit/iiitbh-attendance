@@ -9,23 +9,24 @@ let initPromise: Promise<any> | null = null;
 
 export const INSIGHTFACE_CONFIG = {
   backend: 'webgl' as const,
+  cacheModels: false, // Prevents browser IndexedDB tf.io.listModels transaction lockups
   modelBasePath: 'https://cdn.jsdelivr.net/npm/@vladmandic/human/models/',
   wasmPath: 'https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-wasm/dist/',
   debug: false,
-  async: true,
+  async: false, // Synchronous pipeline execution eliminates race conditions & unhandled tensor disposal
   warmup: 'none' as const, // Prevents mobile/browser WebGL shader compilation hangs
   cacheSensitivity: 0.7,
   filter: {
-    enabled: true,
-    equalization: true, // Auto-balance harsh lighting / shadows
+    enabled: false,
+    equalization: false,
   },
   face: {
     enabled: true,
     detector: {
-      rotation: true,
+      rotation: false,
       return: true,
       cropFactor: 1.6,
-      minConfidence: 0.5,
+      minConfidence: 0.35,
       maxDetected: 20, // Support multi-face recognition for Kiosk Mode
     },
     mesh: { enabled: false },
@@ -73,6 +74,7 @@ export async function loadInsightFaceWithProgress(
 
       onProgress?.(45, 'Configuring Neural Hardware Pipeline...');
       const human = new Human(INSIGHTFACE_CONFIG);
+      await human.init();
 
       onProgress?.(70, 'Loading Biometric Neural Graph...');
       await human.load();

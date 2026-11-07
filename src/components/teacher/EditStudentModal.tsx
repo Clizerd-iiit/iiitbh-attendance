@@ -66,19 +66,28 @@ export function EditStudentModal({ student, onClose, onSaved }: { student: any, 
   
   const captureAngle = async () => {
     if (!videoRef.current || !humanRef.current) return;
-    setFaceMsg('Scanning Face ID...');
+    if (videoRef.current.readyState < 2 || videoRef.current.videoWidth === 0) {
+      alert("Camera stream is initializing. Please wait a moment.");
+      return;
+    }
+    setFaceMsg('Scanning Face Geometry...');
     try {
-      const res = await humanRef.current.detect(videoRef.current);
+      const detectPromise = humanRef.current.detect(videoRef.current);
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Scanning timed out. Please hold steady in good lighting.')), 8000)
+      );
+      const res = await Promise.race([detectPromise, timeoutPromise]) as any;
       if (!res.face || res.face.length === 0 || !res.face[0]?.embedding) {
-        setFaceMsg(''); alert('No face detected! Please ensure good lighting and face camera.'); return;
+        alert('No face detected! Please ensure good lighting and face camera.');
+        return;
       }
       const embedding = Array.from(res.face[0].embedding as number[] | Float32Array);
       setDescriptors(prev => [...prev, embedding]);
       setStep(s => s + 1);
+    } catch (e: any) {
+      alert(e?.message || 'Error during face detection');
+    } finally {
       setFaceMsg('');
-    } catch (e) {
-      setFaceMsg('');
-      alert('Error during face detection');
     }
   };
   
@@ -182,7 +191,7 @@ export function EditStudentModal({ student, onClose, onSaved }: { student: any, 
               
               <div className="relative w-full max-w-sm mx-auto aspect-square bg-gray-200 rounded-2xl overflow-hidden mb-4 flex items-center justify-center border-4 border-blue-100">
                 {faceMsg && <div className="absolute inset-0 bg-black/80 backdrop-blur-sm text-white flex items-center justify-center p-4 z-10 font-bold">{faceMsg}</div>}
-                <video ref={videoRef} className="w-full h-full object-cover transform scale-x-[-1]" muted playsInline />
+                <video ref={videoRef} autoPlay className="w-full h-full object-cover transform scale-x-[-1]" muted playsInline />
                 
                 {/* 3D Target Overlay Guide */}
                 <div className="absolute inset-0 z-0 pointer-events-none flex items-center justify-center">
