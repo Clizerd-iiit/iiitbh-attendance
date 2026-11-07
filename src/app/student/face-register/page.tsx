@@ -14,7 +14,7 @@ const ANGLES = [
 export default function FaceRegisterPage() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const humanRef = useRef<any>(null);
-  const [loading, setLoading] = useState('Initializing InsightFace...');
+  const [loading, setLoading] = useState('Initializing AI Biometric Engine...');
   const [modelProgress, setModelProgress] = useState(0);
   const [stream, setStream] = useState<MediaStream | null>(null);
   
@@ -39,7 +39,7 @@ export default function FaceRegisterPage() {
           startVideo();
         }
       } catch (e) {
-        if (!isCancelled) setLoading('Error loading InsightFace AI models. Please refresh.');
+        if (!isCancelled) setLoading('Error loading AI biometric models. Please refresh.');
       }
     };
 
@@ -67,7 +67,7 @@ export default function FaceRegisterPage() {
 
   const captureAngle = async () => {
     if (!videoRef.current || !humanRef.current) return;
-    setLoading('Scanning with InsightFace...');
+    setLoading('Scanning Face Geometry...');
     
     try {
       const res = await humanRef.current.detect(videoRef.current);
@@ -98,7 +98,7 @@ export default function FaceRegisterPage() {
     });
     setSaving(false);
     if (res.ok) {
-      alert("✅ InsightFace Multi-Angle Face ID Registered Successfully!");
+      alert("✅ Multi-Angle Face ID Registered Successfully!");
       window.location.href = '/student/dashboard';
     } else {
       const d = await res.json();

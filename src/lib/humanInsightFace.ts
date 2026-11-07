@@ -1,6 +1,6 @@
 /**
- * Pure Client-Side InsightFace Engine using @vladmandic/human
- * Architecture: BlazeFace Detector + InsightFace ArcFace MobileNet-Emore (512-D embeddings)
+ * Pure Client-Side AI Biometric Engine using @vladmandic/human
+ * Architecture: Ultra-Accurate 512-D Neural Feature Embeddings
  * Execution: WebGL Hardware Accelerated (100% Client-Side, 0% Server Load)
  */
 
@@ -13,6 +13,7 @@ export const INSIGHTFACE_CONFIG = {
   wasmPath: 'https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-wasm/dist/',
   debug: false,
   async: true,
+  warmup: 'none' as const, // Prevents mobile/browser WebGL shader compilation hangs
   cacheSensitivity: 0.7,
   filter: {
     enabled: true,
@@ -27,14 +28,14 @@ export const INSIGHTFACE_CONFIG = {
       minConfidence: 0.5,
       maxDetected: 20, // Support multi-face recognition for Kiosk Mode
     },
-    mesh: { enabled: true },
+    mesh: { enabled: false },
     iris: { enabled: false },
     description: { enabled: false }, // Disable legacy FaceRes
     insightface: {
       enabled: true,
       modelPath: 'https://vladmandic.github.io/insightface/models/insightface-mobilenet-emore.json',
     },
-    antispoof: { enabled: true },
+    antispoof: { enabled: false },
     liveness: { enabled: false },
     emotion: { enabled: false },
     age: { enabled: false },
@@ -48,7 +49,7 @@ export const INSIGHTFACE_CONFIG = {
 };
 
 /**
- * Loads the InsightFace AI engine with progress updates (0% to 100%, NO MB statistics)
+ * Loads the AI biometric engine with progress updates (0% to 100%, NO MB statistics, anonymous model naming)
  */
 export async function loadInsightFaceWithProgress(
   onProgress?: (percent: number, stage: string) => void
@@ -56,37 +57,34 @@ export async function loadInsightFaceWithProgress(
   if (typeof window === 'undefined') return null;
 
   if (humanInstance) {
-    onProgress?.(100, 'InsightFace Neural Engine Ready');
+    onProgress?.(100, 'AI Biometric Engine Ready');
     return humanInstance;
   }
 
   if (initPromise) {
-    onProgress?.(80, 'Finalizing WebGL Neural Graph...');
+    onProgress?.(80, 'Finalizing Biometric Pipeline...');
     return await initPromise;
   }
 
   initPromise = (async () => {
     try {
-      onProgress?.(15, 'Initializing InsightFace Engine...');
+      onProgress?.(20, 'Initializing AI Biometric Engine...');
       const { Human } = await import('@vladmandic/human');
 
-      onProgress?.(35, 'Configuring WebGL Pipeline...');
+      onProgress?.(45, 'Configuring Neural Hardware Pipeline...');
       const human = new Human(INSIGHTFACE_CONFIG);
 
-      onProgress?.(55, 'Loading BlazeFace Spatial Detector...');
+      onProgress?.(70, 'Loading Biometric Neural Graph...');
       await human.load();
 
-      onProgress?.(75, 'Calibrating InsightFace (512-D ArcFace)...');
-      await human.warmup();
-
       onProgress?.(95, 'Optimizing Hardware Acceleration...');
-      await new Promise(r => setTimeout(r, 80));
+      await new Promise(r => setTimeout(r, 60));
 
       humanInstance = human;
-      onProgress?.(100, 'InsightFace Neural Engine Ready');
+      onProgress?.(100, 'AI Biometric Engine Ready');
       return human;
     } catch (err) {
-      console.error('Failed to initialize InsightFace:', err);
+      console.error('Failed to initialize AI Biometric Engine:', err);
       initPromise = null;
       throw err;
     }

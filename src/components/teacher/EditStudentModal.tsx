@@ -43,7 +43,7 @@ export function EditStudentModal({ student, onClose, onSaved }: { student: any, 
   
   const startCamera = async () => {
     try {
-      setFaceMsg('Loading InsightFace AI...');
+      setFaceMsg('Loading AI Biometric Engine...');
       const human = await loadInsightFaceWithProgress((pct, stage) => {
         setFaceMsg(`${stage} (${pct}%)`);
       });
@@ -66,7 +66,7 @@ export function EditStudentModal({ student, onClose, onSaved }: { student: any, 
   
   const captureAngle = async () => {
     if (!videoRef.current || !humanRef.current) return;
-    setFaceMsg('Scanning with InsightFace...');
+    setFaceMsg('Scanning Face ID...');
     try {
       const res = await humanRef.current.detect(videoRef.current);
       if (!res.face || res.face.length === 0 || !res.face[0]?.embedding) {

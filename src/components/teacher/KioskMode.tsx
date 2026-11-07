@@ -38,7 +38,7 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [status, setStatus] = useState<'loading_models'|'loading_faces'|'starting_camera'|'active'|'error'>('loading_models');
   const [modelLoadProgress, setModelLoadProgress] = useState(0);
-  const [modelLoadStage, setModelLoadStage] = useState('Initializing InsightFace Neural Engine...');
+  const [modelLoadStage, setModelLoadStage] = useState('Initializing Biometric Attendance Engine...');
   const [msg, setMsg] = useState('');
   const [recentMatches, setRecentMatches] = useState<{id: string, name: string, time: number}[]>([]);
   const [fps, setFps] = useState(0);
@@ -87,7 +87,7 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
 
         if (enrolledStudents.length === 0) {
           setStatus('error');
-          setMsg('No students have registered their InsightFace ID yet! Ask students to set up Face ID.');
+          setMsg('No students have registered their Face ID yet! Ask students to set up Face ID.');
           return;
         }
 
@@ -214,7 +214,7 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
       } catch (e: any) {
         console.error(e);
         setStatus('error');
-        setMsg(e.message || 'Failed to start InsightFace Engine');
+        setMsg(e.message || 'Failed to start Biometric Engine');
       }
     };
 
@@ -231,7 +231,7 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
       <div className="p-4 bg-gray-950 flex justify-between items-center border-b border-gray-800">
         <h2 className="text-white font-bold text-xl flex items-center gap-3">
           <span className="w-3 h-3 bg-red-500 rounded-full animate-pulse"/>
-          InsightFace Biometric Kiosk (ArcFace 512-D)
+          Biometric Attendance Kiosk (512-D HD)
         </h2>
         <div className="flex items-center gap-4">
            <div className="text-green-400 font-bold bg-gray-900 px-3 py-1 rounded border border-green-900">
@@ -286,17 +286,17 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
            <video ref={videoRef} autoPlay muted playsInline className="absolute w-full h-full object-cover" />
            <canvas ref={canvasRef} className="absolute w-full h-full object-cover pointer-events-none" />
            
-           {/* InsightFace HUD Overlay */}
+           {/* Biometric HUD Overlay */}
            {status === 'active' && (
              <div className="absolute top-4 left-4 text-green-400 text-xs md:text-sm font-bold opacity-80 pointer-events-none">
-                <p>MODEL: InsightFace (ArcFace 512-D MobileNet)</p>
+                <p>ENGINE: Neural Biometric AI (512-D HD)</p>
                 <p>TARGET: High-Precision Attendance Recognition</p>
                 <p>DEVICE: WebGL Hardware Accelerated</p>
              </div>
            )}
         </div>
         
-        {/* Realtime Toast Popups (InsightFace Style) */}
+        {/* Realtime Toast Popups */}
         <div className="absolute right-6 top-20 bottom-6 w-72 md:w-80 overflow-hidden flex flex-col items-end gap-3 pointer-events-none p-2">
           {recentMatches.map((match) => (
             <div key={match.id} className="bg-gray-900 text-green-400 px-4 py-3 rounded font-bold text-lg shadow-lg flex items-center justify-between w-full border border-green-500">
