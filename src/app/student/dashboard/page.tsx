@@ -5,7 +5,7 @@ import { Navbar } from '@/components/shared/Navbar';
 import { WelcomeCard } from '@/components/shared/WelcomeCard';
 import { QrScanner } from '@/components/student/QrScanner';
 import { StudentAttendanceSummary } from '@/types';
-import { loadInsightFaceWithProgress, matchInsightDescriptor } from '@/lib/humanInsightFace';
+import { loadFaceEngine, detectFaceEmbedding, matchFaceDescriptor } from '@/lib/faceEngine';
 import { MapPin, Laptop, Smartphone, RefreshCw, X, AlertTriangle, HelpCircle } from 'lucide-react';
 import { OnboardingTour } from '@/components/shared/OnboardingTour';
 
@@ -378,7 +378,7 @@ export default function StudentDashboard() {
 
       let stream: MediaStream | null = null;
       try {
-        const human = await loadInsightFaceWithProgress((percent, stage) => {
+        await loadFaceEngine((percent, stage) => {
           setModelLoadProgress(percent);
           setModelLoadStage(stage);
         });
@@ -393,46 +393,45 @@ export default function StudentDashboard() {
           if (playPromise !== undefined) playPromise.catch(() => {});
         }
 
+        // Wait for video to start playing
+        await new Promise(r => setTimeout(r, 600));
+
         const studentName = session?.user?.name || 'Student';
         const startTime = Date.now();
         let matched = false;
         let consecutiveMatches = 0;
 
-        // Realtime detection loop: scans face with InsightFace, draws square frame & name badge
-        while (Date.now() - startTime < 15000 && !matched) {
+        // Realtime detection loop
+        while (Date.now() - startTime < 18000 && !matched) {
           if (!videoRef.current || !canvasRef.current) break;
 
           const video = videoRef.current;
           const canvas = canvasRef.current;
 
           if (video.readyState >= 2) {
-            const displaySize = {
-              width: video.videoWidth || 320,
-              height: video.videoHeight || 320
-            };
-            if (canvas.width !== displaySize.width || canvas.height !== displaySize.height) {
-              canvas.width = displaySize.width;
-              canvas.height = displaySize.height;
+            if (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight) {
+              canvas.width  = video.videoWidth  || 320;
+              canvas.height = video.videoHeight || 320;
             }
 
-            const res = await human.detect(video);
+            const embedding = await detectFaceEmbedding(video);
             const ctx = canvas.getContext('2d');
             if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            if (res.face && res.face.length > 0 && res.face[0]?.embedding) {
-              const detectedFace = res.face[0];
-              const [bx, by, bw, bh] = detectedFace.box;
-              const box = { x: bx, y: by, width: bw, height: bh };
-
-              const { isMatch, confidence } = matchInsightDescriptor(
-                detectedFace.embedding,
+            if (embedding) {
+              const { isMatch, confidence } = matchFaceDescriptor(
+                embedding,
                 faceDescriptor,
-                0.58
+                0.52
               );
+
+              // Approximate box from video center for canvas drawing
+              const cx = canvas.width / 2, cy = canvas.height / 2;
+              const size = Math.min(canvas.width, canvas.height) * 0.55;
+              const box = { x: cx - size / 2, y: cy - size / 2, width: size, height: size };
 
               if (isMatch) {
                 consecutiveMatches++;
-                // Anti-Spoof Liveness: require 2 consecutive live frames (~240ms)
                 if (consecutiveMatches >= 2) {
                   if (ctx) drawSquareFaceBox(ctx, box, `${studentName} (${confidence}%)`, 'verified');
                   matched = true;
@@ -448,7 +447,7 @@ export default function StudentDashboard() {
               }
             }
           }
-          await new Promise(r => setTimeout(r, 120));
+          await new Promise(r => setTimeout(r, 200));
         }
 
         if (stream) stream.getTracks().forEach(t => t.stop());

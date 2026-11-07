@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from 'react';
-import { loadInsightFaceWithProgress, matchInsightDescriptor } from '@/lib/humanInsightFace';
+import { loadFaceEngine, detectFaceEmbedding, matchFaceDescriptor } from '@/lib/faceEngine';
 
 interface KioskModeProps {
   subjectId: string;
@@ -56,7 +56,7 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
     const init = async () => {
       try {
         setStatus('loading_models');
-        const human = await loadInsightFaceWithProgress((percent, stage) => {
+        await loadFaceEngine((percent, stage) => {
           setModelLoadProgress(percent);
           setModelLoadStage(stage);
         });
@@ -120,7 +120,7 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
           if (!isRunning || !videoRef.current || !canvasRef.current) return;
           
           const now = Date.now();
-          if (!isDetecting && now - lastDetectTime >= 120 && videoRef.current.readyState >= 2) {
+          if (!isDetecting && now - lastDetectTime >= 250 && videoRef.current.readyState >= 2) {
             isDetecting = true;
             lastDetectTime = now;
             try {
@@ -129,56 +129,56 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
                 canvasRef.current.height = videoRef.current.videoHeight;
               }
 
-              const result = await human.detect(videoRef.current);
-              setFacesCount(result.face ? result.face.length : 0);
-              
+              const embedding = await detectFaceEmbedding(videoRef.current);
+              setFacesCount(embedding ? 1 : 0);
+
               const ctx = canvasRef.current.getContext('2d');
               if (ctx) ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
 
-              if (result.face && result.face.length > 0) {
+              if (embedding) {
                 const newlyMarkedNames: string[] = [];
                 const markPromises: Promise<void>[] = [];
 
-                result.face.forEach((det: any) => {
-                  if (!det.box) return;
-                  const [bx, by, bw, bh] = det.box;
-                  if (bw < 60 || bh < 60) return;
-                  const box = { x: bx, y: by, width: bw, height: bh };
+                // Find best matching enrolled student
+                let bestMatch: any = null;
+                let highestConf = 0;
 
-                  let bestMatch: any = null;
-                  let highestConf = 0;
-
-                  if (det.embedding) {
-                    for (const s of enrolledStudents) {
-                      const match = matchInsightDescriptor(det.embedding, s.descriptor, 0.58);
-                      if (match.isMatch && match.confidence > highestConf) {
-                        highestConf = match.confidence;
-                        bestMatch = s;
-                      }
-                    }
+                for (const s of enrolledStudents) {
+                  const match = matchFaceDescriptor(embedding, s.descriptor, 0.52);
+                  if (match.isMatch && match.confidence > highestConf) {
+                    highestConf = match.confidence;
+                    bestMatch = s;
                   }
+                }
 
-                  let labelText = 'Unrecognized Face';
-                  let boxColor = '#ef4444'; // Red for unknown
+                // Draw box in center of frame
+                const cw = canvasRef.current.width, ch = canvasRef.current.height;
+                const size = Math.min(cw, ch) * 0.52;
+                const box = { x: cw / 2 - size / 2, y: ch / 2 - size / 2, width: size, height: size };
 
-                  if (bestMatch && highestConf >= 58) {
-                    const studentName = bestMatch.name || 'Student';
-                    const rollNo = bestMatch.roll_no ? ` (${bestMatch.roll_no})` : '';
+                let labelText = 'Scanning…';
+                let boxColor = '#3b82f6';
 
-                    labelText = `${studentName} ${highestConf}%`;
-                    boxColor = '#22c55e'; // Green for recognized
+                if (bestMatch && highestConf >= 50) {
+                  const studentName = bestMatch.name || 'Student';
+                  const rollNo = bestMatch.roll_no ? ` (${bestMatch.roll_no})` : '';
 
-                    if (markedRef.current[bestMatch.id] !== 'P') {
-                      markedRef.current[bestMatch.id] = 'P';
-                      markPromises.push(onMark(bestMatch.id));
-                      newlyMarkedNames.push(`${studentName}${rollNo}`);
-                    }
+                  labelText = `${studentName} ${highestConf}%`;
+                  boxColor = '#22c55e';
+
+                  if (markedRef.current[bestMatch.id] !== 'P') {
+                    markedRef.current[bestMatch.id] = 'P';
+                    markPromises.push(onMark(bestMatch.id));
+                    newlyMarkedNames.push(`${studentName}${rollNo}`);
                   }
+                } else if (embedding) {
+                  labelText = 'Unknown Face';
+                  boxColor = '#ef4444';
+                }
 
-                  if (canvasRef.current && ctx) {
-                    drawInsightBox(ctx, box, labelText, boxColor);
-                  }
-                });
+                if (canvasRef.current && ctx) {
+                  drawInsightBox(ctx, box, labelText, boxColor);
+                }
 
                 if (markPromises.length > 0) await Promise.all(markPromises);
 
@@ -192,7 +192,7 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
                 }
               }
             } catch (err) {
-              console.error("InsightFace matching error:", err);
+              console.error("Face matching error:", err);
             } finally {
               isDetecting = false;
             }

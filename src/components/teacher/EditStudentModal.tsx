@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { loadInsightFaceWithProgress } from '@/lib/humanInsightFace';
+import { loadFaceEngine, detectFaceEmbedding } from '@/lib/faceEngine';
 
 const ANGLES = [
   { id: 'center', label: 'Look Straight', emoji: '😐' },
@@ -25,7 +25,6 @@ export function EditStudentModal({ student, onClose, onSaved }: { student: any, 
   
   const [step, setStep] = useState(0);
   const [descriptors, setDescriptors] = useState<number[][]>([]);
-  const humanRef = useRef<any>(null);
 
   const saveDetails = async () => {
     setSaving(true);
@@ -44,45 +43,46 @@ export function EditStudentModal({ student, onClose, onSaved }: { student: any, 
   const startCamera = async () => {
     try {
       setFaceMsg('Loading AI Biometric Engine...');
-      const human = await loadInsightFaceWithProgress((pct, stage) => {
+      await loadFaceEngine((pct, stage) => {
         setFaceMsg(`${stage} (${pct}%)`);
       });
-      humanRef.current = human;
       setFaceMsg('Starting Camera...');
       const s = await navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 640 }, height: { ideal: 640 }, facingMode: 'user' } });
       setStream(s);
       if (videoRef.current) {
         videoRef.current.srcObject = s;
+        videoRef.current.onloadeddata = () => setFaceMsg('');
         const playPromise = videoRef.current.play();
         if (playPromise !== undefined) {
           playPromise.catch(() => {});
         }
       }
-      setFaceMsg('');
+      setTimeout(() => setFaceMsg(''), 2000); // fallback
     } catch (e) {
       setFaceMsg('Error starting camera');
     }
   };
   
   const captureAngle = async () => {
-    if (!videoRef.current || !humanRef.current) return;
+    if (!videoRef.current) return;
     if (videoRef.current.readyState < 2 || videoRef.current.videoWidth === 0) {
       alert("Camera stream is initializing. Please wait a moment.");
       return;
     }
     setFaceMsg('Scanning Face Geometry...');
     try {
-      const detectPromise = humanRef.current.detect(videoRef.current);
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Scanning timed out. Please hold steady in good lighting.')), 8000)
-      );
-      const res = await Promise.race([detectPromise, timeoutPromise]) as any;
-      if (!res.face || res.face.length === 0 || !res.face[0]?.embedding) {
-        alert('No face detected! Please ensure good lighting and face camera.');
+      let embedding: Float32Array | null = null;
+      let attempts = 0;
+      while (!embedding && attempts < 6) {
+        attempts++;
+        embedding = await detectFaceEmbedding(videoRef.current);
+        if (!embedding) await new Promise(r => setTimeout(r, 400));
+      }
+      if (!embedding) {
+        alert('No face detected! Please ensure good lighting and face camera directly.');
         return;
       }
-      const embedding = Array.from(res.face[0].embedding as number[] | Float32Array);
-      setDescriptors(prev => [...prev, embedding]);
+      setDescriptors(prev => [...prev, Array.from(embedding!)]);
       setStep(s => s + 1);
     } catch (e: any) {
       alert(e?.message || 'Error during face detection');
