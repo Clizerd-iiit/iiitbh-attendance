@@ -44,6 +44,15 @@ function AttendancePage() {
   const [mainGroup, setMainGroup] = useState('');
   const [groupFilter, setGroupFilter] = useState('');
 
+  // Track if teacher actively selected or changed any filter
+  const [filtersChanged, setFiltersChanged] = useState(false);
+  const [showConfirmFilterModal, setShowConfirmFilterModal] = useState(false);
+  const [pendingMethod, setPendingMethod] = useState<Method>('kiosk');
+  const [modalSubjectId, setModalSubjectId] = useState('');
+  const [modalBranchFilter, setModalBranchFilter] = useState('');
+  const [modalMainGroup, setModalMainGroup] = useState('');
+  const [modalGroupFilter, setModalGroupFilter] = useState('');
+
   // Configurable security verification checkmarks
   const [otpRequireGeofence, setOtpRequireGeofence] = useState(true);
   const [otpRequireFace, setOtpRequireFace] = useState(true);
@@ -125,6 +134,16 @@ function AttendancePage() {
             if (active) {
               setActiveClass(active);
               if (active.subject_id) setSubjectId(active.subject_id);
+              if (active.target_branch) {
+                setBranchFilter(active.target_branch);
+                setFiltersChanged(true);
+              }
+              if (active.target_group) {
+                setGroupFilter(active.target_group);
+                if (active.target_group.startsWith('G1')) setMainGroup('G1');
+                else if (active.target_group.startsWith('G2')) setMainGroup('G2');
+                setFiltersChanged(true);
+              }
               if (active.method) setMethod(active.method);
               if (active.method === 'kiosk') setShowKiosk(true);
               const createdAt = active.created_at ? new Date(active.created_at).getTime() : Date.now();
@@ -297,8 +316,17 @@ function AttendancePage() {
     return () => clearInterval(timer);
   }, [activeClass, method, otpRefreshInterval]);
 
-  const startClass = useCallback(async (selectedMethod: Method) => {
-    if (!subjectId) return alert('Please select a subject first.');
+  const startClass = useCallback(async (
+    selectedMethod: Method,
+    overrideSubjectId?: string,
+    overrideBranch?: string,
+    overrideGroup?: string
+  ) => {
+    const activeSubj = overrideSubjectId || subjectId;
+    const activeBranch = overrideBranch !== undefined ? overrideBranch : branchFilter;
+    const activeGroup = overrideGroup !== undefined ? overrideGroup : groupFilter;
+
+    if (!activeSubj) return alert('Please select a subject first.');
     setLoading(true);
     setMethod(selectedMethod);
 
@@ -312,7 +340,7 @@ function AttendancePage() {
           navigator.geolocation.getCurrentPosition(res, rej, { 
             enableHighAccuracy: true, 
             timeout: 10000, 
-            maximumAge: 30000 
+            maximumAge: 15000 
           })
         );
         latitude = pos.coords.latitude;
@@ -326,7 +354,7 @@ function AttendancePage() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        subjectId,
+        subjectId: activeSubj,
         method: selectedMethod,
         latitude,
         longitude,
@@ -334,7 +362,9 @@ function AttendancePage() {
         requireGeofence,
         requireFace,
         qrInterval: qrRefreshInterval,
-        otpInterval: otpRefreshInterval
+        otpInterval: otpRefreshInterval,
+        targetBranch: activeBranch || null,
+        targetGroup: activeGroup || null,
       }),
     });
     const data = await res.json();
@@ -352,7 +382,41 @@ function AttendancePage() {
     if (selectedMethod === 'kiosk') {
       setShowKiosk(true);
     }
-  }, [subjectId, radius, qrRefreshInterval, otpRefreshInterval, otpRequireGeofence, otpRequireFace, qrRequireGeofence, qrRequireFace]);
+  }, [subjectId, branchFilter, groupFilter, radius, qrRefreshInterval, otpRefreshInterval, otpRequireGeofence, otpRequireFace, qrRequireGeofence, qrRequireFace]);
+
+  const handleInitiateStart = (selectedMethod: Method) => {
+    const currentSubj = subjectId || (subjects[0]?.id || '');
+    if (!currentSubj) {
+      alert('Please select a subject first.');
+      return;
+    }
+
+    // If teacher already actively changed/selected any filter:
+    // start class immediately without asking again!
+    if (filtersChanged) {
+      startClass(selectedMethod);
+      return;
+    }
+
+    // Teacher clicked start with default unchanged filters:
+    // Ask to confirm Subject, Branch, Group (if CSE)
+    setPendingMethod(selectedMethod);
+    setModalSubjectId(currentSubj);
+    setModalBranchFilter(branchFilter || '');
+    setModalMainGroup(mainGroup || '');
+    setModalGroupFilter(groupFilter || '');
+    setShowConfirmFilterModal(true);
+  };
+
+  const handleConfirmModalStart = () => {
+    setSubjectId(modalSubjectId);
+    setBranchFilter(modalBranchFilter);
+    setMainGroup(modalMainGroup);
+    setGroupFilter(modalGroupFilter);
+    setFiltersChanged(true);
+    setShowConfirmFilterModal(false);
+    startClass(pendingMethod, modalSubjectId, modalBranchFilter, modalGroupFilter);
+  };
 
 
   const handleDeleteClass = async (classId: string) => {
@@ -528,7 +592,7 @@ function AttendancePage() {
                     <span>Delegate to CR</span>
                   </button>
                 </div>
-                <select value={subjectId} onChange={e => setSubjectId(e.target.value)}
+                <select value={subjectId} onChange={e => { setSubjectId(e.target.value); setFiltersChanged(true); }}
                   className="w-full border border-gray-300 rounded-xl px-4 py-3 bg-white text-gray-900 font-bold text-base md:text-lg focus:outline-none focus:border-blue-500 shadow-sm">
                   <option value="" disabled>-- Select a Subject --</option>
                   {subjects.map(s => <option key={s.id} value={s.id} className="text-gray-900 font-semibold">{s.code} - {s.name} {s.branch ? `(${s.branch} ${s.section||""})` : ""}</option>)}
@@ -541,6 +605,7 @@ function AttendancePage() {
                   <select value={branchFilter} onChange={e => {
                     const b = e.target.value;
                     setBranchFilter(b);
+                    setFiltersChanged(true);
                     if (b !== 'CSE') {
                       setMainGroup('');
                       setGroupFilter('');
@@ -564,6 +629,7 @@ function AttendancePage() {
                         const mg = e.target.value;
                         setMainGroup(mg);
                         setGroupFilter(mg);
+                        setFiltersChanged(true);
                       }}
                         className="w-full border border-gray-300 rounded-xl px-3 py-2.5 bg-white text-gray-900 font-semibold focus:outline-none focus:border-blue-500 text-sm shadow-sm">
                         <option value="">All Groups</option>
@@ -572,7 +638,7 @@ function AttendancePage() {
                       </select>
 
                       {mainGroup === 'G1' && (
-                        <select value={groupFilter} onChange={e => setGroupFilter(e.target.value)}
+                        <select value={groupFilter} onChange={e => { setGroupFilter(e.target.value); setFiltersChanged(true); }}
                           className="w-full border border-blue-300 bg-blue-50/50 text-blue-900 rounded-xl px-3 py-2 font-bold text-xs focus:outline-none focus:border-blue-500 shadow-sm animate-fadeIn">
                           <option value="G1">All G1 (Both G1A & G1B)</option>
                           <option value="G1A">↳ Sub-Group G1A</option>
@@ -581,7 +647,7 @@ function AttendancePage() {
                       )}
 
                       {mainGroup === 'G2' && (
-                        <select value={groupFilter} onChange={e => setGroupFilter(e.target.value)}
+                        <select value={groupFilter} onChange={e => { setGroupFilter(e.target.value); setFiltersChanged(true); }}
                           className="w-full border border-purple-300 bg-purple-50/50 text-purple-900 rounded-xl px-3 py-2 font-bold text-xs focus:outline-none focus:border-purple-500 shadow-sm animate-fadeIn">
                           <option value="G2">All G2 (Both G2A & G2B)</option>
                           <option value="G2A">↳ Sub-Group G2A</option>
@@ -598,7 +664,7 @@ function AttendancePage() {
 
             <div className="grid md:grid-cols-2 gap-4">
               {/* Method 1: Kiosk */}
-              <button onClick={() => startClass('kiosk')} disabled={!subjectId || loading}
+              <button onClick={() => handleInitiateStart('kiosk')} disabled={!subjectId || loading}
                 className="text-left bg-white p-6 rounded-2xl border-2 border-transparent hover:border-blue-400 hover:shadow-md transition group disabled:opacity-70">
                 <div className="text-4xl mb-4">📸</div>
                 <h3 className="text-xl font-bold text-gray-900 mb-2">Start Live AI Detection Attendance</h3>
@@ -673,7 +739,7 @@ function AttendancePage() {
                       </div>
                     </div>
                   )}
-                  <button onClick={() => startClass('otp')} disabled={!subjectId || loading}
+                  <button onClick={() => handleInitiateStart('otp')} disabled={!subjectId || loading}
                     className="w-full bg-green-600 text-white py-3 rounded-xl font-bold hover:bg-green-700 disabled:opacity-70 transition shadow-sm">
                     Start with OTP
                   </button>
@@ -748,7 +814,7 @@ function AttendancePage() {
                       </div>
                     </div>
                   )}
-                  <button onClick={() => startClass('qr')} disabled={!subjectId || loading}
+                  <button onClick={() => handleInitiateStart('qr')} disabled={!subjectId || loading}
                     className="w-full bg-purple-600 text-white py-3 rounded-xl font-bold hover:bg-purple-700 disabled:opacity-70 transition shadow-sm">
                     Start with QR
                   </button>
@@ -879,6 +945,8 @@ function AttendancePage() {
                 </div>
                 <p className="text-sm text-gray-700 capitalize mt-0.5">
                   {method === 'kiosk' ? 'Live Kiosk Mode' : method === 'otp' ? 'OTP Mode' : 'QR Scanner Mode'}
+                  {branchFilter ? ` • ${branchFilter}` : ' • All Branches'}
+                  {groupFilter ? ` (${groupFilter})` : ''}
                 </p>
               </div>
               <div className="flex items-center gap-2 flex-wrap">
@@ -990,14 +1058,21 @@ function AttendancePage() {
             {/* Live Student List */}
             <div className="bg-white rounded-2xl shadow-sm p-6 border">
               <div className="flex justify-between items-center mb-6">
-                <h2 className="font-bold text-xl text-gray-800">Live Feed ({students.length})</h2>
+                <h2 className="font-bold text-xl text-gray-800 flex items-center gap-2 flex-wrap">
+                  <span>Live Feed ({filteredStudents.length})</span>
+                  {(branchFilter || groupFilter) && (
+                    <span className="text-xs font-bold text-blue-700 bg-blue-50 border border-blue-200 px-2.5 py-0.5 rounded-full">
+                      Target: {branchFilter || 'All'} {groupFilter ? `(${groupFilter})` : ''}
+                    </span>
+                  )}
+                </h2>
                 <span className="px-4 py-1.5 bg-blue-100 text-blue-800 rounded-full font-bold text-sm">
-                  {Object.keys(marked).length} marked
+                  {filteredStudents.filter(s => marked[s.id]).length} / {filteredStudents.length} marked
                 </span>
               </div>
               
               <div className="grid md:grid-cols-2 gap-3 max-h-[60vh] overflow-y-auto pr-2">
-                {[...students].sort((a,b) => (marked[a.id] ? 1 : 0) - (marked[b.id] ? 1 : 0)).map(student => (
+                {[...filteredStudents].sort((a,b) => (marked[a.id] ? 1 : 0) - (marked[b.id] ? 1 : 0)).map(student => (
                   <div key={student.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100 transition hover:shadow-sm">
                     <div>
                       <p className="font-bold text-gray-900">{student.name}</p>
@@ -1034,7 +1109,7 @@ function AttendancePage() {
           onClose={() => setShowKiosk(false)}
           onMark={async (id) => { await markKiosk(id, 'P'); }}
           markedMap={marked}
-          students={students}
+          students={filteredStudents}
         />
       )}
 
@@ -1078,6 +1153,157 @@ function AttendancePage() {
               <span className={`font-mono text-3xl md:text-5xl font-bold ${fullScreenMode === 'qr' ? (qrExpiry <= 10 ? 'text-red-500' : 'text-gray-800') : (otpExpiry <= 10 ? 'text-red-500' : 'text-gray-800')}`}>
                 Refreshes in {fullScreenMode === 'qr' ? qrExpiry : otpExpiry}s
               </span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* CONFIRMATION MODAL FOR DEFAULT / UNTOUCHED FILTERS */}
+      {showConfirmFilterModal && (
+        <div className="fixed inset-0 z-[999999] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-fadeIn">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 md:p-8 shadow-2xl border border-gray-100 flex flex-col gap-5">
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-3">
+                <span className="text-3xl p-2.5 bg-blue-50 rounded-2xl border border-blue-100">📋</span>
+                <div>
+                  <h3 className="text-xl font-black text-gray-900">Confirm Class Details</h3>
+                  <p className="text-xs text-gray-500 font-medium mt-0.5">
+                    Aapne default filters use kiye hain. Kripya subject, branch aur group verify karein:
+                  </p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setShowConfirmFilterModal(false)}
+                className="text-gray-400 hover:text-gray-600 text-2xl font-bold leading-none p-1 cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-4 bg-gray-50/80 p-4 rounded-2xl border border-gray-200/80">
+              {/* Subject */}
+              <div>
+                <label className="block text-xs font-black uppercase tracking-wider text-gray-700 mb-1.5">
+                  1. Subject <span className="text-red-500">*</span>
+                </label>
+                <select 
+                  value={modalSubjectId} 
+                  onChange={e => setModalSubjectId(e.target.value)}
+                  className="w-full border border-gray-300 rounded-xl px-3.5 py-2.5 bg-white text-gray-900 font-bold text-sm focus:outline-none focus:border-blue-500 shadow-sm"
+                >
+                  <option value="" disabled>-- Select Subject --</option>
+                  {subjects.map(s => (
+                    <option key={s.id} value={s.id} className="text-gray-900 font-semibold">
+                      {s.code} - {s.name} {s.branch ? `(${s.branch} ${s.section||""})` : ""}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Branch */}
+              <div>
+                <label className="block text-xs font-black uppercase tracking-wider text-gray-700 mb-1.5">
+                  2. Target Branch
+                </label>
+                <select 
+                  value={modalBranchFilter} 
+                  onChange={e => {
+                    const b = e.target.value;
+                    setModalBranchFilter(b);
+                    if (b !== 'CSE') {
+                      setModalMainGroup('');
+                      setModalGroupFilter('');
+                    }
+                  }}
+                  className="w-full border border-gray-300 rounded-xl px-3.5 py-2.5 bg-white text-gray-900 font-bold text-sm focus:outline-none focus:border-blue-500 shadow-sm"
+                >
+                  <option value="">All Branches</option>
+                  <option value="CSE">CSE</option>
+                  <option value="ECE">ECE</option>
+                  <option value="MNC">MNC</option>
+                  <option value="MAE">MAE</option>
+                </select>
+              </div>
+
+              {/* Group (if CSE) */}
+              <div>
+                <label className="block text-xs font-black uppercase tracking-wider text-gray-700 mb-1.5">
+                  3. Target Group {modalBranchFilter === 'CSE' ? '(CSE Groups & Sub-Groups)' : ''}
+                </label>
+                {modalBranchFilter && modalBranchFilter !== 'CSE' ? (
+                  <div className="w-full border border-dashed border-gray-300 rounded-xl px-3 py-2.5 bg-gray-100/70 text-gray-600 font-medium text-xs flex items-center justify-between">
+                    <span>All Groups (No group division for {modalBranchFilter})</span>
+                    <span className="text-[10px] bg-gray-200 text-gray-800 px-1.5 py-0.5 rounded font-bold">Auto</span>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <select 
+                      value={modalMainGroup} 
+                      onChange={e => {
+                        const mg = e.target.value;
+                        setModalMainGroup(mg);
+                        setModalGroupFilter(mg);
+                      }}
+                      className="w-full border border-gray-300 rounded-xl px-3.5 py-2.5 bg-white text-gray-900 font-bold text-sm focus:outline-none focus:border-blue-500 shadow-sm"
+                    >
+                      <option value="">All Groups</option>
+                      <option value="G1">Group 1 (G1)</option>
+                      <option value="G2">Group 2 (G2)</option>
+                    </select>
+
+                    {modalMainGroup === 'G1' && (
+                      <select 
+                        value={modalGroupFilter} 
+                        onChange={e => setModalGroupFilter(e.target.value)}
+                        className="w-full border border-blue-300 bg-blue-50/50 text-blue-900 rounded-xl px-3 py-2 font-bold text-xs focus:outline-none focus:border-blue-500 shadow-sm animate-fadeIn"
+                      >
+                        <option value="G1">All G1 (Both G1A & G1B)</option>
+                        <option value="G1A">↳ Sub-Group G1A</option>
+                        <option value="G1B">↳ Sub-Group G1B</option>
+                      </select>
+                    )}
+
+                    {modalMainGroup === 'G2' && (
+                      <select 
+                        value={modalGroupFilter} 
+                        onChange={e => setModalGroupFilter(e.target.value)}
+                        className="w-full border border-purple-300 bg-purple-50/50 text-purple-900 rounded-xl px-3 py-2 font-bold text-xs focus:outline-none focus:border-purple-500 shadow-sm animate-fadeIn"
+                      >
+                        <option value="G2">All G2 (Both G2A & G2B)</option>
+                        <option value="G2A">↳ Sub-Group G2A</option>
+                        <option value="G2B">↳ Sub-Group G2B</option>
+                      </select>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Summary preview badge */}
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs text-blue-900 flex items-center justify-between font-semibold">
+              <span>Method: <b className="uppercase">{pendingMethod === 'kiosk' ? 'Live AI Detection' : pendingMethod.toUpperCase()}</b></span>
+              <span className="bg-white px-2.5 py-1 rounded-md border border-blue-200 text-blue-800 font-bold">
+                {modalBranchFilter || 'All Branches'} {modalGroupFilter ? `(${modalGroupFilter})` : ''}
+              </span>
+            </div>
+
+            {/* Action buttons */}
+            <div className="flex gap-3 mt-1">
+              <button
+                type="button"
+                onClick={() => setShowConfirmFilterModal(false)}
+                className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-bold text-sm transition cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmModalStart}
+                disabled={loading || !modalSubjectId}
+                className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-black text-sm shadow-md transition active:scale-95 disabled:opacity-50 cursor-pointer"
+              >
+                Confirm & Start Class 🚀
+              </button>
             </div>
           </div>
         </div>

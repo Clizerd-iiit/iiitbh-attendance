@@ -1,5 +1,6 @@
 import { supabaseAdmin } from './supabase';
 import { backupClassAttendance } from './secondaryBackup';
+import { getClassSettings } from './classSettings';
 
 /**
  * Closes an active class session, marks any unmarked enrolled students as Absent ('A', method: 'auto'),
@@ -29,7 +30,7 @@ export async function closeClassAndMarkAbsent(classId: string, subjectId?: strin
       .update({ status: 'closed', end_time: istTime })
       .eq('id', classId);
 
-    // 2. Mark unmarked enrolled students as Absent
+    // 2. Mark unmarked enrolled students as Absent (filtered by target branch/group if configured)
     const { data: enrolled } = await supabaseAdmin
       .from('enrollments')
       .select('student_id')
@@ -40,11 +41,44 @@ export async function closeClassAndMarkAbsent(classId: string, subjectId?: strin
       .eq('class_id', classId);
     
     const markedIds = new Set(marked?.map((m: any) => m.student_id) || []);
-    const absentStudents = (enrolled || [])
-      .filter((e: any) => !markedIds.has(e.student_id))
-      .map((e: any) => ({
+    let targetStudentIds: string[] = (enrolled || []).map((e: any) => e.student_id);
+
+    const cfg = await getClassSettings(classId);
+    if ((cfg.target_branch || cfg.target_group) && targetStudentIds.length > 0) {
+      const { data: users } = await supabaseAdmin
+        .from('users')
+        .select('id, branch, section, signup_info')
+        .in('id', targetStudentIds);
+
+      if (users && users.length > 0) {
+        const filteredUsers = users.filter((u: any) => {
+          const sBranch = (u.signup_info?.branch || u.branch || '').toUpperCase().trim();
+          const sGroup = (u.signup_info?.group || u.section || '').toUpperCase().trim();
+          const sSubGroup = (u.signup_info?.sub_group || '').toUpperCase().trim();
+          if (cfg.target_branch && sBranch !== cfg.target_branch.toUpperCase().trim()) return false;
+          if (cfg.target_group) {
+            const target = cfg.target_group.toUpperCase().trim();
+            if (target === 'G1') {
+              if (!sGroup.startsWith('G1') && !sSubGroup.startsWith('G1')) return false;
+            } else if (target === 'G2') {
+              if (!sGroup.startsWith('G2') && !sSubGroup.startsWith('G2')) return false;
+            } else if (['G1A', 'G1B', 'G2A', 'G2B'].includes(target)) {
+              if (sSubGroup !== target && sGroup !== target) return false;
+            } else {
+              if (!sGroup.includes(target) && !sSubGroup.includes(target)) return false;
+            }
+          }
+          return true;
+        });
+        targetStudentIds = filteredUsers.map((u: any) => u.id);
+      }
+    }
+
+    const absentStudents = targetStudentIds
+      .filter((sId: string) => !markedIds.has(sId))
+      .map((sId: string) => ({
         class_id: classId,
-        student_id: e.student_id,
+        student_id: sId,
         status: 'A',
         method: 'auto'
       }));

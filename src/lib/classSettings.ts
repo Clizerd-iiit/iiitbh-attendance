@@ -4,6 +4,8 @@ export interface ClassVerificationSettings {
   require_geofence: boolean;
   require_face: boolean;
   method?: 'qr' | 'otp' | 'kiosk' | 'manual';
+  target_branch?: string | null;
+  target_group?: string | null;
 }
 
 export async function getClassSettings(classId: string): Promise<ClassVerificationSettings> {
@@ -20,13 +22,15 @@ export async function getClassSettings(classId: string): Promise<ClassVerificati
         require_geofence: parsed.require_geofence !== false,
         require_face: parsed.require_face !== false,
         method: parsed.method || 'otp',
+        target_branch: parsed.target_branch || null,
+        target_group: parsed.target_group || null,
       };
     }
   } catch (e) {
     console.warn(`Could not load settings for class ${classId}, using defaults`, e);
   }
 
-  return { require_geofence: true, require_face: true, method: 'otp' };
+  return { require_geofence: true, require_face: true, method: 'otp', target_branch: null, target_group: null };
 }
 
 export async function setClassSettings(classId: string, settings: ClassVerificationSettings): Promise<void> {
@@ -37,6 +41,8 @@ export async function setClassSettings(classId: string, settings: ClassVerificat
         require_geofence: !!settings.require_geofence,
         require_face: !!settings.require_face,
         method: settings.method || 'otp',
+        target_branch: settings.target_branch || null,
+        target_group: settings.target_group || null,
       }),
       updated_at: new Date().toISOString(),
     });

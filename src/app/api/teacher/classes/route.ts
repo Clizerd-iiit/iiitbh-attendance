@@ -71,17 +71,23 @@ export async function GET(req: NextRequest) {
     let method = 'otp';
     let require_geofence = true;
     let require_face = true;
+    let target_branch: string | null = null;
+    let target_group: string | null = null;
     if (c.status === 'active') {
       const cfg = await getClassSettings(c.id);
       method = cfg.method || (c.qr_code && !c.otp ? 'qr' : 'otp');
       require_geofence = cfg.require_geofence;
       require_face = cfg.require_face;
+      target_branch = cfg.target_branch || null;
+      target_group = cfg.target_group || null;
     }
     return {
       ...c,
       method,
       require_geofence,
       require_face,
+      target_branch,
+      target_group,
       creator_name: creatorMap[c.created_by]?.name || null,
       creator_role: creatorMap[c.created_by]?.role || null,
       is_cr_conducted: !!c.created_by && c.created_by !== session.user.userId && creatorMap[c.created_by]?.role === 'student',
@@ -107,6 +113,8 @@ export async function POST(req: NextRequest) {
     requireFace = true,
     qrInterval = 60,
     otpInterval = 60,
+    targetBranch = null,
+    targetGroup = null,
   } = body;
 
   if (session.user.role === 'teacher') {
@@ -156,6 +164,8 @@ export async function POST(req: NextRequest) {
     require_geofence: !!requireGeofence,
     require_face: !!requireFace,
     method: method || 'otp',
+    target_branch: targetBranch || null,
+    target_group: targetGroup || null,
   });
 
   return NextResponse.json({ class: { ...newClass, method }, qrCode, otp });

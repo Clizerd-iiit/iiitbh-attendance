@@ -289,6 +289,42 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // Target Branch and Group verification for student self-marking
+  if (!canManageAttendance && (method === 'qr' || method === 'otp')) {
+    const classSettings = await getClassSettings(classId);
+    if (classSettings.target_branch || classSettings.target_group) {
+      const sBranch = (studentUser?.signup_info?.branch || (studentUser as any)?.branch || '').toUpperCase().trim();
+      const sGroup = (studentUser?.signup_info?.group || (studentUser as any)?.section || '').toUpperCase().trim();
+      const sSubGroup = (studentUser?.signup_info?.sub_group || '').toUpperCase().trim();
+
+      if (classSettings.target_branch && sBranch !== classSettings.target_branch.toUpperCase().trim()) {
+        return NextResponse.json({
+          error: `This attendance is exclusively for ${classSettings.target_branch} branch. (Your branch: ${sBranch || 'None'})`,
+        }, { status: 403 });
+      }
+
+      if (classSettings.target_group) {
+        const target = classSettings.target_group.toUpperCase().trim();
+        let matchGroup = false;
+        if (target === 'G1') {
+          matchGroup = sGroup.startsWith('G1') || sSubGroup.startsWith('G1');
+        } else if (target === 'G2') {
+          matchGroup = sGroup.startsWith('G2') || sSubGroup.startsWith('G2');
+        } else if (['G1A', 'G1B', 'G2A', 'G2B'].includes(target)) {
+          matchGroup = sSubGroup === target || sGroup === target;
+        } else {
+          matchGroup = sGroup.includes(target) || sSubGroup.includes(target);
+        }
+
+        if (!matchGroup) {
+          return NextResponse.json({
+            error: `This attendance is exclusively for Group ${classSettings.target_group}. (Your group: ${sGroup || sSubGroup || 'None'})`,
+          }, { status: 403 });
+        }
+      }
+    }
+  }
+
   if (method === 'manual' && session.user.role === 'teacher') {
     const { data: cls } = await supabaseAdmin.from('classes').select('subject_id, date').eq('id', classId).single();
     if (cls) {
