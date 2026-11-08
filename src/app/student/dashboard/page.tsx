@@ -422,7 +422,7 @@ export default function StudentDashboard() {
               const { isMatch, confidence } = matchFaceDescriptor(
                 embedding,
                 faceDescriptor,
-                0.52
+                0.55
               );
 
               // Approximate box from video center for canvas drawing

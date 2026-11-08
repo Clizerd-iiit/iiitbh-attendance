@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from 'react';
-import { loadFaceEngine, detectFaceEmbedding, matchFaceDescriptor } from '@/lib/faceEngine';
+import { loadFaceEngine, detectAllFacesWithDetails, matchFaceDescriptor } from '@/lib/faceEngine';
 
 interface KioskModeProps {
   subjectId: string;
@@ -129,55 +129,52 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
                 canvasRef.current.height = videoRef.current.videoHeight;
               }
 
-              const embedding = await detectFaceEmbedding(videoRef.current);
-              setFacesCount(embedding ? 1 : 0);
+              const detections = await detectAllFacesWithDetails(videoRef.current);
+              setFacesCount(detections.length);
 
               const ctx = canvasRef.current.getContext('2d');
               if (ctx) ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
 
-              if (embedding) {
+              if (detections.length > 0) {
                 const newlyMarkedNames: string[] = [];
                 const markPromises: Promise<void>[] = [];
 
-                // Find best matching enrolled student
-                let bestMatch: any = null;
-                let highestConf = 0;
+                for (const det of detections) {
+                  let bestMatch: any = null;
+                  let highestConf = 0;
 
-                for (const s of enrolledStudents) {
-                  const match = matchFaceDescriptor(embedding, s.descriptor, 0.52);
-                  if (match.isMatch && match.confidence > highestConf) {
-                    highestConf = match.confidence;
-                    bestMatch = s;
+                  for (const s of enrolledStudents) {
+                    const match = matchFaceDescriptor(det.descriptor, s.descriptor, 0.55);
+                    if (match.isMatch && match.confidence > highestConf) {
+                      highestConf = match.confidence;
+                      bestMatch = s;
+                    }
                   }
-                }
 
-                // Draw box in center of frame
-                const cw = canvasRef.current.width, ch = canvasRef.current.height;
-                const size = Math.min(cw, ch) * 0.52;
-                const box = { x: cw / 2 - size / 2, y: ch / 2 - size / 2, width: size, height: size };
+                  const box = det.box;
+                  let labelText = 'Scanning…';
+                  let boxColor = '#3b82f6';
 
-                let labelText = 'Scanning…';
-                let boxColor = '#3b82f6';
+                  if (bestMatch && highestConf >= 50) {
+                    const studentName = bestMatch.name || 'Student';
+                    const rollNo = bestMatch.roll_no ? ` (${bestMatch.roll_no})` : '';
 
-                if (bestMatch && highestConf >= 50) {
-                  const studentName = bestMatch.name || 'Student';
-                  const rollNo = bestMatch.roll_no ? ` (${bestMatch.roll_no})` : '';
+                    labelText = `${studentName} ${highestConf}%`;
+                    boxColor = '#22c55e';
 
-                  labelText = `${studentName} ${highestConf}%`;
-                  boxColor = '#22c55e';
-
-                  if (markedRef.current[bestMatch.id] !== 'P') {
-                    markedRef.current[bestMatch.id] = 'P';
-                    markPromises.push(onMark(bestMatch.id));
-                    newlyMarkedNames.push(`${studentName}${rollNo}`);
+                    if (markedRef.current[bestMatch.id] !== 'P') {
+                      markedRef.current[bestMatch.id] = 'P';
+                      markPromises.push(onMark(bestMatch.id));
+                      newlyMarkedNames.push(`${studentName}${rollNo}`);
+                    }
+                  } else {
+                    labelText = 'Unknown Face';
+                    boxColor = '#ef4444';
                   }
-                } else if (embedding) {
-                  labelText = 'Unknown Face';
-                  boxColor = '#ef4444';
-                }
 
-                if (canvasRef.current && ctx) {
-                  drawInsightBox(ctx, box, labelText, boxColor);
+                  if (canvasRef.current && ctx) {
+                    drawInsightBox(ctx, box, labelText, boxColor);
+                  }
                 }
 
                 if (markPromises.length > 0) await Promise.all(markPromises);

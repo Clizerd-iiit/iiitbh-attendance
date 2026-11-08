@@ -1,13 +1,5 @@
 import { useState, useRef } from 'react';
-import { loadFaceEngine, detectFaceEmbedding } from '@/lib/faceEngine';
-
-const ANGLES = [
-  { id: 'center', label: 'Look Straight', emoji: '😐' },
-  { id: 'left', label: 'Turn Head Slowly to Left', emoji: '⬅️' },
-  { id: 'right', label: 'Turn Head Slowly to Right', emoji: '➡️' },
-  { id: 'up', label: 'Tilt Head Upwards', emoji: '⬆️' },
-  { id: 'down', label: 'Tilt Head Downwards', emoji: '⬇️' }
-];
+import { loadFaceEngine, detectFaceEmbedding, BIOMETRIC_ANGLES as ANGLES } from '@/lib/faceEngine';
 
 export function EditStudentModal({ student, onClose, onSaved }: { student: any, onClose: () => void, onSaved: () => void }) {
   const [name, setName] = useState(student.name || '');
@@ -199,16 +191,16 @@ export function EditStudentModal({ student, onClose, onSaved }: { student: any, 
                 </div>
               </div>
               
-              {step < 5 ? (
+              {step < ANGLES.length ? (
                 <div>
                   <h3 className="text-lg font-bold text-gray-900">{ANGLES[step].emoji} {ANGLES[step].label}</h3>
-                  <p className="text-sm font-bold text-gray-800 mb-4">Angle {step + 1} of 5</p>
+                  <p className="text-sm font-bold text-gray-800 mb-4">Angle {step + 1} of {ANGLES.length}</p>
                   <button onClick={captureAngle} disabled={!!faceMsg} className="w-full py-3 bg-blue-600 text-white rounded-xl font-medium">Capture Angle</button>
                 </div>
               ) : (
                 <div>
-                  <h3 className="text-lg font-bold text-green-600 mb-4">✅ All 5 Angles Captured</h3>
-                  <button onClick={saveFace} disabled={saving} className="w-full py-3 bg-green-600 text-white rounded-xl font-medium">{saving?'Saving...':'Save 3D Face ID'}</button>
+                  <h3 className="text-lg font-bold text-green-600 mb-4">✅ All {ANGLES.length} Angles Captured</h3>
+                  <button onClick={saveFace} disabled={saving} className="w-full py-3 bg-green-600 text-white rounded-xl font-medium">{saving?'Saving...':'Save Face ID'}</button>
                   <button onClick={() => { setStep(0); setDescriptors([]); }} className="w-full py-3 mt-2 bg-gray-100 text-gray-800 rounded-xl font-medium">Retake</button>
                 </div>
               )}
