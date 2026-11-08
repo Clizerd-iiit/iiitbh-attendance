@@ -347,7 +347,7 @@ export default function StudentDashboard() {
 
     setMarking(true);
 
-    // 0. Concurrently pre-acquire GPS in background with 60s cache (instant 10ms retrieval!)
+    // 0. Concurrently pre-acquire GPS in background with 15s cache (instant 10ms retrieval!)
     const gpsPromise: Promise<{ pos: GeolocationPosition | null; err: any }> = (
       typeof navigator !== 'undefined' && navigator.geolocation
     )
@@ -358,7 +358,7 @@ export default function StudentDashboard() {
             {
               enableHighAccuracy: true,
               timeout: 10000,
-              maximumAge: 60000, // 60s cache allows instant response if located recently
+              maximumAge: 15000, // 15s cache allows instant response if located recently
             }
           );
         })
