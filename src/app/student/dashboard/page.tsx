@@ -347,6 +347,23 @@ export default function StudentDashboard() {
 
     setMarking(true);
 
+    // 0. Concurrently pre-acquire GPS in background with 60s cache (instant 10ms retrieval!)
+    const gpsPromise: Promise<{ pos: GeolocationPosition | null; err: any }> = (
+      typeof navigator !== 'undefined' && navigator.geolocation
+    )
+      ? new Promise((resolve) => {
+          navigator.geolocation.getCurrentPosition(
+            (pos) => resolve({ pos, err: null }),
+            (err) => resolve({ pos: null, err }),
+            {
+              enableHighAccuracy: true,
+              timeout: 10000,
+              maximumAge: 60000, // 60s cache allows instant response if located recently
+            }
+          );
+        })
+      : Promise.resolve({ pos: null, err: null });
+
     // 1. Fetch class verification requirements set by teacher
     let reqs = { requireFace: true, requireGeofence: true };
     try {
@@ -393,8 +410,17 @@ export default function StudentDashboard() {
           if (playPromise !== undefined) playPromise.catch(() => {});
         }
 
-        // Wait for video to start playing
-        await new Promise(r => setTimeout(r, 600));
+        // Wait for video frame to be ready
+        await new Promise<void>((r) => {
+          if (videoRef.current && videoRef.current.readyState >= 2) {
+            r();
+          } else if (videoRef.current) {
+            videoRef.current.onloadeddata = () => r();
+            setTimeout(r, 200);
+          } else {
+            setTimeout(r, 200);
+          }
+        });
 
         const studentName = session?.user?.name || 'Student';
         const startTime = Date.now();
@@ -436,7 +462,7 @@ export default function StudentDashboard() {
                   if (ctx) drawSquareFaceBox(ctx, box, `${studentName} (${confidence}%)`, 'verified');
                   matched = true;
                   setFaceCheckState('success');
-                  await new Promise(r => setTimeout(r, 1200));
+                  await new Promise(r => setTimeout(r, 250)); // Fast snappy 250ms visual confirmation
                   break;
                 } else {
                   if (ctx) drawSquareFaceBox(ctx, box, `${studentName} (${confidence}%)`, 'scanning');
@@ -465,19 +491,12 @@ export default function StudentDashboard() {
       }
     }
 
-    // 3. Geofence Location check (only if teacher enabled Geofence)
+    // 3. Geofence Location check (pre-resolved concurrently in background!)
     let lat = null, lon = null, accuracy = null;
     if (reqs.requireGeofence) {
-      try {
+      const { pos, err } = await gpsPromise;
+      if (pos) {
         const isMobile = typeof navigator !== 'undefined' && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-        
-        const pos = await new Promise<GeolocationPosition>((res, rej) => 
-          navigator.geolocation.getCurrentPosition(res, rej, { 
-            enableHighAccuracy: true, 
-            timeout: 15000, 
-            maximumAge: 0 // Force fresh GPS fix, don't use stale approximate cached location
-          })
-        );
         
         // On mobile devices, Android/iOS Approximate location produces accuracy > 1500 meters
         // Laptops/Desktops use Wi-Fi positioning where accuracy is often 300-800m naturally
@@ -496,7 +515,7 @@ export default function StudentDashboard() {
         lat = pos.coords.latitude;
         lon = pos.coords.longitude;
         accuracy = pos.coords.accuracy;
-      } catch (err: any) {
+      } else if (err) {
         console.warn("Could not get GPS:", err);
         if (err?.code === 1) { // PERMISSION_DENIED
           setLocationHelpDetails({
