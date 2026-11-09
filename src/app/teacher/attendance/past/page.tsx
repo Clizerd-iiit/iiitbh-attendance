@@ -6,9 +6,24 @@ import { useRouter } from 'next/navigation';
 
 export default function PastAttendancePage() {
   const [subjects, setSubjects] = useState<any[]>([]);
-  const [selectedSubject, setSelectedSubject] = useState('');
-  const [date, setDate] = useState(format(new Date(), 'yyyy-MM-dd'));
-  const [classId, setClassId] = useState('');
+  const [selectedSubject, setSelectedSubject] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return new URLSearchParams(window.location.search).get('subject_id') || '';
+    }
+    return '';
+  });
+  const [date, setDate] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return new URLSearchParams(window.location.search).get('date') || format(new Date(), 'yyyy-MM-dd');
+    }
+    return format(new Date(), 'yyyy-MM-dd');
+  });
+  const [classId, setClassId] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return new URLSearchParams(window.location.search).get('class_id') || '';
+    }
+    return '';
+  });
   const [students, setStudents] = useState<any[]>([]);
   
   const [mode, setMode] = useState<'absentees' | 'presentees'>('absentees');
@@ -27,13 +42,13 @@ export default function PastAttendancePage() {
     const sub = params.get('subject_id');
     const dt = params.get('date');
     const cid = params.get('class_id');
-    if (dt) setDate(dt);
-    if (cid) setClassId(cid);
+    if (dt && dt !== date) setDate(dt);
+    if (cid && cid !== classId) setClassId(cid);
     
     fetch('/api/teacher/subjects').then(r=>r.json()).then(d => {
       setSubjects(d.subjects||[]);
       if (sub) setSelectedSubject(sub);
-      else if (d.subjects?.[0]) setSelectedSubject(d.subjects[0].id);
+      else if (!selectedSubject && d.subjects?.[0]) setSelectedSubject(d.subjects[0].id);
     });
   }, []);
 
@@ -63,8 +78,8 @@ export default function PastAttendancePage() {
       }
       
       setLoading(false);
-    });
-  }, [selectedSubject, date, mode]);
+    }).catch(() => setLoading(false));
+  }, [selectedSubject, date, mode, classId]);
 
   const toggleSelection = (id: string) => {
     const next = new Set(selectedIds);
