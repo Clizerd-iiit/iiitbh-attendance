@@ -6,7 +6,7 @@ import { WelcomeCard } from '@/components/shared/WelcomeCard';
 import { QrScanner } from '@/components/student/QrScanner';
 import { StudentAttendanceSummary } from '@/types';
 import { loadFaceEngine, detectFaceEmbedding, matchFaceDescriptor } from '@/lib/faceEngine';
-import { MapPin, Laptop, Smartphone, RefreshCw, X, AlertTriangle, HelpCircle } from 'lucide-react';
+import { MapPin, Laptop, Smartphone, RefreshCw, X, AlertTriangle, HelpCircle, UserCheck, Camera, CheckCircle2, ShieldCheck, Sparkles, Eye, Info } from 'lucide-react';
 import { OnboardingTour } from '@/components/shared/OnboardingTour';
 
 
@@ -161,6 +161,150 @@ export default function StudentDashboard() {
     coords?: { lat: number; lon: number };
   }>({});
   const [retryingGps, setRetryingGps] = useState(false);
+
+  // Face ID Diagnostic & Help States
+  const [showFaceHelp, setShowFaceHelp] = useState(false);
+  const [faceHelpTab, setFaceHelpTab] = useState<'test' | 'register' | 'troubleshoot'>('test');
+  const [isPreloadingModel, setIsPreloadingModel] = useState(false);
+  const [modelPreloadProgress, setModelPreloadProgress] = useState(0);
+  const [modelPreloadStage, setModelPreloadStage] = useState('');
+  const [isModelReady, setIsModelReady] = useState(false);
+  const [isTestingCamera, setIsTestingCamera] = useState(false);
+  const [testMatchResult, setTestMatchResult] = useState<{ isMatch: boolean; confidence: number; text: string } | null>(null);
+  const testVideoRef = useRef<HTMLVideoElement>(null);
+  const testCanvasRef = useRef<HTMLCanvasElement>(null);
+  const testStreamRef = useRef<MediaStream | null>(null);
+
+  const stopLiveTest = () => {
+    if (testStreamRef.current) {
+      testStreamRef.current.getTracks().forEach(t => t.stop());
+      testStreamRef.current = null;
+    }
+    setIsTestingCamera(false);
+    setTestMatchResult(null);
+  };
+
+  const handlePreloadModel = async () => {
+    try {
+      setIsPreloadingModel(true);
+      await loadFaceEngine((percent, stage) => {
+        setModelPreloadProgress(percent);
+        setModelPreloadStage(stage);
+      });
+      setIsModelReady(true);
+      setIsPreloadingModel(false);
+    } catch (err: any) {
+      setIsPreloadingModel(false);
+      alert('Failed to pre-load AI models: ' + (err?.message || 'Check network connection'));
+    }
+  };
+
+  const startLiveTest = async () => {
+    try {
+      setIsTestingCamera(true);
+      setTestMatchResult({ isMatch: false, confidence: 0, text: 'Starting camera & AI engine...' });
+
+      // Ensure model is loaded
+      await loadFaceEngine((p, stage) => {
+        setModelPreloadProgress(p);
+        setModelPreloadStage(stage);
+      });
+      setIsModelReady(true);
+
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'user', width: { ideal: 480 }, height: { ideal: 480 } }
+      });
+      testStreamRef.current = stream;
+
+      if (testVideoRef.current) {
+        testVideoRef.current.srcObject = stream;
+        const p = testVideoRef.current.play();
+        if (p !== undefined) p.catch(() => {});
+      }
+
+      await new Promise<void>((resolve) => {
+        if (testVideoRef.current && testVideoRef.current.readyState >= 2) resolve();
+        else if (testVideoRef.current) testVideoRef.current.onloadeddata = () => resolve();
+        else setTimeout(resolve, 300);
+      });
+
+      const studentName = session?.user?.name || 'Student';
+
+      while (testStreamRef.current && testStreamRef.current.active) {
+        if (!testVideoRef.current || !testCanvasRef.current) break;
+
+        const video = testVideoRef.current;
+        const canvas = testCanvasRef.current;
+
+        if (video.readyState >= 2) {
+          if (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight) {
+            canvas.width = video.videoWidth || 320;
+            canvas.height = video.videoHeight || 320;
+          }
+
+          const embedding = await detectFaceEmbedding(video);
+          const ctx = canvas.getContext('2d');
+          if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+          if (embedding) {
+            const cx = canvas.width / 2, cy = canvas.height / 2;
+            const size = Math.min(canvas.width, canvas.height) * 0.55;
+            const box = { x: cx - size / 2, y: cy - size / 2, width: size, height: size };
+
+            if (faceDescriptor) {
+              const { isMatch, confidence } = matchFaceDescriptor(embedding, faceDescriptor, 0.55);
+              if (isMatch) {
+                if (ctx) drawSquareFaceBox(ctx, box, `${studentName} (${confidence}%)`, 'verified');
+                setTestMatchResult({
+                  isMatch: true,
+                  confidence,
+                  text: `✅ Match: ${confidence}% — AI recognizes your face with high confidence!`,
+                });
+              } else {
+                if (ctx) drawSquareFaceBox(ctx, box, `${studentName} (${confidence}%)`, 'mismatch');
+                setTestMatchResult({
+                  isMatch: false,
+                  confidence,
+                  text: `⚠️ Match: ${confidence}% — Face detected but score is low. Ensure good lighting & direct angle.`,
+                });
+              }
+            } else {
+              if (ctx) drawSquareFaceBox(ctx, box, 'Face Detected', 'scanning');
+              setTestMatchResult({
+                isMatch: false,
+                confidence: 0,
+                text: 'Face geometry detected, but no Face ID is registered in your profile yet.',
+              });
+            }
+          } else {
+            setTestMatchResult({
+              isMatch: false,
+              confidence: 0,
+              text: '🔍 Looking for face... Position face in camera frame with clear lighting.',
+            });
+          }
+        }
+        await new Promise(r => setTimeout(r, 200));
+      }
+    } catch (err: any) {
+      console.error('Face test error:', err);
+      setTestMatchResult({
+        isMatch: false,
+        confidence: 0,
+        text: `❌ Camera error: ${err?.message || 'Could not access camera'}`,
+      });
+      setIsTestingCamera(false);
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      if (testStreamRef.current) {
+        testStreamRef.current.getTracks().forEach(t => t.stop());
+        testStreamRef.current = null;
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (typeof navigator !== 'undefined') {
@@ -573,12 +717,23 @@ export default function StudentDashboard() {
           <div className="w-full sm:w-auto">
             <WelcomeCard subtitle={batchInfo || "Your Attendance Overview"} isCr={isCr} />
           </div>
-          <button id="tour-mark-attendance" onClick={() => {
-            if (!hasFaceId) { alert('Please setup Face ID first!'); window.location.href='/student/face-register'; return; }
-            setShowMarkModal(true);
-          }} className="w-full sm:w-auto justify-center bg-blue-600 text-white px-5 py-3 rounded-xl font-bold shadow-md hover:bg-blue-700 transition flex items-center gap-2 sm:mt-0">
-            📷 Mark Attendance
-          </button>
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full sm:w-auto">
+            <button 
+              type="button"
+              onClick={() => setShowFaceHelp(true)} 
+              className="w-full sm:w-auto justify-center bg-white border border-gray-200 hover:border-blue-300 hover:bg-blue-50/50 text-gray-700 hover:text-blue-700 px-4 py-3 rounded-xl font-bold shadow-sm transition flex items-center gap-2 text-sm"
+              title="Test Face AI Recognition & Preload Models"
+            >
+              <UserCheck className="w-4 h-4 text-blue-600" />
+              <span>Face ID Help & Test</span>
+            </button>
+            <button id="tour-mark-attendance" onClick={() => {
+              if (!hasFaceId) { alert('Please setup Face ID first!'); window.location.href='/student/face-register'; return; }
+              setShowMarkModal(true);
+            }} className="w-full sm:w-auto justify-center bg-blue-600 text-white px-5 py-3 rounded-xl font-bold shadow-md hover:bg-blue-700 transition flex items-center gap-2 sm:mt-0">
+              📷 Mark Attendance
+            </button>
+          </div>
         </div>
 
         {/* Live Poll Banner */}
@@ -765,17 +920,27 @@ export default function StudentDashboard() {
             </div>
             <div className="mt-4 flex items-center justify-between text-xs text-gray-700">
               <span>Location + AI Face verification is required.</span>
-              <button 
-                type="button"
-                onClick={() => {
-                  setLocationHelpDetails({});
-                  setShowLocationHelp(true);
-                }}
-                className="text-blue-600 hover:text-blue-800 font-bold flex items-center gap-1 underline underline-offset-2"
-              >
-                <HelpCircle className="w-3.5 h-3.5" />
-                Location Help
-              </button>
+              <div className="flex items-center gap-3">
+                <button 
+                  type="button"
+                  onClick={() => setShowFaceHelp(true)}
+                  className="text-blue-600 hover:text-blue-800 font-bold flex items-center gap-1 underline underline-offset-2"
+                >
+                  <UserCheck className="w-3.5 h-3.5" />
+                  Face ID Help
+                </button>
+                <button 
+                  type="button"
+                  onClick={() => {
+                    setLocationHelpDetails({});
+                    setShowLocationHelp(true);
+                  }}
+                  className="text-blue-600 hover:text-blue-800 font-bold flex items-center gap-1 underline underline-offset-2"
+                >
+                  <HelpCircle className="w-3.5 h-3.5" />
+                  Location Help
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -976,6 +1141,393 @@ export default function StudentDashboard() {
                 className="w-full py-2 text-xs text-gray-600 hover:text-gray-900 font-bold"
               >
                 Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Face ID Help & Diagnostics Modal */}
+      {showFaceHelp && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white rounded-3xl max-w-xl w-full shadow-2xl border border-gray-200 animate-in fade-in zoom-in duration-150 max-h-[92vh] flex flex-col overflow-hidden">
+            {/* Header */}
+            <div className="p-4 sm:p-5 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-blue-50/70 via-indigo-50/40 to-white">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-md shadow-blue-500/20 font-bold">
+                  <UserCheck className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-base sm:text-lg font-black text-gray-900 leading-tight">Face ID Help &amp; Diagnostics</h3>
+                    <span className="text-[10px] font-bold bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full border border-blue-200">
+                      Neural AI
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-500 font-medium mt-0.5">Test recognition, preload AI cache, and check registration</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => {
+                  stopLiveTest();
+                  setShowFaceHelp(false);
+                }}
+                className="p-2 rounded-full text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition cursor-pointer"
+                title="Close"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Navigation Tabs */}
+            <div className="flex border-b border-gray-200 bg-gray-50/60 p-1.5 gap-1.5 text-xs font-bold">
+              <button
+                type="button"
+                onClick={() => {
+                  setFaceHelpTab('test');
+                }}
+                className={`flex-1 py-2 px-3 rounded-xl transition flex items-center justify-center gap-1.5 ${
+                  faceHelpTab === 'test'
+                    ? 'bg-white text-blue-600 shadow-sm border border-gray-200'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                }`}
+              >
+                <Eye className="w-3.5 h-3.5" />
+                <span>Live Test &amp; Cache</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  stopLiveTest();
+                  setFaceHelpTab('register');
+                }}
+                className={`flex-1 py-2 px-3 rounded-xl transition flex items-center justify-center gap-1.5 ${
+                  faceHelpTab === 'register'
+                    ? 'bg-white text-blue-600 shadow-sm border border-gray-200'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                }`}
+              >
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span>Registration Guide</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  stopLiveTest();
+                  setFaceHelpTab('troubleshoot');
+                }}
+                className={`flex-1 py-2 px-3 rounded-xl transition flex items-center justify-center gap-1.5 ${
+                  faceHelpTab === 'troubleshoot'
+                    ? 'bg-white text-blue-600 shadow-sm border border-gray-200'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                }`}
+              >
+                <Info className="w-3.5 h-3.5" />
+                <span>Troubleshooting</span>
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-4 sm:p-5 overflow-y-auto space-y-4 text-xs sm:text-sm text-gray-700 flex-1">
+              {faceHelpTab === 'test' && (
+                <div className="space-y-4">
+                  {/* Model Preloader Card */}
+                  <div className="p-3.5 rounded-2xl border border-blue-100 bg-blue-50/50 space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Sparkles className="w-4 h-4 text-blue-600" />
+                        <span className="font-bold text-gray-900">AI Model Cache Status</span>
+                      </div>
+                      {isModelReady ? (
+                        <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-green-100 text-green-700 border border-green-200 flex items-center gap-1">
+                          <CheckCircle2 className="w-3 h-3" /> Ready in Browser Cache
+                        </span>
+                      ) : (
+                        <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-200">
+                          Not Cached Yet
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-gray-600 leading-relaxed">
+                      Pre-loading stores the neural model in your phone/laptop browser cache once. During daily class attendance, face verification will run instantaneously (&lt;0.2s) without cold-start delay.
+                    </p>
+                    
+                    {isPreloadingModel && (
+                      <div className="space-y-1.5 pt-1">
+                        <div className="flex justify-between text-[11px] font-bold text-blue-700">
+                          <span>{modelPreloadStage || 'Loading neural networks...'}</span>
+                          <span>{modelPreloadProgress}%</span>
+                        </div>
+                        <div className="w-full bg-blue-200 rounded-full h-2 overflow-hidden">
+                          <div
+                            className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                            style={{ width: `${modelPreloadProgress}%` }}
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {!isModelReady && !isPreloadingModel && (
+                      <button
+                        type="button"
+                        onClick={handlePreloadModel}
+                        className="w-full mt-1 py-2 px-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs transition shadow-sm flex items-center justify-center gap-2 cursor-pointer"
+                      >
+                        <RefreshCw className="w-3.5 h-3.5" />
+                        <span>Pre-load AI Models Now (Save Time in Class)</span>
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Live Camera Test Window */}
+                  <div className="border border-gray-200 rounded-2xl p-4 bg-gray-50/50 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="font-bold text-gray-900 text-sm">Live Face Recognition Test</h4>
+                        <p className="text-xs text-gray-500">Test if the camera detects you and matches your profile</p>
+                      </div>
+                      {hasFaceId ? (
+                        <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
+                          Face ID Enrolled ✓
+                        </span>
+                      ) : (
+                        <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 border border-rose-200">
+                          Face ID Missing
+                        </span>
+                      )}
+                    </div>
+
+                    {!hasFaceId && (
+                      <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 flex items-center justify-between">
+                        <span>You haven&apos;t registered your Face ID yet!</span>
+                        <button
+                          type="button"
+                          onClick={() => window.location.href = '/student/face-register'}
+                          className="bg-amber-600 hover:bg-amber-700 text-white px-2.5 py-1 rounded-lg font-bold text-[11px] transition"
+                        >
+                          Register Now
+                        </button>
+                      </div>
+                    )}
+
+                    {!isTestingCamera ? (
+                      <div className="py-8 text-center bg-white border border-dashed border-gray-300 rounded-2xl space-y-3">
+                        <div className="w-12 h-12 mx-auto rounded-full bg-blue-50 text-blue-600 flex items-center justify-center">
+                          <Camera className="w-6 h-6" />
+                        </div>
+                        <div>
+                          <p className="font-bold text-gray-800 text-sm">Camera Test is Inactive</p>
+                          <p className="text-xs text-gray-500 max-w-xs mx-auto mt-0.5">
+                            Click below to turn on the camera and see real-time confidence scores and face boundary tracking.
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={startLiveTest}
+                          className="px-5 py-2.5 bg-gray-900 hover:bg-black text-white font-bold rounded-xl text-xs transition shadow-sm inline-flex items-center gap-2 cursor-pointer"
+                        >
+                          <Camera className="w-3.5 h-3.5" />
+                          <span>Start Live Diagnostic Test</span>
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        <div className="relative w-full aspect-square max-w-[280px] mx-auto rounded-2xl overflow-hidden bg-black shadow-inner border border-gray-800">
+                          <video
+                            ref={testVideoRef}
+                            autoPlay
+                            playsInline
+                            muted
+                            className="w-full h-full object-cover"
+                          />
+                          <canvas
+                            ref={testCanvasRef}
+                            className="absolute inset-0 w-full h-full pointer-events-none"
+                          />
+                          <div className="absolute top-2.5 left-2.5 bg-black/60 backdrop-blur-md px-2 py-0.5 rounded-full text-[10px] text-white font-bold flex items-center gap-1 border border-white/20">
+                            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                            Live Feed
+                          </div>
+                        </div>
+
+                        {/* Live Match Output */}
+                        {testMatchResult && (
+                          <div className={`p-3 rounded-xl border text-xs font-semibold ${
+                            testMatchResult.isMatch 
+                              ? 'bg-green-50 border-green-200 text-green-900' 
+                              : testMatchResult.confidence > 0 
+                                ? 'bg-amber-50 border-amber-200 text-amber-900'
+                                : 'bg-blue-50 border-blue-200 text-blue-900'
+                          }`}>
+                            <p>{testMatchResult.text}</p>
+                            {testMatchResult.confidence > 0 && (
+                              <div className="mt-2 space-y-1">
+                                <div className="flex justify-between text-[11px] font-bold">
+                                  <span>Confidence Score</span>
+                                  <span>{testMatchResult.confidence}%</span>
+                                </div>
+                                <div className="w-full bg-gray-200 rounded-full h-1.5 overflow-hidden">
+                                  <div
+                                    className={`h-1.5 rounded-full transition-all duration-300 ${
+                                      testMatchResult.isMatch ? 'bg-green-600' : 'bg-amber-500'
+                                    }`}
+                                    style={{ width: `${Math.min(100, testMatchResult.confidence)}%` }}
+                                  />
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={stopLiveTest}
+                            className="flex-1 py-2 px-3 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold rounded-xl text-xs transition cursor-pointer"
+                          >
+                            Stop Camera Test
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              stopLiveTest();
+                              setTimeout(() => startLiveTest(), 300);
+                            }}
+                            className="py-2 px-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl text-xs transition cursor-pointer"
+                          >
+                            Restart
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {faceHelpTab === 'register' && (
+                <div className="space-y-4">
+                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-4">
+                    <h4 className="font-bold text-blue-900 text-sm mb-1 flex items-center gap-1.5">
+                      <ShieldCheck className="w-4 h-4 text-blue-600" />
+                      Face Registration Best Practices
+                    </h4>
+                    <p className="text-xs text-blue-800 leading-relaxed">
+                      Follow these simple rules while registering your face so the AI can reliably recognize you in any classroom condition in less than a second.
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="p-3.5 bg-white border border-gray-200 rounded-xl space-y-1.5 shadow-sm">
+                      <div className="text-xl">📐</div>
+                      <h5 className="font-bold text-gray-900 text-xs">3 Natural Calibration Angles</h5>
+                      <p className="text-[11px] text-gray-600 leading-relaxed">
+                        Capture 1 center shot looking straight, 1 slightly left (~15°), and 1 slightly right (~15°). This trains the 3D embedding matrix.
+                      </p>
+                    </div>
+
+                    <div className="p-3.5 bg-white border border-gray-200 rounded-xl space-y-1.5 shadow-sm">
+                      <div className="text-xl">💡</div>
+                      <h5 className="font-bold text-gray-900 text-xs">Direct Front Lighting</h5>
+                      <p className="text-[11px] text-gray-600 leading-relaxed">
+                        Ensure light falls directly on your face. Avoid sitting with bright windows or ceiling lamps directly behind your head (backlight).
+                      </p>
+                    </div>
+
+                    <div className="p-3.5 bg-white border border-gray-200 rounded-xl space-y-1.5 shadow-sm">
+                      <div className="text-xl">👓</div>
+                      <h5 className="font-bold text-gray-900 text-xs">Glasses &amp; Accessories</h5>
+                      <p className="text-[11px] text-gray-600 leading-relaxed">
+                        Regular prescription glasses are 100% supported. Remove dark sunglasses, masks, or caps that cover eyebrows or forehead.
+                      </p>
+                    </div>
+
+                    <div className="p-3.5 bg-white border border-gray-200 rounded-xl space-y-1.5 shadow-sm">
+                      <div className="text-xl">😐</div>
+                      <h5 className="font-bold text-gray-900 text-xs">Neutral Face Expression</h5>
+                      <p className="text-[11px] text-gray-600 leading-relaxed">
+                        Keep a relaxed, neutral expression during capture. Avoid wide grins, eye squinting, or talking while the camera snaps.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="p-4 bg-gray-50 border border-gray-200 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                    <div>
+                      <p className="font-bold text-gray-900 text-xs">Need to register or update Face ID?</p>
+                      <p className="text-[11px] text-gray-500">You can retake photos anytime if your hairstyle or beard changes.</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        stopLiveTest();
+                        window.location.href = '/student/face-register';
+                      }}
+                      className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-4 py-2 rounded-xl text-xs shadow-sm transition whitespace-nowrap cursor-pointer"
+                    >
+                      Open Registration Page →
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {faceHelpTab === 'troubleshoot' && (
+                <div className="space-y-3.5">
+                  <div className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-2xl space-y-1">
+                    <h5 className="font-bold text-emerald-900 text-xs flex items-center gap-1.5">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                      Lightning-Fast Attendance (&lt;1.5s) Tips
+                    </h5>
+                    <p className="text-[11px] text-emerald-800 leading-relaxed">
+                      Hold your phone at eye level ~40cm away. As soon as you enter the OTP/Scan QR, face verification happens automatically in 1 second and submits attendance without extra clicks.
+                    </p>
+                  </div>
+
+                  <div className="border border-gray-200 rounded-2xl divide-y divide-gray-100 bg-white shadow-sm overflow-hidden text-xs">
+                    <div className="p-3.5 space-y-1">
+                      <p className="font-bold text-gray-900">1. &quot;Face not detected&quot; or camera black screen</p>
+                      <p className="text-gray-600 leading-relaxed">
+                        Ensure camera permission is allowed in your browser. On <strong>Chrome</strong>, tap the site settings lock icon next to the URL and toggle Camera to &quot;Allow&quot;. On <strong>Safari iOS</strong>, go to Settings &gt; Safari &gt; Camera &gt; &quot;Allow&quot;.
+                      </p>
+                    </div>
+
+                    <div className="p-3.5 space-y-1">
+                      <p className="font-bold text-gray-900">2. Low confidence score or &quot;Face mismatch&quot;</p>
+                      <p className="text-gray-600 leading-relaxed">
+                        Classroom shadows or extreme backlight can lower confidence. Move your phone angle slightly towards the room light or step away from harsh glare.
+                      </p>
+                    </div>
+
+                    <div className="p-3.5 space-y-1">
+                      <p className="font-bold text-gray-900">3. Multiple faces in background</p>
+                      <p className="text-gray-600 leading-relaxed">
+                        During personal phone attendance, ensure a friend isn&apos;t peering closely directly over your shoulder, which can confuse the primary face target.
+                      </p>
+                    </div>
+
+                    <div className="p-3.5 space-y-1">
+                      <p className="font-bold text-gray-900">4. Changed beard, hairstyle or spectacles</p>
+                      <p className="text-gray-600 leading-relaxed">
+                        If you recently shaved, grew a dense beard, or changed glasses, simply re-register your Face ID from the student profile to update your 512-dimension biometric vector.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="p-3.5 sm:p-4 border-t border-gray-100 bg-gray-50 flex items-center justify-between">
+              <span className="text-[11px] text-gray-500 font-medium">
+                Biometric embeddings are encrypted &amp; processed 100% on-device.
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  stopLiveTest();
+                  setShowFaceHelp(false);
+                }}
+                className="px-4 py-2 bg-gray-900 hover:bg-black text-white text-xs font-bold rounded-xl transition cursor-pointer"
+              >
+                Close Help
               </button>
             </div>
           </div>
