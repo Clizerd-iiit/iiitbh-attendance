@@ -717,23 +717,12 @@ export default function StudentDashboard() {
           <div className="w-full sm:w-auto">
             <WelcomeCard subtitle={batchInfo || "Your Attendance Overview"} isCr={isCr} />
           </div>
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full sm:w-auto">
-            <button 
-              type="button"
-              onClick={() => setShowFaceHelp(true)} 
-              className="w-full sm:w-auto justify-center bg-white border border-gray-200 hover:border-blue-300 hover:bg-blue-50/50 text-gray-700 hover:text-blue-700 px-4 py-3 rounded-xl font-bold shadow-sm transition flex items-center gap-2 text-sm"
-              title="Test Face AI Recognition & Preload Models"
-            >
-              <UserCheck className="w-4 h-4 text-blue-600" />
-              <span>Face ID Help & Test</span>
-            </button>
-            <button id="tour-mark-attendance" onClick={() => {
-              if (!hasFaceId) { alert('Please setup Face ID first!'); window.location.href='/student/face-register'; return; }
-              setShowMarkModal(true);
-            }} className="w-full sm:w-auto justify-center bg-blue-600 text-white px-5 py-3 rounded-xl font-bold shadow-md hover:bg-blue-700 transition flex items-center gap-2 sm:mt-0">
-              📷 Mark Attendance
-            </button>
-          </div>
+          <button id="tour-mark-attendance" onClick={() => {
+            if (!hasFaceId) { alert('Please setup Face ID first!'); window.location.href='/student/face-register'; return; }
+            setShowMarkModal(true);
+          }} className="w-full sm:w-auto justify-center bg-blue-600 text-white px-5 py-3 rounded-xl font-bold shadow-md hover:bg-blue-700 transition flex items-center gap-2 sm:mt-0">
+            📷 Mark Attendance
+          </button>
         </div>
 
         {/* Live Poll Banner */}
