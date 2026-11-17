@@ -1,7 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from 'react';
 import { loadInsightFaceWithProgress, detectAllFacesInsight, matchInsightDescriptor } from '@/lib/humanInsightFace';
-import { loadFaceEngine, detectAllFacesWithDetails, matchFaceDescriptor } from '@/lib/faceEngine';
 
 interface KioskModeProps {
   subjectId: string;
@@ -79,6 +78,7 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
 
   useEffect(() => {
     let stream: MediaStream | null = null;
+    let animationFrameId: number | null = null;
     let isRunning = true;
     let frameCount = 0;
     let lastFpsTime = Date.now();
@@ -123,14 +123,8 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
           return;
         }
 
-        // Categorize enrolled students into Neural Biometrics (>= 256) and 128-D (Legacy)
+        // Categorize enrolled students into Neural Biometrics (>= 256)
         const enrolledNeural = enrolledStudents.filter(s => getDescriptorDim(s.descriptor) >= 256);
-        const enrolled128 = enrolledStudents.filter(s => getDescriptorDim(s.descriptor) === 128);
-
-        // If class contains legacy 128-D students, also ensure faceEngine is initialized
-        if (enrolled128.length > 0) {
-          await loadFaceEngine();
-        }
 
         setStatus('starting_camera');
         stream = await navigator.mediaDevices.getUserMedia({ 
@@ -138,12 +132,14 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
         });
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
+          const playPromise = videoRef.current.play();
+          if (playPromise !== undefined) playPromise.catch(() => {});
         }
 
         await new Promise(r => {
-          if (videoRef.current && videoRef.current.readyState >= 2) r(true);
+          if (videoRef.current && videoRef.current.readyState >= 2 && videoRef.current.videoWidth > 0) r(true);
           else if (videoRef.current) videoRef.current.onloadeddata = () => r(true);
-          else setTimeout(r, 1000);
+          else setTimeout(r, 600);
         });
         
         if (videoRef.current && canvasRef.current) {
@@ -153,189 +149,138 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
 
         setStatus('active');
 
-        // High-Speed Industry-Level Inference Loop (250ms cadence)
+        // High-Speed Decoupled Display & Inference Architecture
         let isDetecting = false;
         let lastDetectTime = 0;
 
-        const scanLoop = async () => {
-          if (!isRunning || !videoRef.current || !canvasRef.current) return;
-          
-          const now = Date.now();
-          if (!isDetecting && now - lastDetectTime >= 220 && videoRef.current.readyState >= 2) {
-            isDetecting = true;
-            lastDetectTime = now;
-            try {
-              if (canvasRef.current.width !== videoRef.current.videoWidth || canvasRef.current.height !== videoRef.current.videoHeight) {
-                canvasRef.current.width = videoRef.current.videoWidth;
-                canvasRef.current.height = videoRef.current.videoHeight;
-              }
+        const performDetection = async (video: HTMLVideoElement, canvas: HTMLCanvasElement) => {
+          const detectionsNeural = await detectAllFacesInsight(video);
+          setFacesCount(detectionsNeural.length);
 
-              // Run Neural Biometric Detection
-              const detectionsNeural = await detectAllFacesInsight(videoRef.current);
-              setFacesCount(detectionsNeural.length);
+          const ctx = canvas.getContext('2d');
+          if (!ctx) return;
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-              const ctx = canvasRef.current.getContext('2d');
-              if (ctx) ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+          const currentFrameMatchedIds = new Set<string>();
+          const newlyMarkedNames: string[] = [];
+          const markPromises: Promise<void>[] = [];
 
-              const currentFrameMatchedIds = new Set<string>();
-              const newlyMarkedNames: string[] = [];
-              const markPromises: Promise<void>[] = [];
+          if (detectionsNeural.length > 0) {
+            for (const det of detectionsNeural) {
+              let bestMatch: any = null;
+              let topSim = -1;
+              let secondSim = -1;
 
-              if (detectionsNeural.length > 0) {
-                for (const det of detectionsNeural) {
-                  let bestMatch: any = null;
-                  let topSim = -1;
-                  let secondSim = -1;
-
-                  // 1. Compare against Neural Biometric Enrolled Students
-                  for (const s of enrolledNeural) {
-                    const match = matchInsightDescriptor(det.embedding, s.descriptor, 0.70);
-                    if (match.similarity > topSim) {
-                      secondSim = topSim;
-                      topSim = match.similarity;
-                      bestMatch = { student: s, similarity: match.similarity, confidence: match.confidence };
-                    } else if (match.similarity > secondSim) {
-                      secondSim = match.similarity;
-                    }
-                  }
-
-                  const box = det.box;
-                  let labelText = 'Unknown Face';
-                  let boxColor = '#ef4444'; // Red default for unregistered
-
-                  // Industry Standard Criteria:
-                  // - Cosine Similarity >= 0.70 (>= 70%)
-                  // - Margin over 2nd best candidate >= 0.05 (Disambiguation guard)
-                  const isDistinctMatch = bestMatch && topSim >= 0.70 && (topSim - secondSim >= 0.05);
-
-                  if (isDistinctMatch) {
-                    const sId = bestMatch.student.id;
-                    currentFrameMatchedIds.add(sId);
-                    const hits = (consecutiveHitsRef.current[sId] || 0) + 1;
-                    consecutiveHitsRef.current[sId] = hits;
-
-                    const studentName = bestMatch.student.name || 'Student';
-                    const rollNo = bestMatch.student.roll_no ? ` (${bestMatch.student.roll_no})` : '';
-
-                    // Require 3 consecutive frames (~750ms steady gaze) before triggering attendance
-                    if (hits >= 3) {
-                      labelText = `${studentName} ${bestMatch.confidence}% ✓`;
-                      boxColor = '#22c55e'; // Green confirmed
-
-                      if (markedRef.current[sId] !== 'P' && !pendingMarkRef.current.has(sId)) {
-                        markedRef.current[sId] = 'P';
-                        pendingMarkRef.current.add(sId);
-                        markPromises.push(onMark(sId));
-                        newlyMarkedNames.push(`${studentName}${rollNo}`);
-                      }
-                    } else {
-                      labelText = `${studentName} Verifying (${hits}/3)…`;
-                      boxColor = '#eab308'; // Amber verifying
-                    }
-                  } else {
-                    labelText = 'Unknown Face';
-                    boxColor = '#ef4444'; // Red
-                  }
-
-                  if (canvasRef.current && ctx) {
-                    drawInsightBox(ctx, box, labelText, boxColor);
-                  }
+              // 1. Compare against Neural Biometric Enrolled Students
+              for (const s of enrolledNeural) {
+                const match = matchInsightDescriptor(det.embedding, s.descriptor, 0.70);
+                if (match.similarity > topSim) {
+                  secondSim = topSim;
+                  topSim = match.similarity;
+                  bestMatch = { student: s, similarity: match.similarity, confidence: match.confidence };
+                } else if (match.similarity > secondSim) {
+                  secondSim = match.similarity;
                 }
               }
 
-              // 2. Fallback for legacy 128-D enrolled students if no 512-D matches were found in frame
-              if (enrolled128.length > 0 && currentFrameMatchedIds.size === 0) {
-                const detections128 = await detectAllFacesWithDetails(videoRef.current);
-                if (detections128.length > 0) {
-                  for (const det of detections128) {
-                    let bestMatch128: any = null;
-                    let minDist1 = Infinity;
-                    let minDist2 = Infinity;
+              const box = det.box;
+              let labelText = 'Unknown Face';
+              let boxColor = '#ef4444'; // Red default for unregistered / unupgraded
 
-                    for (const s of enrolled128) {
-                      // Strict 0.40 Euclidean threshold for 1-to-N search!
-                      const match = matchFaceDescriptor(det.descriptor, s.descriptor, 0.40);
-                      const dist = 0.55 - ((match.confidence - 65) / 34) * 0.55;
-                      if (dist < minDist1) {
-                        minDist2 = minDist1;
-                        minDist1 = dist;
-                        if (match.isMatch && match.confidence >= 80) {
-                          bestMatch128 = { student: s, confidence: match.confidence };
-                        }
-                      } else if (dist < minDist2) {
-                        minDist2 = dist;
-                      }
-                    }
+              // Industry Standard Criteria:
+              // - Cosine Similarity >= 0.70 (>= 70%)
+              // - Margin over 2nd best candidate >= 0.05 (Disambiguation guard)
+              const isDistinctMatch = bestMatch && topSim >= 0.70 && (topSim - secondSim >= 0.05);
 
-                    const box = det.box;
-                    if (bestMatch128 && (minDist2 - minDist1 >= 0.05)) {
-                      const sId = bestMatch128.student.id;
-                      currentFrameMatchedIds.add(sId);
-                      const hits = (consecutiveHitsRef.current[sId] || 0) + 1;
-                      consecutiveHitsRef.current[sId] = hits;
+              if (isDistinctMatch) {
+                const sId = bestMatch.student.id;
+                currentFrameMatchedIds.add(sId);
+                const hits = (consecutiveHitsRef.current[sId] || 0) + 1;
+                consecutiveHitsRef.current[sId] = hits;
 
-                      const studentName = bestMatch128.student.name || 'Student';
-                      const rollNo = bestMatch128.student.roll_no ? ` (${bestMatch128.student.roll_no})` : '';
+                const studentName = bestMatch.student.name || 'Student';
+                const rollNo = bestMatch.student.roll_no ? ` (${bestMatch.student.roll_no})` : '';
 
-                      let labelText = '';
-                      let boxColor = '#ef4444';
+                // Require 3 consecutive frames (~600ms steady gaze) before triggering attendance
+                if (hits >= 3) {
+                  labelText = `${studentName} ${bestMatch.confidence}% ✓`;
+                  boxColor = '#22c55e'; // Green confirmed
 
-                      if (hits >= 3) {
-                        labelText = `${studentName} ${bestMatch128.confidence}% ✓`;
-                        boxColor = '#22c55e';
-
-                        if (markedRef.current[sId] !== 'P' && !pendingMarkRef.current.has(sId)) {
-                          markedRef.current[sId] = 'P';
-                          pendingMarkRef.current.add(sId);
-                          markPromises.push(onMark(sId));
-                          newlyMarkedNames.push(`${studentName}${rollNo}`);
-                        }
-                      } else {
-                        labelText = `${studentName} Verifying (${hits}/3)…`;
-                        boxColor = '#eab308';
-                      }
-
-                      if (canvasRef.current && ctx) {
-                        drawInsightBox(ctx, box, labelText, boxColor);
-                      }
-                    }
+                  if (markedRef.current[sId] !== 'P' && !pendingMarkRef.current.has(sId)) {
+                    markedRef.current[sId] = 'P';
+                    pendingMarkRef.current.add(sId);
+                    markPromises.push(onMark(sId));
+                    newlyMarkedNames.push(`${studentName}${rollNo}`);
                   }
+                } else {
+                  labelText = `${studentName} Verifying (${hits}/3)…`;
+                  boxColor = '#eab308'; // Amber verifying
                 }
+              } else {
+                labelText = 'Unknown Face';
+                boxColor = '#ef4444'; // Red
               }
 
-              // Decay consecutive hit counter for any student not matched in this frame
-              Object.keys(consecutiveHitsRef.current).forEach(id => {
-                if (!currentFrameMatchedIds.has(id)) {
-                  consecutiveHitsRef.current[id] = Math.max(0, (consecutiveHitsRef.current[id] || 0) - 1);
-                }
-              });
-
-              if (markPromises.length > 0) await Promise.all(markPromises);
-
-              if (newlyMarkedNames.length > 0) {
-                const stamp = Date.now();
-                const newMatches = newlyMarkedNames.map((n, i) => ({ id: stamp + '-' + i, name: n, time: stamp }));
-                setRecentMatches(prev => [...prev, ...newMatches]);
-                setTimeout(() => {
-                  setRecentMatches(prev => prev.filter(m => stamp - m.time < 3500));
-                }, 3500);
-              }
-            } catch (err) {
-              console.error("Face matching error:", err);
-            } finally {
-              isDetecting = false;
+              drawInsightBox(ctx, box, labelText, boxColor);
             }
           }
-          
-          // FPS Calculation
+
+          // Decay consecutive hit counter for any student not matched in this frame
+          Object.keys(consecutiveHitsRef.current).forEach(id => {
+            if (!currentFrameMatchedIds.has(id)) {
+              consecutiveHitsRef.current[id] = Math.max(0, (consecutiveHitsRef.current[id] || 0) - 1);
+            }
+          });
+
+          if (markPromises.length > 0) await Promise.all(markPromises);
+
+          if (newlyMarkedNames.length > 0) {
+            const stamp = Date.now();
+            const newMatches = newlyMarkedNames.map((n, i) => ({ id: stamp + '-' + i, name: n, time: stamp }));
+            setRecentMatches(prev => [...prev, ...newMatches]);
+            setTimeout(() => {
+              setRecentMatches(prev => prev.filter(m => stamp - m.time < 3500));
+            }, 3500);
+          }
+        };
+
+        const scanLoop = () => {
+          if (!isRunning) return;
+
+          // Always schedule next animation frame first — guarantees smooth 30-60 FPS UI!
+          animationFrameId = requestAnimationFrame(scanLoop);
+
+          // Realtime FPS Calculation
+          const now = Date.now();
           frameCount++;
           if (now - lastFpsTime >= 1000) {
             setFps(frameCount);
             frameCount = 0;
             lastFpsTime = now;
           }
-          
-          if (isRunning) requestAnimationFrame(scanLoop);
+
+          if (!videoRef.current || !canvasRef.current) return;
+          const video = videoRef.current;
+          const canvas = canvasRef.current;
+
+          if (video.readyState < 2 || video.videoWidth === 0) return;
+
+          if (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight) {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+          }
+
+          // Cadence gate: run heavy AI detection every ~200ms non-blockingly
+          if (isDetecting || now - lastDetectTime < 200) return;
+
+          isDetecting = true;
+          lastDetectTime = now;
+
+          performDetection(video, canvas)
+            .catch(err => console.error("Detection error:", err))
+            .finally(() => {
+              isDetecting = false;
+            });
         };
 
         scanLoop();
@@ -351,6 +296,7 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
 
     return () => {
       isRunning = false;
+      if (animationFrameId) cancelAnimationFrame(animationFrameId);
       if (stream) stream.getTracks().forEach(t => t.stop());
     };
   }, [subjectId]);

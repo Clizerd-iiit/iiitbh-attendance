@@ -112,7 +112,11 @@ export async function detectAllFacesInsight(video: HTMLVideoElement): Promise<{
 
   isDetectingLock = true;
   try {
-    const result = await humanInstance.detect(video);
+    const detectPromise = humanInstance.detect(video);
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Biometric inference timeout')), 2500)
+    );
+    const result: any = await Promise.race([detectPromise, timeoutPromise]);
     if (!result || !result.face || result.face.length === 0) return [];
 
     return result.face
@@ -128,7 +132,7 @@ export async function detectAllFacesInsight(video: HTMLVideoElement): Promise<{
         score: f.faceScore || f.boxScore || 0,
       }));
   } catch (err) {
-    console.error('AI Biometric detection error:', err);
+    console.warn('AI Biometric detection warning:', err);
     return [];
   } finally {
     isDetectingLock = false;
