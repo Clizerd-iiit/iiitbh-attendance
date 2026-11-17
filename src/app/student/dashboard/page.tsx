@@ -263,7 +263,7 @@ export default function StudentDashboard() {
             if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
 
             if (face) {
-              const res = matchInsightDescriptor(face.embedding, faceDescriptor, 0.70);
+              const res = matchInsightDescriptor(face.embedding, faceDescriptor, 0.52);
               const box = face.box;
 
               if (res.isMatch) {
@@ -651,7 +651,7 @@ export default function StudentDashboard() {
               if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
 
               if (face) {
-                const res = matchInsightDescriptor(face.embedding, faceDescriptor, 0.70);
+                const res = matchInsightDescriptor(face.embedding, faceDescriptor, 0.52);
                 const box = face.box;
 
                 if (res.isMatch) {

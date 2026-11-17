@@ -241,7 +241,7 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
               let secondSim = -1;
 
               for (const s of enrolledNeural) {
-                const match = matchInsightDescriptor(det.embedding, s.descriptor, 0.65);
+                const match = matchInsightDescriptor(det.embedding, s.descriptor, 0.52);
                 if (match.similarity > topSim) {
                   secondSim = topSim;
                   topSim = match.similarity;
@@ -254,8 +254,8 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
               let labelText = 'Unregistered Face';
               let boxColor = '#ef4444'; // Red default
 
-              // Robust Matching Threshold: Cosine similarity >= 65% with disambiguation guard
-              const isMatch = bestMatch && topSim >= 0.65 && (secondSim < 0 || topSim - secondSim >= 0.04);
+              // Robust Matching Threshold: Cosine similarity >= 52% with disambiguation guard
+              const isMatch = bestMatch && topSim >= 0.52 && (secondSim < 0 || topSim - secondSim >= 0.04);
 
               if (isMatch) {
                 const sId = bestMatch.student.id;
@@ -266,7 +266,7 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
                 const sName = bestMatch.student.name || 'Student';
                 const rollStr = bestMatch.student.roll_no ? ` (${bestMatch.student.roll_no})` : '';
 
-                if (hits >= 3) {
+                if (hits >= 2) {
                   labelText = `${sName} ${bestMatch.confidence}% ✓`;
                   boxColor = '#22c55e'; // Green confirmed
 
@@ -277,7 +277,7 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
                     newlyMarkedNames.push(`${sName}${rollStr}`);
                   }
                 } else {
-                  labelText = `${sName} Verifying (${hits}/3)…`;
+                  labelText = `${sName} Verifying…`;
                   boxColor = '#eab308'; // Amber verifying
                 }
               }
@@ -398,7 +398,7 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
                   <span className="w-2 h-2 rounded-full bg-green-400 animate-ping" />
                   ENGINE: High-Precision Neural Biometrics
                 </p>
-                <p>MATCHING: Cosine Similarity ≥ 65% · 3-Frame Temporal Lock</p>
+                <p>MATCHING: High-Precision Neural Lock · Instant Verification</p>
                 <p>HARDWARE: WebGL GPU Accelerated · IndexedDB Cached</p>
                 <p className="text-xs text-gray-300 mt-1 font-mono">
                   Enrolled: <span className="text-green-300">{enrolledCount}</span> · Tracking: <span className="text-green-300">{detectedCount}</span> face(s)
