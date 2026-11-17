@@ -204,16 +204,16 @@ export default function StudentDashboard() {
   const startLiveTest = async () => {
     try {
       setIsTestingCamera(true);
-      setTestMatchResult({ isMatch: false, confidence: 0, text: 'Starting camera & InsightFace ArcFace engine...' });
+      setTestMatchResult({ isMatch: false, confidence: 0, text: 'Starting camera & AI Biometric engine...' });
 
-      const is512 = faceDescriptor && (
+      const isNeural = faceDescriptor && (
         Array.isArray(faceDescriptor) && Array.isArray(faceDescriptor[0])
-          ? faceDescriptor[0].length === 512
-          : Array.isArray(faceDescriptor) && faceDescriptor.length === 512
+          ? faceDescriptor[0].length >= 256
+          : Array.isArray(faceDescriptor) && faceDescriptor.length >= 256
       );
 
       // Ensure model is loaded
-      if (is512) {
+      if (isNeural) {
         await loadInsightFaceWithProgress((p, stage) => {
           setModelPreloadProgress(p);
           setModelPreloadStage(stage);
@@ -257,7 +257,7 @@ export default function StudentDashboard() {
             canvas.height = video.videoHeight || 320;
           }
 
-          if (is512) {
+          if (isNeural) {
             const face = await detectSingleFaceInsight(video);
             const ctx = canvas.getContext('2d');
             if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -271,14 +271,14 @@ export default function StudentDashboard() {
                 setTestMatchResult({
                   isMatch: true,
                   confidence: res.confidence,
-                  text: `✅ Match: ${res.confidence}% — InsightFace ArcFace recognizes you with high confidence!`,
+                  text: `✅ Match: ${res.confidence}% — AI Biometric engine recognizes you with high confidence!`,
                 });
               } else {
                 if (ctx) drawSquareFaceBox(ctx, box, `${studentName} (${res.confidence}%)`, 'mismatch');
                 setTestMatchResult({
                   isMatch: false,
                   confidence: res.confidence,
-                  text: `⚠️ Match: ${res.confidence}% — Below ArcFace threshold. Ensure direct lighting & neutral gaze.`,
+                  text: `⚠️ Match: ${res.confidence}% — Below recognition threshold. Ensure direct lighting & neutral gaze.`,
                 });
               }
             } else {
@@ -585,15 +585,15 @@ export default function StudentDashboard() {
       setModelLoadProgress(15);
       setModelLoadStage('Initializing AI Biometric Engine...');
 
-      const is512 = faceDescriptor && (
+      const isNeural = faceDescriptor && (
         Array.isArray(faceDescriptor) && Array.isArray(faceDescriptor[0])
-          ? faceDescriptor[0].length === 512
-          : Array.isArray(faceDescriptor) && faceDescriptor.length === 512
+          ? faceDescriptor[0].length >= 256
+          : Array.isArray(faceDescriptor) && faceDescriptor.length >= 256
       );
 
       let stream: MediaStream | null = null;
       try {
-        if (is512) {
+        if (isNeural) {
           await loadInsightFaceWithProgress((percent, stage) => {
             setModelLoadProgress(percent);
             setModelLoadStage(stage);
@@ -645,7 +645,7 @@ export default function StudentDashboard() {
               canvas.height = video.videoHeight || 320;
             }
 
-            if (is512) {
+            if (isNeural) {
               const face = await detectSingleFaceInsight(video);
               const ctx = canvas.getContext('2d');
               if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -799,15 +799,15 @@ export default function StudentDashboard() {
           </div>
         )}
 
-        {/* Upgrade Face ID to InsightFace ArcFace Banner */}
-        {hasFaceId && faceDescriptor && (!Array.isArray(faceDescriptor) || !Array.isArray(faceDescriptor[0]) || faceDescriptor[0]?.length !== 512) && (
+        {/* Upgrade Face ID to High-Precision Biometrics Banner */}
+        {hasFaceId && faceDescriptor && (!Array.isArray(faceDescriptor) || !Array.isArray(faceDescriptor[0]) || faceDescriptor[0]?.length < 256) && (
           <div className="bg-gradient-to-r from-indigo-50 to-blue-50 border border-indigo-200 p-4 mb-6 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 shadow-sm">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold text-lg shadow-sm">
                 ⚡
               </div>
               <div>
-                <h4 className="font-bold text-indigo-900 text-sm">Upgrade Face ID to InsightFace ArcFace (512-D)</h4>
+                <h4 className="font-bold text-indigo-900 text-sm">Upgrade Face ID (High-Precision Biometrics)</h4>
                 <p className="text-xs text-indigo-700">Higher recognition accuracy for instant, hands-free Kiosk attendance in class.</p>
               </div>
             </div>
@@ -1603,7 +1603,7 @@ export default function StudentDashboard() {
                     <div className="p-3.5 space-y-1">
                       <p className="font-bold text-gray-900">4. Changed beard, hairstyle or spectacles</p>
                       <p className="text-gray-600 leading-relaxed">
-                        If you recently shaved, grew a dense beard, or changed glasses, simply re-register your Face ID from the student profile to update your 512-dimension biometric vector.
+                        If you recently shaved, grew a dense beard, or changed glasses, simply re-register your Face ID from the student profile to update your neural biometric vector.
                       </p>
                     </div>
                   </div>

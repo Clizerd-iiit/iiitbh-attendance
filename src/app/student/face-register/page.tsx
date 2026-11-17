@@ -7,6 +7,7 @@ import { Navbar } from '@/components/shared/Navbar';
 export default function FaceRegisterPage() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const isCapturingRef = useRef(false);
 
   /* ── State Machine: loading → ready → scanning → done | error ── */
   const [phase, setPhase] = useState<'loading' | 'ready' | 'scanning' | 'done' | 'error'>('loading');
@@ -100,12 +101,12 @@ export default function FaceRegisterPage() {
 
     const tracker = setInterval(async () => {
       const vid = videoRef.current;
-      if (!vid || vid.readyState < 2 || vid.videoWidth === 0 || !active) return;
+      if (!vid || vid.readyState < 2 || vid.videoWidth === 0 || !active || isCapturingRef.current) return;
 
       try {
         // Fast probe to check if face is currently visible
         const face = await detectSingleFaceInsight(vid);
-        if (active) {
+        if (active && !isCapturingRef.current) {
           setIsFaceInFrame(!!face);
           if (!face) {
             setGuidanceTip('Hold steady · Position face in center');
@@ -127,41 +128,43 @@ export default function FaceRegisterPage() {
   // ── 3. Capture Biometric Angle ───────────────────────────────────────────
   const captureAngle = useCallback(async () => {
     const vid = videoRef.current;
-    if (!vid || phase !== 'ready') return;
+    if (!vid || phase !== 'ready' || isCapturingRef.current) return;
 
     if (vid.readyState < 2 || vid.videoWidth === 0) {
       alert('Camera stream is still starting. Please wait a moment.');
       return;
     }
 
+    isCapturingRef.current = true;
     setPhase('scanning');
-    setScanFeedback('Analyzing 512-D ArcFace geometry…');
+    setScanFeedback('Analyzing neural face geometry…');
     setGuidanceTip('');
 
     try {
       await new Promise((r) => requestAnimationFrame(r));
+      await new Promise((r) => setTimeout(r, 80));
 
       let face: any = null;
       let attempts = 0;
-      const maxAttempts = 3;
+      const maxAttempts = 6;
 
-      // 3 fast attempts (~1s total)
+      // 6 fast attempts (~1.2s total)
       while (!face && attempts < maxAttempts) {
         attempts++;
         face = await detectSingleFaceInsight(vid);
         if (!face && attempts < maxAttempts) {
-          await new Promise((r) => setTimeout(r, 250));
+          await new Promise((r) => setTimeout(r, 180));
         }
       }
 
-      if (!face || !face.embedding || face.embedding.length !== 512) {
+      if (!face || !face.embedding || face.embedding.length === 0) {
         setScanFeedback('');
         setPhase('ready');
         setGuidanceTip('Face not detected. Look directly into camera in good lighting.');
         return;
       }
 
-      setScanFeedback('✅ 512-D ArcFace Angle Captured!');
+      setScanFeedback('✅ Face Angle Captured!');
       await new Promise((r) => setTimeout(r, 350));
 
       setDescriptors((prev) => [...prev, Array.from(face.embedding)]);
@@ -179,6 +182,8 @@ export default function FaceRegisterPage() {
       setScanFeedback('');
       setPhase('ready');
       alert(`Face scan error: ${err?.message || 'Please try again.'}`);
+    } finally {
+      isCapturingRef.current = false;
     }
   }, [phase]);
 

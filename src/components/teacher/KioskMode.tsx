@@ -63,7 +63,7 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [status, setStatus] = useState<'loading_models'|'loading_faces'|'starting_camera'|'active'|'error'>('loading_models');
   const [modelLoadProgress, setModelLoadProgress] = useState(0);
-  const [modelLoadStage, setModelLoadStage] = useState('Initializing InsightFace ArcFace Engine...');
+  const [modelLoadStage, setModelLoadStage] = useState('Initializing AI Biometric Engine...');
   const [msg, setMsg] = useState('');
   const [recentMatches, setRecentMatches] = useState<{id: string, name: string, time: number}[]>([]);
   const [fps, setFps] = useState(0);
@@ -123,8 +123,8 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
           return;
         }
 
-        // Categorize enrolled students into 512-D (InsightFace) and 128-D (Legacy)
-        const enrolled512 = enrolledStudents.filter(s => getDescriptorDim(s.descriptor) === 512);
+        // Categorize enrolled students into Neural Biometrics (>= 256) and 128-D (Legacy)
+        const enrolledNeural = enrolledStudents.filter(s => getDescriptorDim(s.descriptor) >= 256);
         const enrolled128 = enrolledStudents.filter(s => getDescriptorDim(s.descriptor) === 128);
 
         // If class contains legacy 128-D students, also ensure faceEngine is initialized
@@ -170,9 +170,9 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
                 canvasRef.current.height = videoRef.current.videoHeight;
               }
 
-              // Run InsightFace 512-D Detection
-              const detections512 = await detectAllFacesInsight(videoRef.current);
-              setFacesCount(detections512.length);
+              // Run Neural Biometric Detection
+              const detectionsNeural = await detectAllFacesInsight(videoRef.current);
+              setFacesCount(detectionsNeural.length);
 
               const ctx = canvasRef.current.getContext('2d');
               if (ctx) ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
@@ -181,14 +181,14 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
               const newlyMarkedNames: string[] = [];
               const markPromises: Promise<void>[] = [];
 
-              if (detections512.length > 0) {
-                for (const det of detections512) {
+              if (detectionsNeural.length > 0) {
+                for (const det of detectionsNeural) {
                   let bestMatch: any = null;
                   let topSim = -1;
                   let secondSim = -1;
 
-                  // 1. Compare against 512-D InsightFace Enrolled Students
-                  for (const s of enrolled512) {
+                  // 1. Compare against Neural Biometric Enrolled Students
+                  for (const s of enrolledNeural) {
                     const match = matchInsightDescriptor(det.embedding, s.descriptor, 0.70);
                     if (match.similarity > topSim) {
                       secondSim = topSim;
@@ -360,7 +360,7 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
       <div className="p-4 bg-gray-950 flex justify-between items-center border-b border-gray-800">
         <h2 className="text-white font-bold text-xl flex items-center gap-3">
           <span className="w-3 h-3 bg-red-500 rounded-full animate-pulse"/>
-          Biometric Attendance Kiosk (InsightFace ArcFace 512-D)
+          AI Biometric Attendance Kiosk
         </h2>
         <div className="flex items-center gap-4">
            <div className="text-green-400 font-bold bg-gray-900 px-3 py-1 rounded border border-green-900">
@@ -420,7 +420,7 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
              <div className="absolute top-4 left-4 text-green-400 text-xs md:text-sm font-bold opacity-90 pointer-events-none bg-black/60 p-2.5 rounded-xl border border-green-500/30">
                 <p className="flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-green-400 animate-ping" />
-                  ENGINE: InsightFace ArcFace (512-D HD)
+                  ENGINE: High-Precision Neural Biometrics
                 </p>
                 <p>MATCHING: Cosine Similarity ≥ 70% · 3-Frame Temporal Lock</p>
                 <p>HARDWARE: WebGL GPU Accelerated · IndexedDB Cached</p>

@@ -28,7 +28,7 @@ export const INSIGHTFACE_CONFIG = {
       rotation: false,
       return: true,
       cropFactor: 1.6,
-      minConfidence: 0.35,
+      minConfidence: 0.20, // Robust detection across all indoor/classroom lighting
       maxDetected: 20, // Support multi-face recognition for Kiosk Mode
     },
     mesh: { enabled: false },
@@ -60,7 +60,7 @@ export async function loadInsightFaceWithProgress(
   if (typeof window === 'undefined') return null;
 
   if (humanInstance) {
-    onProgress?.(100, 'InsightFace ArcFace Ready');
+    onProgress?.(100, 'AI Biometric Engine Ready');
     return humanInstance;
   }
 
@@ -71,21 +71,21 @@ export async function loadInsightFaceWithProgress(
 
   initPromise = (async () => {
     try {
-      onProgress?.(20, 'Initializing InsightFace Engine...');
+      onProgress?.(20, 'Initializing AI Biometric Engine...');
       const { Human } = await import('@vladmandic/human');
 
       onProgress?.(45, 'Configuring GPU Hardware Acceleration...');
       const human = new Human(INSIGHTFACE_CONFIG);
       await human.init();
 
-      onProgress?.(70, 'Loading 512-D ArcFace Biometric Graph...');
+      onProgress?.(70, 'Loading Neural Biometric Graph...');
       await human.load();
 
       onProgress?.(95, 'Optimizing Hardware Acceleration...');
       await new Promise(r => setTimeout(r, 60));
 
       humanInstance = human;
-      onProgress?.(100, 'InsightFace ArcFace Ready');
+      onProgress?.(100, 'AI Biometric Engine Ready');
       return human;
     } catch (err) {
       console.error('Failed to initialize AI Biometric Engine:', err);
@@ -97,8 +97,10 @@ export async function loadInsightFaceWithProgress(
   return await initPromise;
 }
 
+let isDetectingLock = false;
+
 /**
- * Detects all faces in a video frame with their real bounding boxes and 512-D InsightFace descriptors.
+ * Detects all faces in a video frame with their real bounding boxes and neural descriptors.
  */
 export async function detectAllFacesInsight(video: HTMLVideoElement): Promise<{
   box: { x: number; y: number; width: number; height: number };
@@ -106,6 +108,9 @@ export async function detectAllFacesInsight(video: HTMLVideoElement): Promise<{
   score: number;
 }[]> {
   if (!humanInstance || !video || video.readyState < 2 || video.videoWidth === 0) return [];
+  if (isDetectingLock) return [];
+
+  isDetectingLock = true;
   try {
     const result = await humanInstance.detect(video);
     if (!result || !result.face || result.face.length === 0) return [];
@@ -123,8 +128,10 @@ export async function detectAllFacesInsight(video: HTMLVideoElement): Promise<{
         score: f.faceScore || f.boxScore || 0,
       }));
   } catch (err) {
-    console.error('InsightFace detection error:', err);
+    console.error('AI Biometric detection error:', err);
     return [];
+  } finally {
+    isDetectingLock = false;
   }
 }
 
