@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from 'react';
+import { loadInsightFaceWithProgress, detectAllFacesInsight, matchInsightDescriptor } from '@/lib/humanInsightFace';
 import { loadFaceEngine, detectAllFacesWithDetails, matchFaceDescriptor } from '@/lib/faceEngine';
 
 interface KioskModeProps {
@@ -8,6 +9,13 @@ interface KioskModeProps {
   onMark: (studentId: string) => Promise<void>;
   markedMap: Record<string, string>;
   students: { id: string; name: string; roll_no?: string }[];
+}
+
+function getDescriptorDim(descriptor: any): number {
+  if (!descriptor) return 0;
+  if (Array.isArray(descriptor) && Array.isArray(descriptor[0])) return descriptor[0].length;
+  if (Array.isArray(descriptor)) return descriptor.length;
+  return 0;
 }
 
 function drawInsightBox(
@@ -21,12 +29,29 @@ function drawInsightBox(
   ctx.lineWidth = 3;
   ctx.strokeRect(box.x, box.y, box.width, box.height);
 
+  // High-tech corner brackets
+  const cornerLen = Math.min(20, Math.max(8, box.width * 0.18));
+  ctx.lineWidth = 4;
+  // Top-left
+  ctx.beginPath(); ctx.moveTo(box.x, box.y + cornerLen); ctx.lineTo(box.x, box.y); ctx.lineTo(box.x + cornerLen, box.y); ctx.stroke();
+  // Top-right
+  ctx.beginPath(); ctx.moveTo(box.x + box.width - cornerLen, box.y); ctx.lineTo(box.x + box.width, box.y); ctx.lineTo(box.x + box.width, box.y + cornerLen); ctx.stroke();
+  // Bottom-left
+  ctx.beginPath(); ctx.moveTo(box.x, box.y + box.height - cornerLen); ctx.lineTo(box.x, box.y + box.height); ctx.lineTo(box.x + cornerLen, box.y + box.height); ctx.stroke();
+  // Bottom-right
+  ctx.beginPath(); ctx.moveTo(box.x + box.width - cornerLen, box.y + box.height); ctx.lineTo(box.x + box.width, box.y + box.height); ctx.lineTo(box.x + box.width, box.y + box.height - cornerLen); ctx.stroke();
+
   // Label capsule
-  ctx.font = 'bold 15px system-ui, -apple-system, sans-serif';
+  ctx.font = 'bold 14px system-ui, -apple-system, sans-serif';
   const textWidth = ctx.measureText(label).width;
-  const padding = 6;
-  ctx.fillStyle = color === '#22c55e' ? 'rgba(22, 101, 52, 0.95)' : 'rgba(153, 27, 27, 0.95)';
-  const labelY = box.y - 28 > 0 ? box.y - 28 : box.y;
+  const padding = 8;
+  const labelBg = color === '#22c55e' 
+    ? 'rgba(22, 101, 52, 0.95)' 
+    : color === '#eab308' 
+      ? 'rgba(161, 98, 7, 0.95)' 
+      : 'rgba(153, 27, 27, 0.95)';
+  const labelY = box.y - 28 > 0 ? box.y - 28 : box.y + box.height + 4;
+  ctx.fillStyle = labelBg;
   ctx.fillRect(box.x, labelY, textWidth + padding * 2, 26);
   ctx.fillStyle = '#ffffff';
   ctx.fillText(label, box.x + padding, labelY + 18);
@@ -38,7 +63,7 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [status, setStatus] = useState<'loading_models'|'loading_faces'|'starting_camera'|'active'|'error'>('loading_models');
   const [modelLoadProgress, setModelLoadProgress] = useState(0);
-  const [modelLoadStage, setModelLoadStage] = useState('Initializing Biometric Attendance Engine...');
+  const [modelLoadStage, setModelLoadStage] = useState('Initializing InsightFace ArcFace Engine...');
   const [msg, setMsg] = useState('');
   const [recentMatches, setRecentMatches] = useState<{id: string, name: string, time: number}[]>([]);
   const [fps, setFps] = useState(0);
@@ -46,6 +71,11 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
   
   const markedRef = useRef(markedMap);
   useEffect(() => { markedRef.current = markedMap; }, [markedMap]);
+
+  // Industry Setting: Multi-frame temporal consistency map (studentId -> consecutive hit count)
+  const consecutiveHitsRef = useRef<Record<string, number>>({});
+  // Pending mark lockout set
+  const pendingMarkRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     let stream: MediaStream | null = null;
@@ -56,7 +86,9 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
     const init = async () => {
       try {
         setStatus('loading_models');
-        await loadFaceEngine((percent, stage) => {
+        
+        // 1. Load InsightFace ArcFace (512-D) with local caching
+        await loadInsightFaceWithProgress((percent, stage) => {
           setModelLoadProgress(percent);
           setModelLoadStage(stage);
         });
@@ -91,6 +123,15 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
           return;
         }
 
+        // Categorize enrolled students into 512-D (InsightFace) and 128-D (Legacy)
+        const enrolled512 = enrolledStudents.filter(s => getDescriptorDim(s.descriptor) === 512);
+        const enrolled128 = enrolledStudents.filter(s => getDescriptorDim(s.descriptor) === 128);
+
+        // If class contains legacy 128-D students, also ensure faceEngine is initialized
+        if (enrolled128.length > 0) {
+          await loadFaceEngine();
+        }
+
         setStatus('starting_camera');
         stream = await navigator.mediaDevices.getUserMedia({ 
           video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' } 
@@ -112,7 +153,7 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
 
         setStatus('active');
 
-        // High-Speed Throttled Inference Loop
+        // High-Speed Industry-Level Inference Loop (250ms cadence)
         let isDetecting = false;
         let lastDetectTime = 0;
 
@@ -120,7 +161,7 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
           if (!isRunning || !videoRef.current || !canvasRef.current) return;
           
           const now = Date.now();
-          if (!isDetecting && now - lastDetectTime >= 250 && videoRef.current.readyState >= 2) {
+          if (!isDetecting && now - lastDetectTime >= 220 && videoRef.current.readyState >= 2) {
             isDetecting = true;
             lastDetectTime = now;
             try {
@@ -129,64 +170,155 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
                 canvasRef.current.height = videoRef.current.videoHeight;
               }
 
-              const detections = await detectAllFacesWithDetails(videoRef.current);
-              setFacesCount(detections.length);
+              // Run InsightFace 512-D Detection
+              const detections512 = await detectAllFacesInsight(videoRef.current);
+              setFacesCount(detections512.length);
 
               const ctx = canvasRef.current.getContext('2d');
               if (ctx) ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
 
-              if (detections.length > 0) {
-                const newlyMarkedNames: string[] = [];
-                const markPromises: Promise<void>[] = [];
+              const currentFrameMatchedIds = new Set<string>();
+              const newlyMarkedNames: string[] = [];
+              const markPromises: Promise<void>[] = [];
 
-                for (const det of detections) {
+              if (detections512.length > 0) {
+                for (const det of detections512) {
                   let bestMatch: any = null;
-                  let highestConf = 0;
+                  let topSim = -1;
+                  let secondSim = -1;
 
-                  for (const s of enrolledStudents) {
-                    const match = matchFaceDescriptor(det.descriptor, s.descriptor, 0.55);
-                    if (match.isMatch && match.confidence > highestConf) {
-                      highestConf = match.confidence;
-                      bestMatch = s;
+                  // 1. Compare against 512-D InsightFace Enrolled Students
+                  for (const s of enrolled512) {
+                    const match = matchInsightDescriptor(det.embedding, s.descriptor, 0.70);
+                    if (match.similarity > topSim) {
+                      secondSim = topSim;
+                      topSim = match.similarity;
+                      bestMatch = { student: s, similarity: match.similarity, confidence: match.confidence };
+                    } else if (match.similarity > secondSim) {
+                      secondSim = match.similarity;
                     }
                   }
 
                   const box = det.box;
-                  let labelText = 'Scanning…';
-                  let boxColor = '#3b82f6';
+                  let labelText = 'Unknown Face';
+                  let boxColor = '#ef4444'; // Red default for unregistered
 
-                  if (bestMatch && highestConf >= 50) {
-                    const studentName = bestMatch.name || 'Student';
-                    const rollNo = bestMatch.roll_no ? ` (${bestMatch.roll_no})` : '';
+                  // Industry Standard Criteria:
+                  // - Cosine Similarity >= 0.70 (>= 70%)
+                  // - Margin over 2nd best candidate >= 0.05 (Disambiguation guard)
+                  const isDistinctMatch = bestMatch && topSim >= 0.70 && (topSim - secondSim >= 0.05);
 
-                    labelText = `${studentName} ${highestConf}%`;
-                    boxColor = '#22c55e';
+                  if (isDistinctMatch) {
+                    const sId = bestMatch.student.id;
+                    currentFrameMatchedIds.add(sId);
+                    const hits = (consecutiveHitsRef.current[sId] || 0) + 1;
+                    consecutiveHitsRef.current[sId] = hits;
 
-                    if (markedRef.current[bestMatch.id] !== 'P') {
-                      markedRef.current[bestMatch.id] = 'P';
-                      markPromises.push(onMark(bestMatch.id));
-                      newlyMarkedNames.push(`${studentName}${rollNo}`);
+                    const studentName = bestMatch.student.name || 'Student';
+                    const rollNo = bestMatch.student.roll_no ? ` (${bestMatch.student.roll_no})` : '';
+
+                    // Require 3 consecutive frames (~750ms steady gaze) before triggering attendance
+                    if (hits >= 3) {
+                      labelText = `${studentName} ${bestMatch.confidence}% ✓`;
+                      boxColor = '#22c55e'; // Green confirmed
+
+                      if (markedRef.current[sId] !== 'P' && !pendingMarkRef.current.has(sId)) {
+                        markedRef.current[sId] = 'P';
+                        pendingMarkRef.current.add(sId);
+                        markPromises.push(onMark(sId));
+                        newlyMarkedNames.push(`${studentName}${rollNo}`);
+                      }
+                    } else {
+                      labelText = `${studentName} Verifying (${hits}/3)…`;
+                      boxColor = '#eab308'; // Amber verifying
                     }
                   } else {
                     labelText = 'Unknown Face';
-                    boxColor = '#ef4444';
+                    boxColor = '#ef4444'; // Red
                   }
 
                   if (canvasRef.current && ctx) {
                     drawInsightBox(ctx, box, labelText, boxColor);
                   }
                 }
+              }
 
-                if (markPromises.length > 0) await Promise.all(markPromises);
+              // 2. Fallback for legacy 128-D enrolled students if no 512-D matches were found in frame
+              if (enrolled128.length > 0 && currentFrameMatchedIds.size === 0) {
+                const detections128 = await detectAllFacesWithDetails(videoRef.current);
+                if (detections128.length > 0) {
+                  for (const det of detections128) {
+                    let bestMatch128: any = null;
+                    let minDist1 = Infinity;
+                    let minDist2 = Infinity;
 
-                if (newlyMarkedNames.length > 0) {
-                  const stamp = Date.now();
-                  const newMatches = newlyMarkedNames.map((n, i) => ({ id: stamp + '-' + i, name: n, time: stamp }));
-                  setRecentMatches(prev => [...prev, ...newMatches]);
-                  setTimeout(() => {
-                    setRecentMatches(prev => prev.filter(m => stamp - m.time < 3500));
-                  }, 3500);
+                    for (const s of enrolled128) {
+                      // Strict 0.40 Euclidean threshold for 1-to-N search!
+                      const match = matchFaceDescriptor(det.descriptor, s.descriptor, 0.40);
+                      const dist = 0.55 - ((match.confidence - 65) / 34) * 0.55;
+                      if (dist < minDist1) {
+                        minDist2 = minDist1;
+                        minDist1 = dist;
+                        if (match.isMatch && match.confidence >= 80) {
+                          bestMatch128 = { student: s, confidence: match.confidence };
+                        }
+                      } else if (dist < minDist2) {
+                        minDist2 = dist;
+                      }
+                    }
+
+                    const box = det.box;
+                    if (bestMatch128 && (minDist2 - minDist1 >= 0.05)) {
+                      const sId = bestMatch128.student.id;
+                      currentFrameMatchedIds.add(sId);
+                      const hits = (consecutiveHitsRef.current[sId] || 0) + 1;
+                      consecutiveHitsRef.current[sId] = hits;
+
+                      const studentName = bestMatch128.student.name || 'Student';
+                      const rollNo = bestMatch128.student.roll_no ? ` (${bestMatch128.student.roll_no})` : '';
+
+                      let labelText = '';
+                      let boxColor = '#ef4444';
+
+                      if (hits >= 3) {
+                        labelText = `${studentName} ${bestMatch128.confidence}% ✓`;
+                        boxColor = '#22c55e';
+
+                        if (markedRef.current[sId] !== 'P' && !pendingMarkRef.current.has(sId)) {
+                          markedRef.current[sId] = 'P';
+                          pendingMarkRef.current.add(sId);
+                          markPromises.push(onMark(sId));
+                          newlyMarkedNames.push(`${studentName}${rollNo}`);
+                        }
+                      } else {
+                        labelText = `${studentName} Verifying (${hits}/3)…`;
+                        boxColor = '#eab308';
+                      }
+
+                      if (canvasRef.current && ctx) {
+                        drawInsightBox(ctx, box, labelText, boxColor);
+                      }
+                    }
+                  }
                 }
+              }
+
+              // Decay consecutive hit counter for any student not matched in this frame
+              Object.keys(consecutiveHitsRef.current).forEach(id => {
+                if (!currentFrameMatchedIds.has(id)) {
+                  consecutiveHitsRef.current[id] = Math.max(0, (consecutiveHitsRef.current[id] || 0) - 1);
+                }
+              });
+
+              if (markPromises.length > 0) await Promise.all(markPromises);
+
+              if (newlyMarkedNames.length > 0) {
+                const stamp = Date.now();
+                const newMatches = newlyMarkedNames.map((n, i) => ({ id: stamp + '-' + i, name: n, time: stamp }));
+                setRecentMatches(prev => [...prev, ...newMatches]);
+                setTimeout(() => {
+                  setRecentMatches(prev => prev.filter(m => stamp - m.time < 3500));
+                }, 3500);
               }
             } catch (err) {
               console.error("Face matching error:", err);
@@ -228,7 +360,7 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
       <div className="p-4 bg-gray-950 flex justify-between items-center border-b border-gray-800">
         <h2 className="text-white font-bold text-xl flex items-center gap-3">
           <span className="w-3 h-3 bg-red-500 rounded-full animate-pulse"/>
-          Biometric Attendance Kiosk (512-D HD)
+          Biometric Attendance Kiosk (InsightFace ArcFace 512-D)
         </h2>
         <div className="flex items-center gap-4">
            <div className="text-green-400 font-bold bg-gray-900 px-3 py-1 rounded border border-green-900">
@@ -285,10 +417,13 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
            
            {/* Biometric HUD Overlay */}
            {status === 'active' && (
-             <div className="absolute top-4 left-4 text-green-400 text-xs md:text-sm font-bold opacity-80 pointer-events-none">
-                <p>ENGINE: Neural Biometric AI (512-D HD)</p>
-                <p>TARGET: High-Precision Attendance Recognition</p>
-                <p>DEVICE: WebGL Hardware Accelerated</p>
+             <div className="absolute top-4 left-4 text-green-400 text-xs md:text-sm font-bold opacity-90 pointer-events-none bg-black/60 p-2.5 rounded-xl border border-green-500/30">
+                <p className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-green-400 animate-ping" />
+                  ENGINE: InsightFace ArcFace (512-D HD)
+                </p>
+                <p>MATCHING: Cosine Similarity ≥ 70% · 3-Frame Temporal Lock</p>
+                <p>HARDWARE: WebGL GPU Accelerated · IndexedDB Cached</p>
              </div>
            )}
         </div>
@@ -296,9 +431,9 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
         {/* Realtime Toast Popups */}
         <div className="absolute right-6 top-20 bottom-6 w-72 md:w-80 overflow-hidden flex flex-col items-end gap-3 pointer-events-none p-2">
           {recentMatches.map((match) => (
-            <div key={match.id} className="bg-gray-900 text-green-400 px-4 py-3 rounded font-bold text-lg shadow-lg flex items-center justify-between w-full border border-green-500">
+            <div key={match.id} className="bg-gray-900 text-green-400 px-4 py-3 rounded-xl font-bold text-base shadow-xl flex items-center justify-between w-full border border-green-500/60 animate-in fade-in slide-in-from-right duration-200">
               <span className="truncate">{match.name}</span>
-              <span className="text-xs bg-green-900 text-white px-2 py-1 rounded">MATCHED</span>
+              <span className="text-xs bg-green-900 text-green-200 px-2 py-1 rounded font-mono">VERIFIED ✓</span>
             </div>
           ))}
         </div>

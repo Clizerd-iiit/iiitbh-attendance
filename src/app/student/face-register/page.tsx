@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { loadFaceEngine, detectFaceEmbedding, BIOMETRIC_ANGLES } from '@/lib/faceEngine';
+import { loadInsightFaceWithProgress, detectSingleFaceInsight } from '@/lib/humanInsightFace';
+import { BIOMETRIC_ANGLES } from '@/lib/faceEngine';
 import { Navbar } from '@/components/shared/Navbar';
 
 export default function FaceRegisterPage() {
@@ -29,7 +30,7 @@ export default function FaceRegisterPage() {
 
     async function init() {
       try {
-        await loadFaceEngine((pct, stage) => {
+        await loadInsightFaceWithProgress((pct, stage) => {
           if (!cancelled) {
             setLoadProgress(pct);
             setLoadStage(stage);
@@ -103,10 +104,10 @@ export default function FaceRegisterPage() {
 
       try {
         // Fast probe to check if face is currently visible
-        const embedding = await detectFaceEmbedding(vid);
+        const face = await detectSingleFaceInsight(vid);
         if (active) {
-          setIsFaceInFrame(!!embedding);
-          if (!embedding) {
+          setIsFaceInFrame(!!face);
+          if (!face) {
             setGuidanceTip('Hold steady · Position face in center');
           } else {
             setGuidanceTip('');
@@ -134,36 +135,36 @@ export default function FaceRegisterPage() {
     }
 
     setPhase('scanning');
-    setScanFeedback('Analyzing face geometry…');
+    setScanFeedback('Analyzing 512-D ArcFace geometry…');
     setGuidanceTip('');
 
     try {
       await new Promise((r) => requestAnimationFrame(r));
 
-      let embedding: Float32Array | null = null;
+      let face: any = null;
       let attempts = 0;
       const maxAttempts = 3;
 
       // 3 fast attempts (~1s total)
-      while (!embedding && attempts < maxAttempts) {
+      while (!face && attempts < maxAttempts) {
         attempts++;
-        embedding = await detectFaceEmbedding(vid);
-        if (!embedding && attempts < maxAttempts) {
+        face = await detectSingleFaceInsight(vid);
+        if (!face && attempts < maxAttempts) {
           await new Promise((r) => setTimeout(r, 250));
         }
       }
 
-      if (!embedding) {
+      if (!face || !face.embedding || face.embedding.length !== 512) {
         setScanFeedback('');
         setPhase('ready');
         setGuidanceTip('Face not detected. Look directly into camera in good lighting.');
         return;
       }
 
-      setScanFeedback('✅ Angle Captured!');
+      setScanFeedback('✅ 512-D ArcFace Angle Captured!');
       await new Promise((r) => setTimeout(r, 350));
 
-      setDescriptors((prev) => [...prev, Array.from(embedding!)]);
+      setDescriptors((prev) => [...prev, Array.from(face.embedding)]);
       setStep((prev) => {
         const next = prev + 1;
         if (next >= BIOMETRIC_ANGLES.length) {

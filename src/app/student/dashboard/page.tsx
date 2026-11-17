@@ -6,6 +6,7 @@ import { WelcomeCard } from '@/components/shared/WelcomeCard';
 import { QrScanner } from '@/components/student/QrScanner';
 import { StudentAttendanceSummary } from '@/types';
 import { loadFaceEngine, detectFaceEmbedding, matchFaceDescriptor } from '@/lib/faceEngine';
+import { loadInsightFaceWithProgress, detectSingleFaceInsight, matchInsightDescriptor } from '@/lib/humanInsightFace';
 import { MapPin, Laptop, Smartphone, RefreshCw, X, AlertTriangle, HelpCircle, UserCheck, Camera, CheckCircle2, ShieldCheck, Sparkles, Eye, Info } from 'lucide-react';
 import { OnboardingTour } from '@/components/shared/OnboardingTour';
 
@@ -187,10 +188,11 @@ export default function StudentDashboard() {
   const handlePreloadModel = async () => {
     try {
       setIsPreloadingModel(true);
-      await loadFaceEngine((percent, stage) => {
+      await loadInsightFaceWithProgress((percent, stage) => {
         setModelPreloadProgress(percent);
         setModelPreloadStage(stage);
       });
+      await loadFaceEngine();
       setIsModelReady(true);
       setIsPreloadingModel(false);
     } catch (err: any) {
@@ -202,13 +204,26 @@ export default function StudentDashboard() {
   const startLiveTest = async () => {
     try {
       setIsTestingCamera(true);
-      setTestMatchResult({ isMatch: false, confidence: 0, text: 'Starting camera & AI engine...' });
+      setTestMatchResult({ isMatch: false, confidence: 0, text: 'Starting camera & InsightFace ArcFace engine...' });
+
+      const is512 = faceDescriptor && (
+        Array.isArray(faceDescriptor) && Array.isArray(faceDescriptor[0])
+          ? faceDescriptor[0].length === 512
+          : Array.isArray(faceDescriptor) && faceDescriptor.length === 512
+      );
 
       // Ensure model is loaded
-      await loadFaceEngine((p, stage) => {
-        setModelPreloadProgress(p);
-        setModelPreloadStage(stage);
-      });
+      if (is512) {
+        await loadInsightFaceWithProgress((p, stage) => {
+          setModelPreloadProgress(p);
+          setModelPreloadStage(stage);
+        });
+      } else {
+        await loadFaceEngine((p, stage) => {
+          setModelPreloadProgress(p);
+          setModelPreloadStage(stage);
+        });
+      }
       setIsModelReady(true);
 
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -242,46 +257,79 @@ export default function StudentDashboard() {
             canvas.height = video.videoHeight || 320;
           }
 
-          const embedding = await detectFaceEmbedding(video);
-          const ctx = canvas.getContext('2d');
-          if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
+          if (is512) {
+            const face = await detectSingleFaceInsight(video);
+            const ctx = canvas.getContext('2d');
+            if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-          if (embedding) {
-            const cx = canvas.width / 2, cy = canvas.height / 2;
-            const size = Math.min(canvas.width, canvas.height) * 0.55;
-            const box = { x: cx - size / 2, y: cy - size / 2, width: size, height: size };
+            if (face) {
+              const res = matchInsightDescriptor(face.embedding, faceDescriptor, 0.70);
+              const box = face.box;
 
-            if (faceDescriptor) {
-              const { isMatch, confidence } = matchFaceDescriptor(embedding, faceDescriptor, 0.55);
-              if (isMatch) {
-                if (ctx) drawSquareFaceBox(ctx, box, `${studentName} (${confidence}%)`, 'verified');
+              if (res.isMatch) {
+                if (ctx) drawSquareFaceBox(ctx, box, `${studentName} (${res.confidence}%)`, 'verified');
                 setTestMatchResult({
                   isMatch: true,
-                  confidence,
-                  text: `✅ Match: ${confidence}% — AI recognizes your face with high confidence!`,
+                  confidence: res.confidence,
+                  text: `✅ Match: ${res.confidence}% — InsightFace ArcFace recognizes you with high confidence!`,
                 });
               } else {
-                if (ctx) drawSquareFaceBox(ctx, box, `${studentName} (${confidence}%)`, 'mismatch');
+                if (ctx) drawSquareFaceBox(ctx, box, `${studentName} (${res.confidence}%)`, 'mismatch');
                 setTestMatchResult({
                   isMatch: false,
-                  confidence,
-                  text: `⚠️ Match: ${confidence}% — Face detected but score is low. Ensure good lighting & direct angle.`,
+                  confidence: res.confidence,
+                  text: `⚠️ Match: ${res.confidence}% — Below ArcFace threshold. Ensure direct lighting & neutral gaze.`,
                 });
               }
             } else {
-              if (ctx) drawSquareFaceBox(ctx, box, 'Face Detected', 'scanning');
               setTestMatchResult({
                 isMatch: false,
                 confidence: 0,
-                text: 'Face geometry detected, but no Face ID is registered in your profile yet.',
+                text: '🔍 Looking for face... Position face in camera frame with clear lighting.',
               });
             }
           } else {
-            setTestMatchResult({
-              isMatch: false,
-              confidence: 0,
-              text: '🔍 Looking for face... Position face in camera frame with clear lighting.',
-            });
+            const embedding = await detectFaceEmbedding(video);
+            const ctx = canvas.getContext('2d');
+            if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            if (embedding) {
+              const cx = canvas.width / 2, cy = canvas.height / 2;
+              const size = Math.min(canvas.width, canvas.height) * 0.55;
+              const box = { x: cx - size / 2, y: cy - size / 2, width: size, height: size };
+
+              if (faceDescriptor) {
+                const { isMatch, confidence } = matchFaceDescriptor(embedding, faceDescriptor, 0.55);
+                if (isMatch) {
+                  if (ctx) drawSquareFaceBox(ctx, box, `${studentName} (${confidence}%)`, 'verified');
+                  setTestMatchResult({
+                    isMatch: true,
+                    confidence,
+                    text: `✅ Match: ${confidence}% — AI recognizes your face with high confidence!`,
+                  });
+                } else {
+                  if (ctx) drawSquareFaceBox(ctx, box, `${studentName} (${confidence}%)`, 'mismatch');
+                  setTestMatchResult({
+                    isMatch: false,
+                    confidence,
+                    text: `⚠️ Match: ${confidence}% — Face detected but score is low. Ensure good lighting & direct angle.`,
+                  });
+                }
+              } else {
+                if (ctx) drawSquareFaceBox(ctx, box, 'Face Detected', 'scanning');
+                setTestMatchResult({
+                  isMatch: false,
+                  confidence: 0,
+                  text: 'Face geometry detected, but no Face ID is registered in your profile yet.',
+                });
+              }
+            } else {
+              setTestMatchResult({
+                isMatch: false,
+                confidence: 0,
+                text: '🔍 Looking for face... Position face in camera frame with clear lighting.',
+              });
+            }
           }
         }
         await new Promise(r => setTimeout(r, 200));
@@ -535,14 +583,27 @@ export default function StudentDashboard() {
 
       setFaceCheckState('loading_models');
       setModelLoadProgress(15);
-      setModelLoadStage('Initializing AI Neural Engine...');
+      setModelLoadStage('Initializing AI Biometric Engine...');
+
+      const is512 = faceDescriptor && (
+        Array.isArray(faceDescriptor) && Array.isArray(faceDescriptor[0])
+          ? faceDescriptor[0].length === 512
+          : Array.isArray(faceDescriptor) && faceDescriptor.length === 512
+      );
 
       let stream: MediaStream | null = null;
       try {
-        await loadFaceEngine((percent, stage) => {
-          setModelLoadProgress(percent);
-          setModelLoadStage(stage);
-        });
+        if (is512) {
+          await loadInsightFaceWithProgress((percent, stage) => {
+            setModelLoadProgress(percent);
+            setModelLoadStage(stage);
+          });
+        } else {
+          await loadFaceEngine((percent, stage) => {
+            setModelLoadProgress(percent);
+            setModelLoadStage(stage);
+          });
+        }
 
         setFaceCheckState('scanning');
         stream = await navigator.mediaDevices.getUserMedia({ 
@@ -584,36 +645,62 @@ export default function StudentDashboard() {
               canvas.height = video.videoHeight || 320;
             }
 
-            const embedding = await detectFaceEmbedding(video);
-            const ctx = canvas.getContext('2d');
-            if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if (is512) {
+              const face = await detectSingleFaceInsight(video);
+              const ctx = canvas.getContext('2d');
+              if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            if (embedding) {
-              const { isMatch, confidence } = matchFaceDescriptor(
-                embedding,
-                faceDescriptor,
-                0.55
-              );
+              if (face) {
+                const res = matchInsightDescriptor(face.embedding, faceDescriptor, 0.70);
+                const box = face.box;
 
-              // Approximate box from video center for canvas drawing
-              const cx = canvas.width / 2, cy = canvas.height / 2;
-              const size = Math.min(canvas.width, canvas.height) * 0.55;
-              const box = { x: cx - size / 2, y: cy - size / 2, width: size, height: size };
-
-              if (isMatch) {
-                consecutiveMatches++;
-                if (consecutiveMatches >= 2) {
-                  if (ctx) drawSquareFaceBox(ctx, box, `${studentName} (${confidence}%)`, 'verified');
-                  matched = true;
-                  setFaceCheckState('success');
-                  await new Promise(r => setTimeout(r, 250)); // Fast snappy 250ms visual confirmation
-                  break;
+                if (res.isMatch) {
+                  consecutiveMatches++;
+                  if (consecutiveMatches >= 2) {
+                    if (ctx) drawSquareFaceBox(ctx, box, `${studentName} (${res.confidence}%)`, 'verified');
+                    matched = true;
+                    setFaceCheckState('success');
+                    await new Promise(r => setTimeout(r, 250)); // Fast snappy 250ms visual confirmation
+                    break;
+                  } else {
+                    if (ctx) drawSquareFaceBox(ctx, box, `${studentName} (${res.confidence}%)`, 'scanning');
+                  }
                 } else {
-                  if (ctx) drawSquareFaceBox(ctx, box, `${studentName} (${confidence}%)`, 'scanning');
+                  consecutiveMatches = 0;
+                  if (ctx) drawSquareFaceBox(ctx, box, studentName, 'scanning');
                 }
-              } else {
-                consecutiveMatches = 0;
-                if (ctx) drawSquareFaceBox(ctx, box, studentName, 'scanning');
+              }
+            } else {
+              const embedding = await detectFaceEmbedding(video);
+              const ctx = canvas.getContext('2d');
+              if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+              if (embedding) {
+                const { isMatch, confidence } = matchFaceDescriptor(
+                  embedding,
+                  faceDescriptor,
+                  0.55
+                );
+
+                const cx = canvas.width / 2, cy = canvas.height / 2;
+                const size = Math.min(canvas.width, canvas.height) * 0.55;
+                const box = { x: cx - size / 2, y: cy - size / 2, width: size, height: size };
+
+                if (isMatch) {
+                  consecutiveMatches++;
+                  if (consecutiveMatches >= 2) {
+                    if (ctx) drawSquareFaceBox(ctx, box, `${studentName} (${confidence}%)`, 'verified');
+                    matched = true;
+                    setFaceCheckState('success');
+                    await new Promise(r => setTimeout(r, 250)); // Fast snappy 250ms visual confirmation
+                    break;
+                  } else {
+                    if (ctx) drawSquareFaceBox(ctx, box, `${studentName} (${confidence}%)`, 'scanning');
+                  }
+                } else {
+                  consecutiveMatches = 0;
+                  if (ctx) drawSquareFaceBox(ctx, box, studentName, 'scanning');
+                }
               }
             }
           }
@@ -708,6 +795,27 @@ export default function StudentDashboard() {
             </div>
             <button onClick={() => window.location.href='/student/face-register'} className="bg-red-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-red-700 transition">
               Setup Now
+            </button>
+          </div>
+        )}
+
+        {/* Upgrade Face ID to InsightFace ArcFace Banner */}
+        {hasFaceId && faceDescriptor && (!Array.isArray(faceDescriptor) || !Array.isArray(faceDescriptor[0]) || faceDescriptor[0]?.length !== 512) && (
+          <div className="bg-gradient-to-r from-indigo-50 to-blue-50 border border-indigo-200 p-4 mb-6 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold text-lg shadow-sm">
+                ⚡
+              </div>
+              <div>
+                <h4 className="font-bold text-indigo-900 text-sm">Upgrade Face ID to InsightFace ArcFace (512-D)</h4>
+                <p className="text-xs text-indigo-700">Higher recognition accuracy for instant, hands-free Kiosk attendance in class.</p>
+              </div>
+            </div>
+            <button 
+              onClick={() => window.location.href='/student/face-register'} 
+              className="bg-indigo-600 text-white px-4 py-2 rounded-xl font-bold text-xs hover:bg-indigo-700 transition shadow-sm whitespace-nowrap cursor-pointer"
+            >
+              Update Face ID (10s) →
             </button>
           </div>
         )}

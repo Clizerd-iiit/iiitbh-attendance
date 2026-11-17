@@ -16,9 +16,9 @@ export async function POST(req: NextRequest) {
   const { data: user } = await supabaseAdmin.from('users').select('signup_info').eq('id', session.user.userId).single();
   const signupInfo = user?.signup_info || {};
   
-  // Allow immediate upgrade to new Biometric Engine without 30-day block
+  // Allow immediate upgrade to new InsightFace ArcFace Biometric Engine without 30-day block
   const currentModel = signupInfo.face_model || '';
-  const isUpgrading = currentModel !== 'face-biometric-v2';
+  const isUpgrading = currentModel !== 'insightface-v1';
   
   if (signupInfo.last_face_update && !isUpgrading) {
     const lastUpdate = new Date(signupInfo.last_face_update).getTime();
@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
   }
 
   signupInfo.face_descriptor = descriptor;
-  signupInfo.face_model = 'face-biometric-v2';
+  signupInfo.face_model = 'insightface-v1';
   signupInfo.last_face_update = new Date().toISOString();
 
   const { error } = await supabaseAdmin.from('users').update({ signup_info: signupInfo }).eq('id', session.user.userId);
