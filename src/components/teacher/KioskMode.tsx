@@ -17,6 +17,12 @@ function getDescriptorDim(descriptor: any): number {
   return 0;
 }
 
+interface BoxDrawItem {
+  box: { x: number; y: number; width: number; height: number };
+  label: string;
+  color: string;
+}
+
 function drawInsightBox(
   ctx: CanvasRenderingContext2D,
   box: { x: number; y: number; width: number; height: number },
@@ -29,7 +35,7 @@ function drawInsightBox(
   ctx.strokeRect(box.x, box.y, box.width, box.height);
 
   // High-tech corner brackets
-  const cornerLen = Math.min(20, Math.max(8, box.width * 0.18));
+  const cornerLen = Math.min(22, Math.max(10, box.width * 0.18));
   ctx.lineWidth = 4;
   // Top-left
   ctx.beginPath(); ctx.moveTo(box.x, box.y + cornerLen); ctx.lineTo(box.x, box.y); ctx.lineTo(box.x + cornerLen, box.y); ctx.stroke();
@@ -66,28 +72,33 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
   const [msg, setMsg] = useState('');
   const [recentMatches, setRecentMatches] = useState<{id: string, name: string, time: number}[]>([]);
   const [fps, setFps] = useState(0);
-  const [facesCount, setFacesCount] = useState(0);
+  const [enrolledCount, setEnrolledCount] = useState(0);
+  const [detectedCount, setDetectedCount] = useState(0);
   
   const markedRef = useRef(markedMap);
   useEffect(() => { markedRef.current = markedMap; }, [markedMap]);
 
-  // Industry Setting: Multi-frame temporal consistency map (studentId -> consecutive hit count)
+  // Multi-frame temporal consistency map (studentId -> consecutive hit count)
   const consecutiveHitsRef = useRef<Record<string, number>>({});
   // Pending mark lockout set
   const pendingMarkRef = useRef<Set<string>>(new Set());
+  // Active boxes to render continuously at 60 FPS
+  const activeBoxesRef = useRef<BoxDrawItem[]>([]);
 
   useEffect(() => {
     let stream: MediaStream | null = null;
-    let animationFrameId: number | null = null;
+    let animFrameId: number | null = null;
+    let inferTimer: NodeJS.Timeout | null = null;
     let isRunning = true;
     let frameCount = 0;
     let lastFpsTime = Date.now();
+    let isInferring = false;
     
     const init = async () => {
       try {
         setStatus('loading_models');
         
-        // 1. Load InsightFace ArcFace (512-D) with local caching
+        // 1. Load Neural Biometrics with local caching
         await loadInsightFaceWithProgress((percent, stage) => {
           setModelLoadProgress(percent);
           setModelLoadStage(stage);
@@ -125,21 +136,39 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
 
         // Categorize enrolled students into Neural Biometrics (>= 256)
         const enrolledNeural = enrolledStudents.filter(s => getDescriptorDim(s.descriptor) >= 256);
+        setEnrolledCount(enrolledNeural.length);
 
         setStatus('starting_camera');
         stream = await navigator.mediaDevices.getUserMedia({ 
           video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' } 
         });
+
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
           const playPromise = videoRef.current.play();
           if (playPromise !== undefined) playPromise.catch(() => {});
         }
 
-        await new Promise(r => {
-          if (videoRef.current && videoRef.current.readyState >= 2 && videoRef.current.videoWidth > 0) r(true);
-          else if (videoRef.current) videoRef.current.onloadeddata = () => r(true);
-          else setTimeout(r, 600);
+        // Guaranteed video readiness: resolves on playing, loadedmetadata, or at most 800ms
+        await new Promise<void>((resolve) => {
+          const vid = videoRef.current;
+          if (vid && vid.readyState >= 2 && vid.videoWidth > 0) {
+            resolve();
+            return;
+          }
+          let resolved = false;
+          const done = () => {
+            if (!resolved) {
+              resolved = true;
+              resolve();
+            }
+          };
+          const timeout = setTimeout(done, 800);
+          if (vid) {
+            vid.onloadedmetadata = () => { clearTimeout(timeout); done(); };
+            vid.onplaying = () => { clearTimeout(timeout); done(); };
+            vid.oncanplay = () => { clearTimeout(timeout); done(); };
+          }
         });
         
         if (videoRef.current && canvasRef.current) {
@@ -149,31 +178,70 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
 
         setStatus('active');
 
-        // High-Speed Decoupled Display & Inference Architecture
-        let isDetecting = false;
-        let lastDetectTime = 0;
+        // ── 2. Decoupled 60 FPS Render Loop (Always active, never blocks) ─────
+        const renderLoop = () => {
+          if (!isRunning) return;
+          animFrameId = requestAnimationFrame(renderLoop);
 
-        const performDetection = async (video: HTMLVideoElement, canvas: HTMLCanvasElement) => {
-          const detectionsNeural = await detectAllFacesInsight(video);
-          setFacesCount(detectionsNeural.length);
+          // FPS calculation
+          const now = Date.now();
+          frameCount++;
+          if (now - lastFpsTime >= 1000) {
+            setFps(frameCount);
+            frameCount = 0;
+            lastFpsTime = now;
+          }
+
+          const canvas = canvasRef.current;
+          const video = videoRef.current;
+          if (!canvas || !video) return;
+
+          if (video.videoWidth > 0 && (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight)) {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+          }
 
           const ctx = canvas.getContext('2d');
           if (!ctx) return;
           ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-          const currentFrameMatchedIds = new Set<string>();
-          const newlyMarkedNames: string[] = [];
-          const markPromises: Promise<void>[] = [];
+          // Draw active bounding boxes
+          const boxes = activeBoxesRef.current;
+          for (const b of boxes) {
+            drawInsightBox(ctx, b.box, b.label, b.color);
+          }
+        };
 
-          if (detectionsNeural.length > 0) {
-            for (const det of detectionsNeural) {
+        renderLoop();
+
+        // ── 3. High-Cadence Neural Inference Loop (every 220ms) ───────────────
+        const runInferenceCycle = async () => {
+          if (!isRunning || isInferring) return;
+          const video = videoRef.current;
+          if (!video || video.readyState < 2 || video.videoWidth === 0) return;
+
+          isInferring = true;
+          try {
+            const detections = await detectAllFacesInsight(video);
+            setDetectedCount(detections.length);
+
+            if (detections.length === 0) {
+              activeBoxesRef.current = [];
+              return;
+            }
+
+            const currentMatchedIds = new Set<string>();
+            const newlyMarkedNames: string[] = [];
+            const markPromises: Promise<void>[] = [];
+            const nextBoxes: BoxDrawItem[] = [];
+
+            for (const det of detections) {
               let bestMatch: any = null;
               let topSim = -1;
               let secondSim = -1;
 
-              // 1. Compare against Neural Biometric Enrolled Students
               for (const s of enrolledNeural) {
-                const match = matchInsightDescriptor(det.embedding, s.descriptor, 0.70);
+                const match = matchInsightDescriptor(det.embedding, s.descriptor, 0.65);
                 if (match.similarity > topSim) {
                   secondSim = topSim;
                   topSim = match.similarity;
@@ -183,110 +251,71 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
                 }
               }
 
-              const box = det.box;
-              let labelText = 'Unknown Face';
-              let boxColor = '#ef4444'; // Red default for unregistered / unupgraded
+              let labelText = 'Unregistered Face';
+              let boxColor = '#ef4444'; // Red default
 
-              // Industry Standard Criteria:
-              // - Cosine Similarity >= 0.70 (>= 70%)
-              // - Margin over 2nd best candidate >= 0.05 (Disambiguation guard)
-              const isDistinctMatch = bestMatch && topSim >= 0.70 && (topSim - secondSim >= 0.05);
+              // Robust Matching Threshold: Cosine similarity >= 65% with disambiguation guard
+              const isMatch = bestMatch && topSim >= 0.65 && (secondSim < 0 || topSim - secondSim >= 0.04);
 
-              if (isDistinctMatch) {
+              if (isMatch) {
                 const sId = bestMatch.student.id;
-                currentFrameMatchedIds.add(sId);
+                currentMatchedIds.add(sId);
                 const hits = (consecutiveHitsRef.current[sId] || 0) + 1;
                 consecutiveHitsRef.current[sId] = hits;
 
-                const studentName = bestMatch.student.name || 'Student';
-                const rollNo = bestMatch.student.roll_no ? ` (${bestMatch.student.roll_no})` : '';
+                const sName = bestMatch.student.name || 'Student';
+                const rollStr = bestMatch.student.roll_no ? ` (${bestMatch.student.roll_no})` : '';
 
-                // Require 3 consecutive frames (~600ms steady gaze) before triggering attendance
                 if (hits >= 3) {
-                  labelText = `${studentName} ${bestMatch.confidence}% ✓`;
+                  labelText = `${sName} ${bestMatch.confidence}% ✓`;
                   boxColor = '#22c55e'; // Green confirmed
 
                   if (markedRef.current[sId] !== 'P' && !pendingMarkRef.current.has(sId)) {
                     markedRef.current[sId] = 'P';
                     pendingMarkRef.current.add(sId);
                     markPromises.push(onMark(sId));
-                    newlyMarkedNames.push(`${studentName}${rollNo}`);
+                    newlyMarkedNames.push(`${sName}${rollStr}`);
                   }
                 } else {
-                  labelText = `${studentName} Verifying (${hits}/3)…`;
+                  labelText = `${sName} Verifying (${hits}/3)…`;
                   boxColor = '#eab308'; // Amber verifying
                 }
-              } else {
-                labelText = 'Unknown Face';
-                boxColor = '#ef4444'; // Red
               }
 
-              drawInsightBox(ctx, box, labelText, boxColor);
+              nextBoxes.push({ box: det.box, label: labelText, color: boxColor });
             }
-          }
 
-          // Decay consecutive hit counter for any student not matched in this frame
-          Object.keys(consecutiveHitsRef.current).forEach(id => {
-            if (!currentFrameMatchedIds.has(id)) {
-              consecutiveHitsRef.current[id] = Math.max(0, (consecutiveHitsRef.current[id] || 0) - 1);
-            }
-          });
+            activeBoxesRef.current = nextBoxes;
 
-          if (markPromises.length > 0) await Promise.all(markPromises);
-
-          if (newlyMarkedNames.length > 0) {
-            const stamp = Date.now();
-            const newMatches = newlyMarkedNames.map((n, i) => ({ id: stamp + '-' + i, name: n, time: stamp }));
-            setRecentMatches(prev => [...prev, ...newMatches]);
-            setTimeout(() => {
-              setRecentMatches(prev => prev.filter(m => stamp - m.time < 3500));
-            }, 3500);
-          }
-        };
-
-        const scanLoop = () => {
-          if (!isRunning) return;
-
-          // Always schedule next animation frame first — guarantees smooth 30-60 FPS UI!
-          animationFrameId = requestAnimationFrame(scanLoop);
-
-          // Realtime FPS Calculation
-          const now = Date.now();
-          frameCount++;
-          if (now - lastFpsTime >= 1000) {
-            setFps(frameCount);
-            frameCount = 0;
-            lastFpsTime = now;
-          }
-
-          if (!videoRef.current || !canvasRef.current) return;
-          const video = videoRef.current;
-          const canvas = canvasRef.current;
-
-          if (video.readyState < 2 || video.videoWidth === 0) return;
-
-          if (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight) {
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-          }
-
-          // Cadence gate: run heavy AI detection every ~200ms non-blockingly
-          if (isDetecting || now - lastDetectTime < 200) return;
-
-          isDetecting = true;
-          lastDetectTime = now;
-
-          performDetection(video, canvas)
-            .catch(err => console.error("Detection error:", err))
-            .finally(() => {
-              isDetecting = false;
+            // Decay hit counters for unmatched students
+            Object.keys(consecutiveHitsRef.current).forEach(id => {
+              if (!currentMatchedIds.has(id)) {
+                consecutiveHitsRef.current[id] = Math.max(0, (consecutiveHitsRef.current[id] || 0) - 1);
+              }
             });
+
+            if (markPromises.length > 0) await Promise.all(markPromises);
+
+            if (newlyMarkedNames.length > 0) {
+              const stamp = Date.now();
+              const newMatches = newlyMarkedNames.map((n, i) => ({ id: stamp + '-' + i, name: n, time: stamp }));
+              setRecentMatches(prev => [...prev, ...newMatches]);
+              setTimeout(() => {
+                setRecentMatches(prev => prev.filter(m => stamp - m.time < 3500));
+              }, 3500);
+            }
+          } catch (err) {
+            console.warn('[Kiosk] Inference error:', err);
+          } finally {
+            isInferring = false;
+          }
         };
 
-        scanLoop();
+        // Run inference every 220ms
+        inferTimer = setInterval(runInferenceCycle, 220);
 
       } catch (e: any) {
-        console.error(e);
+        console.error('[Kiosk] Initialization error:', e);
         setStatus('error');
         setMsg(e.message || 'Failed to start Biometric Engine');
       }
@@ -296,7 +325,8 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
 
     return () => {
       isRunning = false;
-      if (animationFrameId) cancelAnimationFrame(animationFrameId);
+      if (animFrameId) cancelAnimationFrame(animFrameId);
+      if (inferTimer) clearInterval(inferTimer);
       if (stream) stream.getTracks().forEach(t => t.stop());
     };
   }, [subjectId]);
@@ -312,7 +342,7 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
            <div className="text-green-400 font-bold bg-gray-900 px-3 py-1 rounded border border-green-900">
               {fps} FPS
            </div>
-           <button onClick={onClose} className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 font-bold uppercase tracking-wider text-sm">
+           <button onClick={onClose} className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 font-bold uppercase tracking-wider text-sm transition">
              Terminate
            </button>
         </div>
@@ -368,8 +398,11 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
                   <span className="w-2 h-2 rounded-full bg-green-400 animate-ping" />
                   ENGINE: High-Precision Neural Biometrics
                 </p>
-                <p>MATCHING: Cosine Similarity ≥ 70% · 3-Frame Temporal Lock</p>
+                <p>MATCHING: Cosine Similarity ≥ 65% · 3-Frame Temporal Lock</p>
                 <p>HARDWARE: WebGL GPU Accelerated · IndexedDB Cached</p>
+                <p className="text-xs text-gray-300 mt-1 font-mono">
+                  Enrolled: <span className="text-green-300">{enrolledCount}</span> · Tracking: <span className="text-green-300">{detectedCount}</span> face(s)
+                </p>
              </div>
            )}
         </div>
