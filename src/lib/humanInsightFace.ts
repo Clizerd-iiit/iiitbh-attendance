@@ -27,9 +27,10 @@ export const INSIGHTFACE_CONFIG = {
       modelPath: 'blazeface.json',
       rotation: false,
       return: true,
-      scale: 1.4,
-      minConfidence: 0.15, // High sensitivity detection across all lighting conditions
-      maxDetected: 20, // Support multi-face recognition for Kiosk Mode
+      scale: 1.15,
+      minConfidence: 0.45, // High accuracy detection that ignores hair/clothing artifacts
+      iouThreshold: 0.35,  // Merges overlapping anchor boxes via Non-Max Suppression
+      maxDetected: 10,     // Support multi-face recognition for Kiosk Mode
     },
     mesh: { enabled: false },
     iris: { enabled: false },

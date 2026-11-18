@@ -73,6 +73,7 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
   const [recentMatches, setRecentMatches] = useState<{id: string, name: string, time: number}[]>([]);
   const [fps, setFps] = useState(0);
   const [enrolledCount, setEnrolledCount] = useState(0);
+  const [legacyCount, setLegacyCount] = useState(0);
   const [detectedCount, setDetectedCount] = useState(0);
   
   const markedRef = useRef(markedMap);
@@ -136,7 +137,15 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
 
         // Categorize enrolled students into Neural Biometrics (>= 256)
         const enrolledNeural = enrolledStudents.filter(s => getDescriptorDim(s.descriptor) >= 256);
+        const legacyStudents = enrolledStudents.filter(s => getDescriptorDim(s.descriptor) < 256);
         setEnrolledCount(enrolledNeural.length);
+        setLegacyCount(legacyStudents.length);
+
+        if (enrolledNeural.length === 0) {
+          setStatus('error');
+          setMsg(`Notice: All ${legacyStudents.length} registered student(s) in this class have legacy face data (128-D). Please update their Face ID via "Edit Student" or have them update in their student portal to enable AI Biometric recognition.`);
+          return;
+        }
 
         setStatus('starting_camera');
         stream = await navigator.mediaDevices.getUserMedia({ 
@@ -255,7 +264,7 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
               let boxColor = '#ef4444'; // Red default
 
               // Robust Matching Threshold: Cosine similarity >= 52% with disambiguation guard
-              const isMatch = bestMatch && topSim >= 0.52 && (secondSim < 0 || topSim - secondSim >= 0.04);
+              const isMatch = bestMatch && topSim >= 0.52 && (topSim >= 0.60 || secondSim < 0 || (topSim - secondSim >= 0.03));
 
               if (isMatch) {
                 const sId = bestMatch.student.id;
@@ -401,7 +410,7 @@ export function KioskMode({ subjectId, onClose, onMark, markedMap, students }: K
                 <p>MATCHING: High-Precision Neural Lock · Instant Verification</p>
                 <p>HARDWARE: WebGL GPU Accelerated · IndexedDB Cached</p>
                 <p className="text-xs text-gray-300 mt-1 font-mono">
-                  Enrolled: <span className="text-green-300">{enrolledCount}</span> · Tracking: <span className="text-green-300">{detectedCount}</span> face(s)
+                  Enrolled: <span className="text-green-300">{enrolledCount}</span>{legacyCount > 0 && <span className="text-yellow-400"> (+{legacyCount} legacy needs update)</span>} · Tracking: <span className="text-green-300">{detectedCount}</span> face(s)
                 </p>
              </div>
            )}

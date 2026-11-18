@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
-import { loadFaceEngine, detectFaceEmbedding, BIOMETRIC_ANGLES as ANGLES } from '@/lib/faceEngine';
+import { loadInsightFaceWithProgress, detectSingleFaceInsight } from '@/lib/humanInsightFace';
+import { BIOMETRIC_ANGLES as ANGLES } from '@/lib/faceEngine';
 
 export function AdminEditStudentModal({ student, onClose, onSaved }: { student: any, onClose: () => void, onSaved: () => void }) {
   const [name, setName] = useState(student.name || '');
@@ -48,7 +49,7 @@ export function AdminEditStudentModal({ student, onClose, onSaved }: { student: 
   const startCamera = async () => {
     try {
       setFaceMsg('Loading AI Biometric Engine...');
-      await loadFaceEngine((pct, stage) => {
+      await loadInsightFaceWithProgress((pct, stage) => {
         setFaceMsg(`${stage} (${pct}%)`);
       });
       setFaceMsg('Starting Camera...');
@@ -76,18 +77,18 @@ export function AdminEditStudentModal({ student, onClose, onSaved }: { student: 
     }
     setFaceMsg('Scanning Face Geometry...');
     try {
-      let embedding: Float32Array | null = null;
+      let face: any = null;
       let attempts = 0;
-      while (!embedding && attempts < 6) {
+      while (!face && attempts < 6) {
         attempts++;
-        embedding = await detectFaceEmbedding(videoRef.current);
-        if (!embedding) await new Promise(r => setTimeout(r, 400));
+        face = await detectSingleFaceInsight(videoRef.current);
+        if (!face) await new Promise(r => setTimeout(r, 300));
       }
-      if (!embedding) {
+      if (!face || !face.embedding || face.embedding.length === 0) {
         alert('No face detected! Please ensure good lighting and face camera directly.');
         return;
       }
-      setDescriptors(prev => [...prev, Array.from(embedding!)]);
+      setDescriptors(prev => [...prev, Array.from(face.embedding)]);
       setStep(s => s + 1);
     } catch (e: any) {
       alert(e?.message || 'Error during face detection');
@@ -126,6 +127,12 @@ export function AdminEditStudentModal({ student, onClose, onSaved }: { student: 
   const stopCamera = () => {
     if (stream) stream.getTracks().forEach(t => t.stop());
   };
+
+  useEffect(() => {
+    return () => {
+      if (stream) stream.getTracks().forEach(t => t.stop());
+    };
+  }, [stream]);
 
   const removeEnrollment = async (enrollmentId: string) => {
     if (!confirm('Remove student from this subject?')) return;
