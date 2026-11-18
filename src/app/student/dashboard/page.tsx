@@ -153,6 +153,14 @@ export default function StudentDashboard() {
   const [loading, setLoading] = useState(true);
   const [showPercentage, setShowPercentage] = useState(true);
 
+  // Mandatory Profile Group Completion States
+  const [showMandatoryGroupModal, setShowMandatoryGroupModal] = useState(false);
+  const [mandatoryBranch, setMandatoryBranch] = useState('CSE');
+  const [mandatoryGroup, setMandatoryGroup] = useState('');
+  const [mandatorySubGroup, setMandatorySubGroup] = useState('');
+  const [savingMandatoryGroup, setSavingMandatoryGroup] = useState(false);
+  const [mandatoryGroupError, setMandatoryGroupError] = useState('');
+
   // Precise Location Help States
   const [showLocationHelp, setShowLocationHelp] = useState(false);
   const [locationHelpTab, setLocationHelpTab] = useState<'android' | 'ios' | 'laptop'>('android');
@@ -183,6 +191,56 @@ export default function StudentDashboard() {
     }
     setIsTestingCamera(false);
     setTestMatchResult(null);
+  };
+
+  const handleSaveMandatoryGroup = async () => {
+    if (!mandatoryBranch) {
+      setMandatoryGroupError('Please select your branch.');
+      return;
+    }
+    if (mandatoryBranch === 'CSE') {
+      if (!mandatoryGroup) {
+        setMandatoryGroupError('Please select your Group (G1 or G2).');
+        return;
+      }
+      if (!mandatorySubGroup) {
+        setMandatoryGroupError('Please select your Sub-Group.');
+        return;
+      }
+    }
+
+    setSavingMandatoryGroup(true);
+    setMandatoryGroupError('');
+
+    try {
+      const res = await fetch('/api/profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          branch: mandatoryBranch,
+          group: mandatoryBranch === 'CSE' ? mandatoryGroup : '',
+          sub_group: mandatoryBranch === 'CSE' ? mandatorySubGroup : '',
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        setMandatoryGroupError(data.error || 'Failed to update profile. Please try again.');
+        setSavingMandatoryGroup(false);
+        return;
+      }
+
+      let txt = mandatoryBranch;
+      if (mandatoryBranch === 'CSE') {
+        txt += ` - ${mandatoryGroup} (${mandatorySubGroup})`;
+      }
+      setBatchInfo(txt);
+      setShowMandatoryGroupModal(false);
+    } catch {
+      setMandatoryGroupError('Network error. Please check your connection.');
+    } finally {
+      setSavingMandatoryGroup(false);
+    }
   };
 
   const handlePreloadModel = async () => {
@@ -394,16 +452,33 @@ export default function StudentDashboard() {
     };
     fetchData();
     
-    // Only once, get face ID status
+    // Only once, get face ID status & verify complete profile
     fetch('/api/student/face').then(r => r.json()).then(d => {
       setHasFaceId(d.hasFaceId);
       if (d.descriptor) setFaceDescriptor(d.descriptor);
       if (d.is_cr) setIsCr(true);
-      if (d.info?.branch) {
-        let txt = d.info.branch;
-        if (d.info.group) txt += ` - ${d.info.group}`;
-        if (d.info.sub_group) txt += ` (${d.info.sub_group})`;
+
+      const sBranch = d.info?.branch || '';
+      const sGroup = d.info?.group || '';
+      const sSubGroup = d.info?.sub_group || '';
+
+      if (sBranch) {
+        let txt = sBranch;
+        if (sGroup) txt += ` - ${sGroup}`;
+        if (sSubGroup) txt += ` (${sSubGroup})`;
         setBatchInfo(txt);
+      }
+
+      // Check if profile has missing Branch or Group/SubGroup
+      // If branch is missing, or if branch is CSE and group or sub_group is missing -> compulsory modal!
+      const isCse = (!sBranch || sBranch.toUpperCase() === 'CSE');
+      const isMissingGroup = isCse ? (!sGroup || !sSubGroup) : !sBranch;
+
+      if (isMissingGroup) {
+        setMandatoryBranch(sBranch || 'CSE');
+        setMandatoryGroup(sGroup || '');
+        setMandatorySubGroup(sSubGroup || '');
+        setShowMandatoryGroupModal(true);
       }
     });
 
@@ -1737,6 +1812,131 @@ export default function StudentDashboard() {
                   I Understand & Acknowledge (Do Not Repeat)
                 </button>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Mandatory Profile Group Completion Modal (Unclosable until valid selection) */}
+      {showMandatoryGroupModal && (
+        <div className="fixed inset-0 z-[99999] bg-black/85 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-gray-900 rounded-3xl max-w-lg w-full p-6 md:p-8 shadow-2xl border border-blue-200 dark:border-blue-900/50 space-y-5">
+            <div className="text-center space-y-2">
+              <div className="w-16 h-16 bg-blue-100 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 rounded-2xl flex items-center justify-center text-3xl mx-auto shadow-inner">
+                🎓
+              </div>
+              <h3 className="text-xl md:text-2xl font-black text-gray-900 dark:text-white tracking-tight">
+                Complete Your Class &amp; Group
+              </h3>
+              <p className="text-xs md:text-sm text-gray-600 dark:text-gray-300 font-medium leading-relaxed">
+                Attendance sessions are filtered strictly by branch &amp; group (e.g. <b>Group 1</b>, <b>G1A</b>, <b>G1B</b>). Please complete your official group assignment to unlock attendance.
+              </p>
+            </div>
+
+            <div className="space-y-4 pt-1">
+              {/* Branch */}
+              <div>
+                <label className="block text-xs font-black text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-1.5">
+                  Academic Branch <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={mandatoryBranch}
+                  onChange={(e) => {
+                    const b = e.target.value;
+                    setMandatoryBranch(b);
+                    if (b !== 'CSE') {
+                      setMandatoryGroup('');
+                      setMandatorySubGroup('');
+                    }
+                  }}
+                  className="w-full bg-gray-50 dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-2xl px-4 py-3 text-sm font-bold text-gray-900 dark:text-white focus:outline-none focus:border-blue-600"
+                >
+                  <option value="CSE">Computer Science &amp; Engineering (CSE)</option>
+                  <option value="ECE">Electronics &amp; Communication (ECE)</option>
+                  <option value="MAE">Mechatronics Engineering (MAE)</option>
+                  <option value="MNC">Mathematics &amp; Computing (MNC)</option>
+                </select>
+              </div>
+
+              {/* Group & Sub-Group (For CSE) */}
+              {mandatoryBranch === 'CSE' ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  <div>
+                    <label className="block text-xs font-black text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-1.5">
+                      Main Group <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      value={mandatoryGroup}
+                      onChange={(e) => {
+                        const g = e.target.value;
+                        setMandatoryGroup(g);
+                        setMandatorySubGroup('');
+                      }}
+                      className="w-full bg-gray-50 dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-2xl px-4 py-3 text-sm font-bold text-gray-900 dark:text-white focus:outline-none focus:border-blue-600"
+                    >
+                      <option value="">Select Group</option>
+                      <option value="G1">Group 1 (G1)</option>
+                      <option value="G2">Group 2 (G2)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-black text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-1.5">
+                      Sub-Group <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      value={mandatorySubGroup}
+                      onChange={(e) => setMandatorySubGroup(e.target.value)}
+                      disabled={!mandatoryGroup}
+                      className="w-full bg-gray-50 dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-2xl px-4 py-3 text-sm font-bold text-gray-900 dark:text-white focus:outline-none focus:border-blue-600 disabled:opacity-50"
+                    >
+                      <option value="">Select Sub-Group</option>
+                      {mandatoryGroup === 'G1' && (
+                        <>
+                          <option value="G1A">Sub-Group G1A</option>
+                          <option value="G1B">Sub-Group G1B</option>
+                        </>
+                      )}
+                      {mandatoryGroup === 'G2' && (
+                        <>
+                          <option value="G2A">Sub-Group G2A</option>
+                          <option value="G2B">Sub-Group G2B</option>
+                        </>
+                      )}
+                    </select>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-3 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/60 rounded-2xl text-xs text-blue-800 dark:text-blue-300 font-medium">
+                  ℹ️ Non-CSE departments attend as a unified branch cohort. No sub-group division is needed.
+                </div>
+              )}
+
+              {mandatoryGroupError && (
+                <p className="text-xs font-bold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/50 p-2.5 rounded-xl border border-red-200 dark:border-red-800">
+                  ⚠️ {mandatoryGroupError}
+                </p>
+              )}
+            </div>
+
+            <div className="pt-2">
+              <button
+                onClick={handleSaveMandatoryGroup}
+                disabled={savingMandatoryGroup}
+                className="w-full py-4 bg-blue-600 hover:bg-blue-700 active:scale-[0.98] transition text-white font-black rounded-2xl shadow-xl shadow-blue-500/20 text-sm tracking-wide disabled:opacity-60 flex items-center justify-center gap-2"
+              >
+                {savingMandatoryGroup ? (
+                  <>
+                    <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>Saving Profile...</span>
+                  </>
+                ) : (
+                  <span>Save &amp; Continue to Dashboard →</span>
+                )}
+              </button>
+              <p className="text-[11px] text-center text-gray-600 dark:text-gray-300 font-bold mt-2">
+                This is a one-time setup. You can always edit it later in your Profile.
+              </p>
             </div>
           </div>
         </div>

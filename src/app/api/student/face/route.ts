@@ -45,8 +45,13 @@ export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const { data: user } = await supabaseAdmin.from('users').select('signup_info, is_cr').eq('id', session.user.userId).single();
+  const { data: user } = await supabaseAdmin.from('users').select('branch, section, signup_info, is_cr').eq('id', session.user.userId).single();
   const descriptor = user?.signup_info?.face_descriptor || null;
+  const info = {
+    branch: user?.branch || '',
+    section: user?.section || '',
+    ...(user?.signup_info || {}),
+  };
   
-  return NextResponse.json({ hasFaceId: !!descriptor, descriptor, info: user?.signup_info, is_cr: user?.is_cr });
+  return NextResponse.json({ hasFaceId: !!descriptor, descriptor, info, is_cr: user?.is_cr });
 }

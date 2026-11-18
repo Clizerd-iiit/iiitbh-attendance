@@ -10,6 +10,7 @@ import { CRDelegationModal } from '@/components/teacher/CRDelegationModal';
 import { ActiveCRDelegations } from '@/components/teacher/ActiveCRDelegations';
 import type { CRDelegation } from '@/lib/delegation';
 import { LocalQRCode } from '@/components/shared/LocalQRCode';
+import { checkStudentGroupMatch } from '@/lib/groupUtils';
 
 type Method = 'qr' | 'otp' | 'kiosk' | 'past';
 
@@ -525,20 +526,10 @@ function AttendancePage() {
   // Filter enrolled students based on selected target branch/group/subgroup
   const filteredStudents = students.filter(s => {
     const sBranch = (s.signup_info?.branch || s.branch || '').toUpperCase().trim();
-    const sGroup = (s.signup_info?.group || s.section || '').toUpperCase().trim();
-    const sSubGroup = (s.signup_info?.sub_group || '').toUpperCase().trim();
     if (branchFilter && sBranch !== branchFilter.toUpperCase().trim()) return false;
     if (groupFilter) {
-      const target = groupFilter.toUpperCase().trim();
-      if (target === 'G1') {
-        if (!sGroup.startsWith('G1') && !sSubGroup.startsWith('G1')) return false;
-      } else if (target === 'G2') {
-        if (!sGroup.startsWith('G2') && !sSubGroup.startsWith('G2')) return false;
-      } else if (target === 'G1A' || target === 'G1B' || target === 'G2A' || target === 'G2B') {
-        if (sSubGroup !== target && sGroup !== target) return false;
-      } else {
-        if (!sGroup.includes(target) && !sSubGroup.includes(target)) return false;
-      }
+      const { match } = checkStudentGroupMatch(groupFilter, s);
+      if (!match) return false;
     }
     return true;
   }).sort((a, b) => {

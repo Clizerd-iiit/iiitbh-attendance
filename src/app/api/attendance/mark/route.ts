@@ -9,6 +9,7 @@ import type { AttendanceStatus } from '@/types';
 import { rateLimit, getIp } from '@/lib/rate-limit';
 import { getClassSettings } from '@/lib/classSettings';
 import { closeClassAndMarkAbsent } from '@/lib/autoCloseClasses';
+import { checkStudentGroupMatch } from '@/lib/groupUtils';
 import {
   checkOtpLockout,
   recordFailedOtpAttempt,
@@ -304,21 +305,10 @@ export async function POST(req: NextRequest) {
       }
 
       if (classSettings.target_group) {
-        const target = classSettings.target_group.toUpperCase().trim();
-        let matchGroup = false;
-        if (target === 'G1') {
-          matchGroup = sGroup.startsWith('G1') || sSubGroup.startsWith('G1');
-        } else if (target === 'G2') {
-          matchGroup = sGroup.startsWith('G2') || sSubGroup.startsWith('G2');
-        } else if (['G1A', 'G1B', 'G2A', 'G2B'].includes(target)) {
-          matchGroup = sSubGroup === target || sGroup === target;
-        } else {
-          matchGroup = sGroup.includes(target) || sSubGroup.includes(target);
-        }
-
-        if (!matchGroup) {
+        const { match, targetDisplay, studentDisplay } = checkStudentGroupMatch(classSettings.target_group, studentUser);
+        if (!match) {
           return NextResponse.json({
-            error: `This attendance is exclusively for Group ${classSettings.target_group}. (Your group: ${sGroup || sSubGroup || 'None'})`,
+            error: `This attendance is exclusively for ${targetDisplay}. (Your group: ${studentDisplay || 'None'})`,
           }, { status: 403 });
         }
       }

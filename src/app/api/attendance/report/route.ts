@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { supabaseAdmin } from '@/lib/supabase';
+import { checkStudentGroupMatch } from '@/lib/groupUtils';
 
 export const dynamic = 'force-dynamic';
 
@@ -45,16 +46,8 @@ export async function GET(req: NextRequest) {
       if (branch && sBranch !== branch.toUpperCase().trim()) return false;
       
       if (group) {
-        const target = group.toUpperCase().trim();
-        if (target === 'G1') {
-          if (!sGroup.startsWith('G1') && !sSubGroup.startsWith('G1')) return false;
-        } else if (target === 'G2') {
-          if (!sGroup.startsWith('G2') && !sSubGroup.startsWith('G2')) return false;
-        } else if (target === 'G1A' || target === 'G1B' || target === 'G2A' || target === 'G2B') {
-          if (sSubGroup !== target && sGroup !== target) return false;
-        } else {
-          if (!sGroup.includes(target) && !sSubGroup.includes(target)) return false;
-        }
+        const { match } = checkStudentGroupMatch(group, student);
+        if (!match) return false;
       }
       return true;
     })

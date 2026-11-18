@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth';
 import { supabaseAdmin } from '@/lib/supabase';
 import { getClassSettings } from '@/lib/classSettings';
 import { closeClassAndMarkAbsent } from '@/lib/autoCloseClasses';
+import { checkStudentGroupMatch } from '@/lib/groupUtils';
 
 export const dynamic = 'force-dynamic';
 
@@ -95,22 +96,11 @@ export async function GET(req: NextRequest) {
       }
 
       if (settings.target_group) {
-        const target = settings.target_group.toUpperCase().trim();
-        let matchGroup = false;
-        if (target === 'G1') {
-          matchGroup = sGroup.startsWith('G1') || sSubGroup.startsWith('G1');
-        } else if (target === 'G2') {
-          matchGroup = sGroup.startsWith('G2') || sSubGroup.startsWith('G2');
-        } else if (['G1A', 'G1B', 'G2A', 'G2B'].includes(target)) {
-          matchGroup = sSubGroup === target || sGroup === target;
-        } else {
-          matchGroup = sGroup.includes(target) || sSubGroup.includes(target);
-        }
-
-        if (!matchGroup) {
+        const { match, targetDisplay, studentDisplay } = checkStudentGroupMatch(settings.target_group, studentUser);
+        if (!match) {
           return NextResponse.json({
             found: false,
-            error: `This attendance session is exclusively for Group ${settings.target_group}. (Your group: ${sGroup || sSubGroup || 'None'})`,
+            error: `This attendance session is exclusively for ${targetDisplay}. (Your group: ${studentDisplay || 'None'})`,
           }, { status: 403 });
         }
       }

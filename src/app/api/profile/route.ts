@@ -31,11 +31,20 @@ export async function PATCH(req: NextRequest) {
   // Handle nested signup_info updates for students
   let updatedSignupInfo = undefined;
   if (body.branch !== undefined || body.group !== undefined || body.sub_group !== undefined) {
-    const { data: user } = await supabaseAdmin.from('users').select('signup_info').eq('id', session.user.userId).single();
+    const { data: user } = await supabaseAdmin.from('users').select('signup_info, branch, section').eq('id', session.user.userId).single();
     updatedSignupInfo = { ...(user?.signup_info || {}) };
-    if (body.branch !== undefined) updatedSignupInfo.branch = body.branch;
+    if (body.branch !== undefined) {
+      updatedSignupInfo.branch = body.branch;
+      allowed.branch = body.branch;
+    }
     if (body.group !== undefined) updatedSignupInfo.group = body.group;
-    if (body.sub_group !== undefined) updatedSignupInfo.sub_group = body.sub_group;
+    if (body.sub_group !== undefined) {
+      updatedSignupInfo.sub_group = body.sub_group;
+      if (body.sub_group) allowed.section = body.sub_group;
+      else if (body.group) allowed.section = body.group;
+    } else if (body.group !== undefined && body.group) {
+      allowed.section = body.group;
+    }
     allowed.signup_info = updatedSignupInfo;
   }
 

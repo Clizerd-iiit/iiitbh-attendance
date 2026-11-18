@@ -1,6 +1,7 @@
 import { supabaseAdmin } from './supabase';
 import { backupClassAttendance } from './secondaryBackup';
 import { getClassSettings } from './classSettings';
+import { checkStudentGroupMatch } from './groupUtils';
 
 /**
  * Closes an active class session, marks any unmarked enrolled students as Absent ('A', method: 'auto'),
@@ -53,20 +54,10 @@ export async function closeClassAndMarkAbsent(classId: string, subjectId?: strin
       if (users && users.length > 0) {
         const filteredUsers = users.filter((u: any) => {
           const sBranch = (u.signup_info?.branch || u.branch || '').toUpperCase().trim();
-          const sGroup = (u.signup_info?.group || u.section || '').toUpperCase().trim();
-          const sSubGroup = (u.signup_info?.sub_group || '').toUpperCase().trim();
           if (cfg.target_branch && sBranch !== cfg.target_branch.toUpperCase().trim()) return false;
           if (cfg.target_group) {
-            const target = cfg.target_group.toUpperCase().trim();
-            if (target === 'G1') {
-              if (!sGroup.startsWith('G1') && !sSubGroup.startsWith('G1')) return false;
-            } else if (target === 'G2') {
-              if (!sGroup.startsWith('G2') && !sSubGroup.startsWith('G2')) return false;
-            } else if (['G1A', 'G1B', 'G2A', 'G2B'].includes(target)) {
-              if (sSubGroup !== target && sGroup !== target) return false;
-            } else {
-              if (!sGroup.includes(target) && !sSubGroup.includes(target)) return false;
-            }
+            const { match } = checkStudentGroupMatch(cfg.target_group, u);
+            if (!match) return false;
           }
           return true;
         });
